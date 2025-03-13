@@ -274,6 +274,213 @@
             font-size: 16px;
             outline: none;
         }
+
+        /* Chrome Browser Styling */
+        .chrome-browser {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            background-color: #f0f0f0;
+            color: #333;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+        }
+        
+        .chrome-header {
+            background-color: #2b2b2b;
+            display: flex;
+            flex-direction: column;
+            padding: 5px;
+            user-select: none;
+        }
+        
+        .chrome-tabs {
+            display: flex;
+            height: 30px;
+            margin-bottom: 5px;
+        }
+        
+        .chrome-tab {
+            background-color: #444;
+            color: #ccc;
+            border-radius: 5px 5px 0 0;
+            padding: 5px 10px;
+            margin-right: 5px;
+            min-width: 120px;
+            display: flex;
+            align-items: center;
+            font-size: 12px;
+        }
+        
+        .chrome-tab.active {
+            background-color: #555;
+            color: white;
+        }
+        
+        .chrome-tab-icon {
+            width: 16px;
+            height: 16px;
+            margin-right: 5px;
+            background-color: #888;
+            border-radius: 50%;
+        }
+        
+        .chrome-tab-close {
+            margin-left: auto;
+            font-size: 14px;
+            opacity: 0.7;
+        }
+        
+        .chrome-address-bar {
+            display: flex;
+            height: 36px;
+            background-color: #444;
+            border-radius: 5px;
+            padding: 0 10px;
+            align-items: center;
+        }
+        
+        .chrome-navigation {
+            display: flex;
+            margin-right: 10px;
+        }
+        
+        .chrome-nav-button {
+            color: #ccc;
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 50%;
+            margin-right: 5px;
+            cursor: pointer;
+        }
+        
+        .chrome-nav-button:hover {
+            background-color: #555;
+        }
+        
+        .chrome-reload {
+            font-size: 16px;
+        }
+        
+        .chrome-back, .chrome-forward {
+            font-size: 18px;
+        }
+        
+        .chrome-url {
+            flex-grow: 1;
+            background-color: #333;
+            color: white;
+            border-radius: 20px;
+            height: 28px;
+            padding: 0 10px;
+            border: none;
+            outline: none;
+            font-size: 14px;
+        }
+        
+        .chrome-content {
+            flex-grow: 1;
+            background-color: white;
+            overflow: auto;
+        }
+        
+        /* Google Search Results Styling */
+        .search-results {
+            font-family: Arial, sans-serif;
+            max-width: 650px;
+            margin: 0 auto;
+            padding: 20px;
+            color: #202124;
+        }
+        
+        .search-header {
+            display: flex;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+        
+        .search-logo {
+            width: 92px;
+            height: 30px;
+            margin-right: 40px;
+            font-weight: bold;
+            color: #4285f4;
+            font-size: 22px;
+        }
+        
+        .search-box {
+            flex-grow: 1;
+            max-width: 550px;
+            height: 46px;
+            border: 1px solid #dfe1e5;
+            border-radius: 24px;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            box-shadow: 0 1px 6px rgba(32, 33, 36, 0.08);
+        }
+        
+        .search-input {
+            flex-grow: 1;
+            border: none;
+            outline: none;
+            height: 34px;
+            font-size: 16px;
+        }
+        
+        .search-result {
+            margin-bottom: 30px;
+        }
+        
+        .result-url {
+            color: #202124;
+            font-size: 14px;
+            margin-bottom: 4px;
+            display: flex;
+            align-items: center;
+        }
+        
+        .result-favicon {
+            width: 16px;
+            height: 16px;
+            margin-right: 10px;
+            border-radius: 50%;
+            background-color: #ddd;
+        }
+        
+        .result-title {
+            color: #1a0dab;
+            font-size: 20px;
+            margin: 0;
+            margin-bottom: 6px;
+            cursor: pointer;
+        }
+        
+        .result-title:hover {
+            text-decoration: underline;
+        }
+        
+        .result-snippet {
+            color: #4d5156;
+            font-size: 14px;
+            line-height: 1.58;
+        }
+        
+        /* Iframe Container */
+        .browser-iframe-container {
+            width: 100%;
+            height: 100%;
+            background-color: white;
+        }
+        
+        .browser-iframe {
+            width: 100%;
+            height: 100%;
+            border: none;
+        }
     </style>
 </head>
 <body>
@@ -291,6 +498,7 @@
             <div class="taskbar-item" data-window="contributions">C</div>
             <div class="taskbar-item" data-window="linkedin">L</div>
             <div class="taskbar-item" data-window="scholar">S</div>
+            <div class="taskbar-item" data-window="browser">B</div>
         </div>
     </div>
 
@@ -323,7 +531,8 @@
                     'readme': { top: '50px', left: '50px', width: '600px', height: '500px' },
                     'contributions': { top: '100px', left: '150px', width: '750px', height: '400px' },
                     'linkedin': { top: '150px', left: '250px', width: '600px', height: '500px' },
-                    'scholar': { top: '200px', left: '350px', width: '600px', height: '500px' }
+                    'scholar': { top: '200px', left: '350px', width: '600px', height: '500px' },
+                    'browser': { top: '80px', left: '120px', width: '800px', height: '600px' }
                 };
                 this.initEventListeners();
             }
@@ -507,6 +716,9 @@
                         case 'scholar':
                             this.createScholarWindow();
                             break;
+                        case 'browser':
+                            this.createBrowserWindow();
+                            break;
                     }
                 }
             }
@@ -515,7 +727,7 @@
                 command = command.trim().toLowerCase();
                 
                 if (command === 'help' || command === '?') {
-                    alert('Available commands:\nopen readme\nopen contributions\nopen linkedin\nopen scholar\nclear\nhelp or ?');
+                    alert('Available commands:\nopen readme\nopen contributions\nopen linkedin\nopen scholar\nopen browser\nclear\nhelp or ?');
                 } else if (command === 'clear') {
                     // Close all windows
                     for (const type in this.windows) {
@@ -549,6 +761,12 @@
                 const scholarWindow = this.createWindow('scholar', 'Google Scholar', '<div id="scholar-content" class="scholar-content"><p class="loading">Loading Google Scholar profile...</p></div>');
                 this.loadScholarProfile();
                 return scholarWindow;
+            }
+            
+            createBrowserWindow() {
+                const browserWindow = this.createWindow('browser', 'Chrome', '<div id="browser-content"></div>');
+                this.loadBrowser();
+                return browserWindow;
             }
             
             loadReadmeContent() {
@@ -639,6 +857,182 @@
                     `;
                 } catch (error) {
                     console.error('Error in loadScholarProfile:', error);
+                }
+            }
+            
+            loadBrowser() {
+                try {
+                    const contentElement = document.getElementById('browser-content');
+                    
+                    // Create Chrome browser interface
+                    const chromeHTML = `
+                        <div class="chrome-browser">
+                            <div class="chrome-header">
+                                <div class="chrome-tabs">
+                                    <div class="chrome-tab active">
+                                        <div class="chrome-tab-icon"></div>
+                                        <span>Google Search</span>
+                                        <span class="chrome-tab-close">×</span>
+                                    </div>
+                                </div>
+                                <div class="chrome-address-bar">
+                                    <div class="chrome-navigation">
+                                        <div class="chrome-nav-button chrome-back">←</div>
+                                        <div class="chrome-nav-button chrome-forward">→</div>
+                                        <div class="chrome-nav-button chrome-reload">↻</div>
+                                    </div>
+                                    <input type="text" class="chrome-url" value="https://www.google.com/search?q=rohan+adwankar" />
+                                </div>
+                            </div>
+                            <div class="chrome-content">
+                                <div id="browser-page-content">
+                                    <!-- Initial search results will be loaded here -->
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    contentElement.innerHTML = chromeHTML;
+                    
+                    // Load initial search results
+                    this.loadSearchResults();
+                    
+                    // Add event listeners
+                    this.setupBrowserEvents();
+                    
+                } catch (error) {
+                    console.error('Error in loadBrowser:', error);
+                }
+            }
+            
+            loadSearchResults() {
+                const pageContent = document.getElementById('browser-page-content');
+                
+                pageContent.innerHTML = `
+                    <div class="search-results">
+                        <div class="search-header">
+                            <div class="search-logo">Google</div>
+                            <div class="search-box">
+                                <input type="text" class="search-input" value="rohan adwankar" />
+                            </div>
+                        </div>
+                        
+                        <div class="search-result">
+                            <div class="result-url">
+                                <div class="result-favicon"></div>
+                                <span>github.com › RohanAdwankar</span>
+                            </div>
+                            <h3 class="result-title" data-url="https://github.com/RohanAdwankar">Rohan Adwankar - GitHub</h3>
+                            <div class="result-snippet">
+                                Rohan Adwankar's GitHub profile with repositories and contributions. View projects and collaborations.
+                            </div>
+                        </div>
+                        
+                        <div class="search-result">
+                            <div class="result-url">
+                                <div class="result-favicon"></div>
+                                <span>linkedin.com › in › rohanadwankar</span>
+                            </div>
+                            <h3 class="result-title" data-url="https://www.linkedin.com/in/rohanadwankar/">Rohan Adwankar - LinkedIn</h3>
+                            <div class="result-snippet">
+                                View Rohan Adwankar's professional profile on LinkedIn. Experience, education, skills, and connections.
+                            </div>
+                        </div>
+                        
+                        <div class="search-result">
+                            <div class="result-url">
+                                <div class="result-favicon"></div>
+                                <span>scholar.google.com › citations › user=zHfkhl0AAAAJ</span>
+                            </div>
+                            <h3 class="result-title" data-url="http://scholar.google.com/citations?hl=en&user=zHfkhl0AAAAJ">Rohan Adwankar - Google Scholar</h3>
+                            <div class="result-snippet">
+                                Academic publications by Rohan Adwankar. Citations, research papers, and scholarly works.
+                            </div>
+                        </div>
+                        
+                        <div class="search-result">
+                            <div class="result-url">
+                                <div class="result-favicon"></div>
+                                <span>rohanadwankar.github.io</span>
+                            </div>
+                            <h3 class="result-title" data-url="https://rohanadwankar.github.io">Rohan Adwankar - Personal Website</h3>
+                            <div class="result-snippet">
+                                Personal website and portfolio of Rohan Adwankar. Projects, research, and contact information.
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            setupBrowserEvents() {
+                // Handle result title clicks
+                document.querySelectorAll('.result-title').forEach(title => {
+                    title.addEventListener('click', () => {
+                        const url = title.getAttribute('data-url');
+                        this.navigateToBrowserPage(url, title.textContent);
+                    });
+                });
+                
+                // Handle reload button
+                document.querySelector('.chrome-reload').addEventListener('click', () => {
+                    const urlBar = document.querySelector('.chrome-url');
+                    const currentUrl = urlBar.value;
+                    
+                    if (currentUrl.includes('google.com/search')) {
+                        this.loadSearchResults();
+                    } else {
+                        const iframe = document.querySelector('.browser-iframe');
+                        if (iframe) {
+                            iframe.src = iframe.src;
+                        }
+                    }
+                });
+                
+                // Handle back button
+                document.querySelector('.chrome-back').addEventListener('click', () => {
+                    const pageContent = document.getElementById('browser-page-content');
+                    const iframe = document.querySelector('.browser-iframe');
+                    
+                    if (iframe) {
+                        // Go back to search results
+                        pageContent.innerHTML = '';
+                        document.querySelector('.chrome-url').value = 'https://www.google.com/search?q=rohan+adwankar';
+                        document.querySelector('.chrome-tab span').textContent = 'Google Search';
+                        this.loadSearchResults();
+                    }
+                });
+                
+                // Handle URL bar
+                document.querySelector('.chrome-url').addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        const url = e.target.value;
+                        if (url.includes('google.com/search')) {
+                            this.loadSearchResults();
+                        } else {
+                            this.navigateToBrowserPage(url, url);
+                        }
+                    }
+                });
+            }
+            
+            navigateToBrowserPage(url, title) {
+                try {
+                    const pageContent = document.getElementById('browser-page-content');
+                    const urlBar = document.querySelector('.chrome-url');
+                    const tabTitle = document.querySelector('.chrome-tab span');
+                    
+                    // Update URL bar and tab title
+                    urlBar.value = url;
+                    tabTitle.textContent = title;
+                    
+                    // Create iframe to display content
+                    pageContent.innerHTML = `
+                        <div class="browser-iframe-container">
+                            <iframe src="${url}" class="browser-iframe" sandbox="allow-same-origin allow-scripts"></iframe>
+                        </div>
+                    `;
+                } catch (error) {
+                    console.error('Error navigating to page:', error);
                 }
             }
         }
