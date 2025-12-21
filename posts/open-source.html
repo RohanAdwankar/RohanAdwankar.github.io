@@ -1,10 +1,10 @@
 <!DOCTYPE html>
-<html lang="en">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Rohan Adwankar</title>
-
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Open Source — Rohan Adwankar</title>
+        
     <style>
     body { background: #1a1a1a; color: #e0e0e0; font-family: Georgia, serif; line-height: 1.6; max-width: 980px; margin: 60px auto; padding: 0 20px; }
     a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; }
@@ -36,27 +36,48 @@
         }
         </style>
 
-</head>
-<body>
-<header>
-    <h1>Rohan Adwankar</h1>
-    <div class="header-controls">
-        <label class="theme-switch">
-            <input type="checkbox" id="theme-toggle">
-            <span class="slider"></span>
-        </label>
-    </div>
-</header>
-<main>
-    <p>Hi my name is Rohan Adwankar.</p>
-    <h3>Notes</h3>
-    <ul>
-<li><a href="posts/open-source.html">Open Source</a></li>
+    </head>
+    <body>
+        <header>
+            <h1>Open Source</h1>
+            <div class="header-controls">
+            <a class="mobile-back" href="/">← Home</a>
+            <label class="theme-switch">
+                <input type="checkbox" id="theme-toggle">
+                <span class="slider"></span>
+            </label>
+            </div>
+        </header>
+        <main>
+            <div class="post-wrapper">
+                <aside class="toc">
+                    <nav><a class="back-link" href="/">← Home</a><h3>Contents</h3><div class="toc">
+<ul>
+<li><a href="#2026">2026</a></li>
+<li><a href="#2025">2025</a></li>
+<li><a href="#2024">2024</a></li>
 </ul>
-</main>
-<script>
-    const toggle = document.getElementById('theme-toggle');
-    if (toggle) toggle.addEventListener('change', () => document.body.classList.toggle('light'));
-</script>
-</body>
-</html>
+</div>
+</nav>
+                </aside>
+                <article>
+                    <h2 id="2026">2026</h2>
+<p>work-in-progress...</p>
+<h2 id="2025">2025</h2>
+<p><a href="https://github.com/RohanAdwankar/newt">newt</a></p>
+<p><a href="https://github.com/RohanAdwankar/cgpu">cgpu</a></p>
+<p><a href="https://github.com/RohanAdwankar/oxdraw">oxdraw</a></p>
+<p><a href="http://github.com/RohanAdwankar/foxes">foxes</a></p>
+<p><a href="https://github.com/RohanAdwankar/taskim">taskim</a></p>
+<h2 id="2024">2024</h2>
+<p><a href="https://github.com/RohanAdwankar/pureSQLCLI">pure sql cli</a></p>
+<p><a href="https://github.com/RohanAdwankar/share-df">share-df</a></p>
+                </article>
+            </div>
+        </main>
+        <script>
+            const toggle = document.getElementById('theme-toggle');
+            if (toggle) toggle.addEventListener('change', () => document.body.classList.toggle('light'));
+        </script>
+    </body>
+    </html>
