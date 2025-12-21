@@ -40,7 +40,6 @@ body.light .sidebar h4 { color: #111; }
 .sidebar a:hover { color: #e0e0e0; }
 body.light .sidebar a:hover { color: #111; }
 .post-content h1 { font-size: 48px; margin-bottom: 10px; font-family: Georgia, serif; line-height: 1.2; }
-.post-date { color: #888; margin-bottom: 10px; display: block; font-size: 16px; }
 
 @media (max-width: 768px) {
     body.post-mode #post-view { grid-template-columns: 1fr; gap: 30px; }
@@ -88,11 +87,9 @@ body.light .sidebar a:hover { color: #111; }
             let tocHtml = '';
             let contentHtml = '';
             const title = tokens.find(t => t.type === 'heading' && t.depth === 1)?.text || '';
-            const dateTokenIndex = tokens.findIndex(t => t.type === 'paragraph');
-            const date = dateTokenIndex !== -1 ? tokens[dateTokenIndex].text : '';
-            const contentTokens = tokens.filter((t, i) => !(t.type === 'heading' && t.depth === 1) && i !== dateTokenIndex);
+            const contentTokens = tokens.filter((t, i) => !(t.type === 'heading' && t.depth === 1));
             contentTokens.links = tokens.links;
-            contentHtml = `<span class="post-date">${date}</span><h1>${title}</h1>` + marked.parser(contentTokens);
+            contentHtml = `<h1>${title}</h1>` + marked.parser(contentTokens);
             tokens.forEach(t => {
                 if(t.type === 'heading' && t.depth === 2) {
                     const id = t.text.toLowerCase().replace(/[^\w]+/g, '-');
