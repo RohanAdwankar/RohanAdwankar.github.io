@@ -1,7 +1,129 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rohan Adwankar</title>
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<style>
+body { background: #1a1a1a; color: #e0e0e0; font-family: Georgia, serif; line-height: 1.6; max-width: 680px; margin: 60px auto; padding: 0 20px; transition: max-width 0.3s; }
+body.post-mode { max-width: 1000px; }
+header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; position: relative; height: 40px; }
+header h1 { font-size: 24px; margin: 0; font-weight: normal; transition: 0.3s; }
+body.post-mode header h1 { position: absolute; left: 50%; transform: translateX(-50%); }
+h3 { font-size: 18px; margin-top: 40px; font-weight: normal; }
+a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; cursor: pointer; }
+p { margin-bottom: 20px; }
+ul { list-style: none; padding: 0; }
+li { margin-bottom: 12px; }
+li::before { content: "• "; margin-right: 5px; }
+.switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e0e0e0; transition: .4s; border-radius: 24px; }
+.slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: #1a1a1a; transition: .4s; border-radius: 50%; }
+input:checked + .slider { background-color: #333; }
+input:checked + .slider:before { transform: translateX(20px); background-color: #e0e0e0; }
+body.light { background: #fff; color: #111; }
+body.light .slider { background-color: #333; }
+body.light .slider:before { background-color: #fff; }
+#close-btn { display: none; font-size: 24px; text-decoration: none; position: absolute; left: 0; z-index: 10; }
+body.post-mode #close-btn { display: block; }
+body.post-mode .switch { margin-left: auto; }
+#post-view { display: none; grid-template-columns: 250px 1fr; gap: 60px; }
+body.post-mode #post-view { display: grid; }
+body.post-mode #home-view { display: none; }
+.sidebar { font-family: sans-serif; font-size: 14px; color: #888; position: sticky; top: 20px; align-self: start; }
+.sidebar h4 { color: #e0e0e0; margin: 0 0 20px 0; font-size: 16px; }
+body.light .sidebar h4 { color: #111; }
+.sidebar ul li::before { content: ""; }
+.sidebar a { text-decoration: none; color: inherit; display: block; margin-bottom: 10px; }
+.sidebar a:hover { color: #e0e0e0; }
+body.light .sidebar a:hover { color: #111; }
+.post-content h1 { font-size: 48px; margin-bottom: 10px; font-family: Georgia, serif; line-height: 1.2; }
+.post-date { color: #888; margin-bottom: 10px; display: block; font-size: 16px; }
+
+@media (max-width: 768px) {
+    body.post-mode #post-view { grid-template-columns: 1fr; gap: 30px; }
+    .sidebar { position: static; order: 2; }
+    .post-content { order: 1; }
+    .post-content h1 { font-size: 32px; }
+}
+</style>
 </head>
 <body>
+<header>
+    <a id="close-btn" href="#" onclick="showHome(event)">×</a>
+    <h1>Rohan Adwankar</h1>
+    <label class="switch">
+        <input type="checkbox" id="theme-toggle">
+        <span class="slider"></span>
+    </label>
+</header>
+<div id="home-view">
+    <main>
+        <p>Hi my name is Rohan Adwankar.</p>
+        <h3>Notes</h3>
+        <ul>
+            <li><a href="#" onclick="loadPost('open-source', event)">Open Source</a></li>
+        </ul>
+    </main>
+</div>
+<div id="post-view">
+    <aside class="sidebar">
+        <h4>Contents</h4>
+        <ul id="toc"></ul>
+    </aside>
+    <article class="post-content" id="content"></article>
+</div>
+<script>
+    const toggle = document.getElementById('theme-toggle');
+    toggle.addEventListener('change', () => document.body.classList.toggle('light'));
+    async function loadPost(slug, e) {
+        if(e) e.preventDefault();
+        try {
+            const res = await fetch(`posts/${slug}.md`);
+            if (!res.ok) throw new Error(`Failed to load post: ${res.statusText}`);
+            const text = await res.text();
+            const tokens = marked.lexer(text);
+            let tocHtml = '';
+            let contentHtml = '';
+            const title = tokens.find(t => t.type === 'heading' && t.depth === 1)?.text || '';
+            const dateTokenIndex = tokens.findIndex(t => t.type === 'paragraph');
+            const date = dateTokenIndex !== -1 ? tokens[dateTokenIndex].text : '';
+            const contentTokens = tokens.filter((t, i) => !(t.type === 'heading' && t.depth === 1) && i !== dateTokenIndex);
+            contentTokens.links = tokens.links;
+            contentHtml = `<span class="post-date">${date}</span><h1>${title}</h1>` + marked.parser(contentTokens);
+            tokens.forEach(t => {
+                if(t.type === 'heading' && t.depth === 2) {
+                    const id = t.text.toLowerCase().replace(/[^\w]+/g, '-');
+                    tocHtml += `<li><a href="#${id}" onclick="scrollToSection('${id}', event)">${t.text}</a></li>`;
+                    contentHtml = contentHtml.replace(`<h2>${t.text}</h2>`, `<h2 id="${id}">${t.text}</h2>`);
+                }
+            });
+            document.getElementById('toc').innerHTML = tocHtml;
+            document.getElementById('content').innerHTML = contentHtml;
+            document.body.classList.add('post-mode');
+            history.pushState({slug}, '', slug);
+        } catch (err) {
+            console.error(err);
+        }
+    }
+    function scrollToSection(id, e) {
+        if(e) e.preventDefault();
+        const el = document.getElementById(id);
+        if(el) {
+            el.scrollIntoView({ behavior: 'smooth' });
+        }
+    }
+    function showHome(e) {
+        if(e) e.preventDefault();
+        document.body.classList.remove('post-mode');
+        history.pushState(null, '', '/');
+    }
+    window.onpopstate = (e) => {
+        if(e.state && e.state.slug) loadPost(e.state.slug);
+        else showHome();
+    };
+</script>
 </body>
 </html>
