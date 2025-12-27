@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Design — Rohan Adwankar</title>
+        
+    <style>
+    body { background: #1a1a1a; color: #e0e0e0; font-family: Georgia, serif; line-height: 1.6; max-width: 980px; margin: 60px auto; padding: 0 20px; }
+    a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; }
+    header { display:flex; justify-content:space-between; align-items:center; margin-bottom:30px }
+    .header-controls { display:flex; gap:12px; align-items:center }
+    .back-link { text-decoration: none; color: inherit; font-size: 14px; display: block; margin-bottom: 8px }
+    .mobile-back { display: none; text-decoration: none; color: inherit; font-size: 14px; margin-right: 8px }
+    .post-wrapper { display: flex; gap: 28px; align-items: flex-start }
+    aside.toc { width: 220px; flex: 0 0 220px; margin-top: 4px; }
+    aside.toc nav { position: sticky; top: 80px; background: transparent; }
+    aside.toc ul { list-style: none; padding-left: 0; margin: 0; }
+    aside.toc h3 { margin: 0 0 8px 0; font-size: 15px; font-weight: normal; }
+    aside.toc a { text-decoration: none; color: inherit; }
+    article { flex: 1 1 auto; min-width: 0 }
+    .toc a { display: block; padding: 4px 0; }
+    .theme-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .theme-switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e0e0e0; transition: .4s; border-radius: 24px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: #1a1a1a; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: #333; }
+    input:checked + .slider:before { transform: translateX(20px); background-color: #e0e0e0; }
+    body.light { background: #fff; color: #111; }
+    body.light .slider { background-color: #333; }
+    body.light .slider:before { background-color: #fff; }
+        @media (max-width: 720px) {
+            aside.toc { display: none; }
+            .post-wrapper { gap: 12px; }
+            .mobile-back { display: inline-block; }
+        }
+        </style>
+
+    </head>
+    <body>
+        <header>
+            <h1>Design</h1>
+            <div class="header-controls">
+            <a class="mobile-back" href="/">← Home</a>
+            <label class="theme-switch">
+                <input type="checkbox" id="theme-toggle">
+                <span class="slider"></span>
+            </label>
+            </div>
+        </header>
+        <main>
+            <div class="post-wrapper">
+                <aside class="toc">
+                    <nav><a class="back-link" href="/">← Home</a><h3>Contents</h3><div class="toc">
+<ul>
+<li><a href="#codemaps">Codemaps</a></li>
+<li><a href="#infinite-toggles">Infinite Toggles</a></li>
+</ul>
+</div>
+</nav>
+                </aside>
+                <article>
+                    <p>I'm interested in creating fresh desings that feel exciting to use.
+Here is a running list of some attempts at creating novel designs.</p>
+<h2 id="codemaps">Codemaps</h2>
+<p><a href="https://github.com/RohanAdwankar/oxdraw">OxDraw</a> has a codemaps feature which explores the idea of navigating a codebase graphically.
+AI generates a mapping of the codebase to a diagram and then in the UI the developer can click on different nodes in the diagram in order to navigate to differnt parts of the codebase.
+The user can then even open these parts of the codebase in their designated editor.
+The design idea I aimed to explore in this feature was how can we make diagrams my dynamic and information dense.</p>
+<h2 id="infinite-toggles">Infinite Toggles</h2>
+<p><a href="https://rohanadwankar.github.io/unravel">Unravel</a> enables infinite toggles. The idea is to make exploring the space feel frictionless. This is intensified in auto mode where the toggles constantly unravel.</p>
+                </article>
+            </div>
+        </main>
+        <script>
+            const toggle = document.getElementById('theme-toggle');
+            if (toggle) toggle.addEventListener('change', () => document.body.classList.toggle('light'));
+        </script>
+    </body>
+    </html>

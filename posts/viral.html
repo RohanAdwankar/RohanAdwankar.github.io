@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Going Viral — Rohan Adwankar</title>
+        
+    <style>
+    body { background: #1a1a1a; color: #e0e0e0; font-family: Georgia, serif; line-height: 1.6; max-width: 980px; margin: 60px auto; padding: 0 20px; }
+    a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; }
+    header { display:flex; justify-content:space-between; align-items:center; margin-bottom:30px }
+    .header-controls { display:flex; gap:12px; align-items:center }
+    .back-link { text-decoration: none; color: inherit; font-size: 14px; display: block; margin-bottom: 8px }
+    .mobile-back { display: none; text-decoration: none; color: inherit; font-size: 14px; margin-right: 8px }
+    .post-wrapper { display: flex; gap: 28px; align-items: flex-start }
+    aside.toc { width: 220px; flex: 0 0 220px; margin-top: 4px; }
+    aside.toc nav { position: sticky; top: 80px; background: transparent; }
+    aside.toc ul { list-style: none; padding-left: 0; margin: 0; }
+    aside.toc h3 { margin: 0 0 8px 0; font-size: 15px; font-weight: normal; }
+    aside.toc a { text-decoration: none; color: inherit; }
+    article { flex: 1 1 auto; min-width: 0 }
+    .toc a { display: block; padding: 4px 0; }
+    .theme-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .theme-switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e0e0e0; transition: .4s; border-radius: 24px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: #1a1a1a; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: #333; }
+    input:checked + .slider:before { transform: translateX(20px); background-color: #e0e0e0; }
+    body.light { background: #fff; color: #111; }
+    body.light .slider { background-color: #333; }
+    body.light .slider:before { background-color: #fff; }
+        @media (max-width: 720px) {
+            aside.toc { display: none; }
+            .post-wrapper { gap: 12px; }
+            .mobile-back { display: inline-block; }
+        }
+        </style>
+
+    </head>
+    <body>
+        <header>
+            <h1>Going Viral</h1>
+            <div class="header-controls">
+            <a class="mobile-back" href="/">← Home</a>
+            <label class="theme-switch">
+                <input type="checkbox" id="theme-toggle">
+                <span class="slider"></span>
+            </label>
+            </div>
+        </header>
+        <main>
+            <div class="post-wrapper">
+                <aside class="toc">
+                    <nav><a class="back-link" href="/">← Home</a><h3>Contents</h3><div class="toc">
+<ul>
+<li><a href="#reflection">Reflection</a></li>
+</ul>
+</div>
+</nav>
+                </aside>
+                <article>
+                    <p>My first project to go viral, or at least as viral as would be expected for a niche developer tool was <a href="https://github.com/RohanAdwankar/oxdraw">OxDraw</a>.
+Here's a list of what happened as a consequence for those curious:</p>
+<ul>
+<li>My <a href="https://news.ycombinator.com/item?id=45706792">post</a> reached the front page of YCombinator's Hacker News. This was a lot of fun because it exposed me to a wide range of opinions and sparked some intersting discussions.</li>
+<li>A variety of content was made about or including it including 1 or more <a href="https://www.instagram.com/reels/DQRpM0fiQpO/">Instagram Reels</a>, <a href="https://www.tiktok.com/@descubreai/video/7565535616058903863">TikToks</a>, <a href="https://www.youtube.com/shorts/Qma_uSpy8D8">YouTube Shorts</a>, <a href="https://youtu.be/jfis6fiLEMs?si=Xq3fbmcp1gmgAsTh&amp;t=59">YouTube Videos</a>, <a href="https://www.linkedin.com/posts/alexanderreelsen_github-rohanadwankaroxdraw-diagram-as-activity-7394372490707353600-Q3Pf?utm_source=social_share_send&amp;utm_medium=member_desktop_web&amp;rcm=ACoAADE1BqsBHnpTPWrPM-eYVHYljFc9ty6qPEc">LinkedIn Posts</a>, <a href="https://serverspace.io/support/help/how-to-use-oxdraw-a-visual-editor-for-mermaid-diagrams-with-cli-and-rust-support/">blogs</a>, <a href="https://x.com/matsuu/status/1982477797764571406">Tweets</a>, and newsletters. This was certainly the most suprising part!</li>
+<li>I recieved and closed several <a href="https://github.com/RohanAdwankar/oxdraw/issues?q=is%3Aissue%20state%3Aclosed">Github Issues</a> which were very helpful to make the product useful for different needs.</li>
+<li>I recieved and merged several <a href="https://github.com/RohanAdwankar/oxdraw/pulls?q=is%3Apr+is%3Aclosed">Pull Requests</a> that added meaningful improvements.</li>
+<li>Other platforms like <a href="https://typst.app/universe/package/oxdraw/">Typst</a> and <a href="https://docs.asciidoctor.org/diagram-extension/latest/diagram_types/oxdraw/">Asciidoctor</a> added support for OxDraw.</li>
+<li>I met new, interesting people across a variety of domains including venture capital, startups, and open source. That was great and if you are reading this and want to chat feel free to reach out through the contacts in the homepage! </li>
+</ul>
+<h2 id="reflection">Reflection</h2>
+<p>Overall this was quite a fun experience as a developer. There certainly is a time expense with building open source software but its great to hear people found code I wrote useful!</p>
+                </article>
+            </div>
+        </main>
+        <script>
+            const toggle = document.getElementById('theme-toggle');
+            if (toggle) toggle.addEventListener('change', () => document.body.classList.toggle('light'));
+        </script>
+    </body>
+    </html>
