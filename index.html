@@ -61,7 +61,7 @@
 <script>
     const toggle = document.getElementById('theme-toggle');
     if (toggle) toggle.addEventListener('change', () => document.body.classList.toggle('light'));
-    
+
     async function loadReadme() {
         const container = document.getElementById('injected-readme');
         if (!container) return;
@@ -75,7 +75,7 @@
             const text = await res.text();
             container.innerHTML = text;
         } catch (err) {
-            container.textContent = 'Error loading content.';
+            container.textContent = 'The Github Card did not load. No worries you can check it out using the link above.';
             console.error(err);
         }
     }

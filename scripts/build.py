@@ -53,7 +53,6 @@ def title_from_markdown(text: str, default: str):
 def build_post(md_path: Path):
         raw = md_path.read_text(encoding='utf-8')
         title = title_from_markdown(raw, slug_from_path(md_path))
-        # Remove the first-level heading from the markdown to avoid duplicate H1
         text = re.sub(r'^\s*#\s+.*\n', '\n', raw, count=1, flags=re.MULTILINE)
         md = markdown.Markdown(extensions=['fenced_code', 'toc'])
         html_body = md.convert(text)
@@ -123,13 +122,36 @@ def build_index(posts):
     </div>
 </header>
 <main>
-    <p>Hi my name is Rohan Adwankar.</p>
+    <p>Hi my name is Rohan Adwankar, welcome to my personal website!</p>
+    <p>My goal with this site is to document some of the things I am working on in a long-form context.</p>
+    <p>To stay updated on what I'm doing feel free to connect with me on <a href="https://github.com/RohanAdwankar">Github</a>, <a href="https://x.com/Rohanadwankar">X</a>, or <a href="https://linkedin.com/in/rohanadwankar">LinkedIn</a>.</p>
+    <p>Injected below is my Github profile card which will stay updated even when this site isn't, and below that are my longer form notes.</p>
+    <div id="injected-readme">Loading...</div>
     <h3>Notes</h3>
     {posts_html}
 </main>
 <script>
     const toggle = document.getElementById('theme-toggle');
     if (toggle) toggle.addEventListener('change', () => document.body.classList.toggle('light'));
+
+    async function loadReadme() {{
+        const container = document.getElementById('injected-readme');
+        if (!container) return;
+        const url = 'https://raw.githubusercontent.com/RohanAdwankar/RohanAdwankar/main/README.md';
+        try {{
+            const res = await fetch(url);
+            if (!res.ok) {{
+                container.textContent = 'Failed to load content.';
+                return;
+            }}
+            const text = await res.text();
+            container.innerHTML = text;
+        }} catch (err) {{
+            container.textContent = 'The Github Card did not load. No worries you can check it out using the link above.';
+            console.error(err);
+        }}
+    }}
+    document.addEventListener('DOMContentLoaded', loadReadme);
 </script>
 </body>
 </html>"""
