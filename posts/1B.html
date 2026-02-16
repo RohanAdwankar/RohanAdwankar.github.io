@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <title>Pushing the 1B Frontier — Rohan Adwankar</title>
+        
+    <style>
+    body { background: #1a1a1a; color: #e0e0e0; font-family: Georgia, serif; line-height: 1.6; max-width: 980px; margin: 60px auto; padding: 0 20px; }
+    a { color: inherit; text-decoration: underline; text-decoration-thickness: 1px; }
+    header { display:flex; justify-content:space-between; align-items:center; margin-bottom:30px }
+    .header-controls { display:flex; gap:12px; align-items:center }
+    .back-link { text-decoration: none; color: inherit; font-size: 14px; display: block; margin-bottom: 8px }
+    .mobile-back { display: none; text-decoration: none; color: inherit; font-size: 14px; margin-right: 8px }
+    .post-wrapper { display: flex; gap: 28px; align-items: flex-start }
+    aside.toc { width: 220px; flex: 0 0 220px; margin-top: 4px; }
+    aside.toc nav { position: sticky; top: 80px; background: transparent; }
+    aside.toc ul { list-style: none; padding-left: 0; margin: 0; }
+    aside.toc h3 { margin: 0 0 8px 0; font-size: 15px; font-weight: normal; }
+    aside.toc a { text-decoration: none; color: inherit; }
+    article { flex: 1 1 auto; min-width: 0 }
+    .toc a { display: block; padding: 4px 0; }
+    .theme-switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+    .theme-switch input { opacity: 0; width: 0; height: 0; }
+    .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #e0e0e0; transition: .4s; border-radius: 24px; }
+    .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: #1a1a1a; transition: .4s; border-radius: 50%; }
+    input:checked + .slider { background-color: #333; }
+    input:checked + .slider:before { transform: translateX(20px); background-color: #e0e0e0; }
+    body.light { background: #fff; color: #111; }
+    body.light .slider { background-color: #333; }
+    body.light .slider:before { background-color: #fff; }
+        @media (max-width: 720px) {
+            aside.toc { display: none; }
+            .post-wrapper { gap: 12px; }
+            .mobile-back { display: inline-block; }
+        }
+        </style>
+
+    </head>
+    <body>
+        <header>
+            <h1>Pushing the 1B Frontier</h1>
+            <div class="header-controls">
+            <a class="mobile-back" href="/">← Home</a>
+            <label class="theme-switch">
+                <input type="checkbox" id="theme-toggle">
+                <span class="slider"></span>
+            </label>
+            </div>
+        </header>
+        <main>
+            <div class="post-wrapper">
+                <aside class="toc">
+                    <nav><a class="back-link" href="/">← Home</a><h3>Contents</h3><div class="toc">
+<ul>
+<li><a href="#in-progress">In Progress</a></li>
+<li><a href="#cinfer">Cinfer</a></li>
+<li><a href="#wagent">wagent</a></li>
+<li><a href="#previously">Previously...</a></li>
+<li><a href="#debate">debate</a></li>
+<li><a href="#unravel">unravel</a></li>
+</ul>
+</div>
+</nav>
+                </aside>
+                <article>
+                    <p>My current passion project is pushing the frontier of what is possible with 1B parameter LLMs (or more accurately SLMs).</p>
+<p>Specificaly the goal is to create reliable AI Agents running with purely at 1B parameter LLM.</p>
+<p>Modern LLMs used for agent are ~1 trillion parameters in size so getting this to work poses some significant challenges.</p>
+<p>LLMs of this size frequently struggle to adhere to schemas and have very small context windows, required pushing the agent harness to its absolute limits.</p>
+<p>I'll keep this file relatively updated with my attempts.</p>
+<h2 id="in-progress">In Progress</h2>
+<h2 id="cinfer"><a href="https://github.com/RohanAdwankar/cinfer">Cinfer</a></h2>
+<p>Cinfer is an Agent SDK that works by constraining generation at inference time to obey grammers generated from tool definitions</p>
+<p>My initial benchmarks with 1B LLMs reveal some very promising first results that this SDK outputs the common ones used for larger LLMs, but further work will be needed still to make it reliable.</p>
+<h2 id="wagent"><a href="https://github.com/RohanAdwankar/wagent">wagent</a></h2>
+<p>Wagent is an llm coding agent purely in the browser (including inference) </p>
+<p>If I can get this to work then I would consider that the ultimate success that 1B SLMs can be used for agents.</p>
+<p>Try it <a href="https://rohanadwankar.github.io/wagent/">here</a></p>
+<h2 id="previously">Previously...</h2>
+<h2 id="debate"><a href="https://github.com/RohanAdwankar/debate">debate</a></h2>
+<p>Debate is the first working version of an agent I got running with a 1B parameter SLM.</p>
+<p>It is very simple with 2 agents that each have a simple tool which allows them to concede the debate.</p>
+<p>However, when you listen to the debates one common problem is that this tool will fail.</p>
+<p>This can result in entertaining cases where the agent says it has conceded in its speech but the program doesnt know because the schema didnt match so the debate continues with the other debater simply restating that they have won.</p>
+<p>This problem resurfaced with wagent where often times when the agent is done it doesnt terminate and instead reimplements the file.</p>
+<p>I hope to document these common agent behavior patterns (hopefully accompanied with a solution).</p>
+<p>Try it <a href="https://rohanadwankar.github.io/debate/">here</a></p>
+<h2 id="unravel"><a href="https://github.com/RohanAdwankar/unravel">unravel</a></h2>
+<p>Unravel generates infinite dropdowns.</p>
+<p>The reason it's interesting is you can see how quickly the SLM runs out of capability to remember the hierarchy chain.</p>
+<p>Try it <a href="https://rohanadwankar.github.io/unravel/">here</a></p>
+                </article>
+            </div>
+        </main>
+        <script>
+            const toggle = document.getElementById('theme-toggle');
+            if (toggle) toggle.addEventListener('change', () => document.body.classList.toggle('light'));
+        </script>
+    </body>
+    </html>
