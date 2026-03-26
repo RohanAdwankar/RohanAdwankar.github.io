@@ -9,7 +9,3 @@ Here's a list of what happened as a consequence for those curious:
 - I recieved and merged several [Pull Requests](https://github.com/RohanAdwankar/oxdraw/pulls?q=is%3Apr+is%3Aclosed) that added meaningful improvements.
 - Other platforms like [Typst](https://typst.app/universe/package/oxdraw/) and [Asciidoctor](https://docs.asciidoctor.org/diagram-extension/latest/diagram_types/oxdraw/) added support for OxDraw.
 - I met new, interesting people across a variety of domains including venture capital, startups, and open source. That was great and if you are reading this and want to chat feel free to reach out through the contacts in the homepage! 
-
-## Reflection
-
-Overall this was quite a fun experience as a developer. There certainly is a time expense with building open source software but its great to hear people found code I wrote useful!

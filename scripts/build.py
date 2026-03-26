@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import re
+import shutil
 from pathlib import Path
 
 import markdown
@@ -51,6 +52,9 @@ def title_from_markdown(text: str, default: str):
     if m:
         return m.group(1).strip()
     return default
+
+def is_draft(md_path: Path):
+    return md_path.stem.startswith('_')
 
 def build_post(md_path: Path):
         raw = md_path.read_text(encoding='utf-8')
@@ -164,10 +168,14 @@ def main():
     if not POSTS_DIR.exists():
         print('No posts/ directory found.')
         return
+    shutil.rmtree(DIST_DIR, ignore_errors=True)
     OUT_POSTS_DIR.mkdir(parents=True, exist_ok=True)
     md_files = sorted(POSTS_DIR.glob('*.md'))
     posts = []
     for md in md_files:
+        if is_draft(md):
+            print(f'Skipped draft {md.relative_to(ROOT)}')
+            continue
         slug, title = build_post(md)
         posts.append((slug, title))
     build_index(posts)
