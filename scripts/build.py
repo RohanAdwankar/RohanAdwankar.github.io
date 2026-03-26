@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
-import os
 import re
 from pathlib import Path
+
 import markdown
 
 ROOT = Path(__file__).resolve().parents[1]
 POSTS_DIR = ROOT / 'posts'
-OUT_INDEX = ROOT / 'index.html'
+DIST_DIR = ROOT / 'dist'
+OUT_POSTS_DIR = DIST_DIR / 'posts'
+OUT_INDEX = DIST_DIR / 'index.html'
 
 PAGE_CSS = '''
     <style>
@@ -58,7 +60,7 @@ def build_post(md_path: Path):
         html_body = md.convert(text)
         toc_html = md.toc or ''
         slug = slug_from_path(md_path)
-        out_path = md_path.with_suffix('.html')
+        out_path = OUT_POSTS_DIR / f'{slug}.html'
         page = f"""<!DOCTYPE html>
     <html lang="en">
     <head>
@@ -162,6 +164,7 @@ def main():
     if not POSTS_DIR.exists():
         print('No posts/ directory found.')
         return
+    OUT_POSTS_DIR.mkdir(parents=True, exist_ok=True)
     md_files = sorted(POSTS_DIR.glob('*.md'))
     posts = []
     for md in md_files:
