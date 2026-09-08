@@ -54,18 +54,18 @@ conversation feels continuous even though the compute was destroyed.
 
 ```mermaid
 flowchart TB
-  user(["your keystrokes"]) -->|HTTP POST| ingress["session-ingress"]
+  user(["your keystrokes"]) -->|http post| ingress["session-ingress"]
   ingress --> pa
-  hostctl(["host control plane"]) -.->|vsock :2024| pa
-  subgraph VM["Firecracker microVM"]
-    pa["process_api — PID 1, Rust"] --> harness["claude — 324 MB Bun harness"]
-    vda[("vda · rw · YOURS · persists")] --- harness
-    ro[("vdc/vdd/vde/vdf · ro · THEIRS")] --- harness
+  hostctl(["host control plane"]) -->|vsock port 2024| pa
+  subgraph vm["Firecracker microVM"]
+    pa["process_api, pid 1, Rust"] --> harness["claude, 324 MB Bun harness"]
+    vda[("vda (rw), yours, persists")] --- harness
+    ro[("vdc/vdd/vde/vdf (ro), theirs")] --- harness
   end
-  harness -->|"inference SSE / HTTP2"| gw["Egress GW · 443 / MITM · api.anthropic.com"]
+  harness -->|inference over SSE| gw["egress gateway, 443, mitm, api.anthropic.com"]
 ```
 
-*Durable thing = the machine (`vda`). The operator lives inside the VM, sealed.*
+*The durable thing is the machine (`vda`), and the operator lives inside the VM, sealed off.*
 
 ---
 
@@ -85,7 +85,7 @@ Instinct doesn't run its own hypervisor. `e2b.local` means this is a rented
 you hand an agent so it has a computer:
 
 ```
-Ubuntu 22.04.5 · 2 vCPU · 1.9 GB RAM · 29 GB disk · up ~30 min · user sandbox (uid 1001)
+Ubuntu 22.04.5, 2 vCPU, 1.9 GB RAM, 29 GB disk, up ~30 min, user sandbox (uid 1001)
 ```
 
 So if the box is disposable, where does the agent's memory live? In a directory
@@ -128,16 +128,16 @@ export AWS_ACCESS_KEY_ID='ASIA…'     # ASIA prefix + session token = temporary
 
 ```mermaid
 flowchart TB
-  subgraph BOX["E2B sandbox — rented, disposable"]
-    agent["Instinct Agent · agent@instinct.com"] -->|writes & commits| mem["/memory — Markdown vault, git repo"]
-    creds["/etc/instinct-aws-creds · short-lived STS"]
+  subgraph box["E2B sandbox (rented, disposable)"]
+    agent["Instinct Agent (agent@instinct.com)"] -->|writes and commits| mem["/memory, a Markdown vault git repo"]
+    creds["/etc/instinct-aws-creds, short-lived STS"]
   end
   mem -->|git push| store
-  subgraph store["S3 — durable, per-user"]
-    vault[("instinct-prod-agent-memory · the vault")]
-    obs[("instinct-prod-observations · raw firehose")]
+  creds -->|authorizes git push| store
+  subgraph store["S3 (durable, per-user)"]
+    vault[("instinct-prod-agent-memory, the vault")]
+    obs[("instinct-prod-observations, raw firehose")]
   end
-  BOX -.->|"box vanishes; this survives"| store
 ```
 
 *Durable thing = a git repo in S3. The machine is throwaway.*
@@ -279,12 +279,12 @@ it sign in without a secret ever touching the box:
 
 ```mermaid
 flowchart TB
-  ta["task agent · off-box"] -->|acquire lease| sched["cloud_browser_scheduler"]
+  ta["task agent, off-box"] -->|acquire lease| sched["cloud_browser_scheduler"]
   sched --> cb
-  ta -->|click / type / read| cb["cloud browser · your saved profile"]
-  vault[("Vault · your secrets<br/>server-side")] -->|fill| cb
-  cb -->|"logged in as you"| sites(["Amazon · Uber · airlines · …"])
-  box["disposable E2B box"] -.->|"issues tools calls · holds no cookies"| cb
+  ta -->|click, type, read| cb["cloud browser with your saved profile"]
+  vault[("Vault, your secrets, server-side")] -->|fill| cb
+  cb -->|"logged in as you"| sites(["Amazon, Uber, airlines, and more"])
+  box["disposable E2B box"] -->|"issues tools calls, holds no cookies"| cb
 ```
 
 *The sandbox never holds a cookie or a password. Like the model, your logged-in

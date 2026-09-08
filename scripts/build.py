@@ -34,6 +34,7 @@ PAGE_CSS = '''
     input:checked + .slider { background-color: #333; }
     input:checked + .slider:before { transform: translateX(20px); background-color: #e0e0e0; }
     pre.mermaid { background: transparent; text-align: center; margin: 24px 0; overflow-x: auto; }
+    pre code.hljs { border-radius: 6px; padding: 14px 16px; font-size: 13.5px; overflow-x: auto; }
     body.light { background: #fff; color: #111; }
     body.light .slider { background-color: #333; }
     body.light .slider:before { background-color: #fff; }
@@ -58,6 +59,8 @@ def is_draft(md_path: Path):
     return md_path.stem.startswith('_')
 
 MERMAID_CDN = 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js'
+HLJS_JS = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js'
+HLJS_CSS = 'https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css'
 
 def extract_mermaid(text: str, store: list):
     def repl(m):
@@ -80,7 +83,7 @@ def build_post(md_path: Path):
         text = re.sub(r'^\s*#\s+.*\n', '\n', raw, count=1, flags=re.MULTILINE)
         mermaid_blocks = []
         text = extract_mermaid(text, mermaid_blocks)
-        md = markdown.Markdown(extensions=['fenced_code', 'toc'])
+        md = markdown.Markdown(extensions=['fenced_code', 'toc', 'tables'])
         html_body = md.convert(text)
         html_body = restore_mermaid(html_body, mermaid_blocks)
         toc_html = md.toc or ''
@@ -90,6 +93,12 @@ def build_post(md_path: Path):
             'mermaid.initialize({startOnLoad:true,theme:d?"default":"dark",'
             'securityLevel:"loose",fontFamily:"Georgia, serif"});}initMermaid();</script>'
         ) if mermaid_blocks else ''
+        highlight_assets = (
+            f'<link rel="stylesheet" href="{HLJS_CSS}">\n'
+            f'<script src="{HLJS_JS}"></script>\n'
+            '<script>document.querySelectorAll("pre code").forEach('
+            'function(b){hljs.highlightElement(b);});</script>'
+        ) if '<pre><code' in html_body else ''
         slug = slug_from_path(md_path)
         out_path = OUT_POSTS_DIR / f'{slug}.html'
         page = f"""<!DOCTYPE html>
@@ -126,6 +135,7 @@ def build_post(md_path: Path):
             if (toggle) toggle.addEventListener('change', () => document.body.classList.toggle('light'));
         </script>
         {mermaid_script}
+        {highlight_assets}
     </body>
     </html>"""
         out_path.write_text(page, encoding='utf-8')
