@@ -174,17 +174,11 @@ Using a git repo for this is quite nice the default structure seems to be like t
     󰂺 README.md               │~
 ~                             │~
 ~                             │~
-~                             │~
-~                             │~
-~                             │~
-~                             │~
-~                             │~
 
 :!tmux capture-pane -pS - | pbcopy
 ```
 
-
-### What harness, and how does it call the model?
+Now Claude Code's harness in the VM is open source and the same as normal but how about Instincts?
 
 ```
 $ ps -eo args | grep -E 'agent-exec|tools'
@@ -193,7 +187,7 @@ tools __internal_daemon --socket /tmp/.tools/bridge.sock \
       --base-url https://api.instinct.com/-/api/graphql/tool-execute   # Rust
 $ strings /usr/local/bin/tools /usr/local/bin/agent-exec-server \
     | grep -iE 'anthropic|openai|/v1/messages|x-api-key|claude|gpt|model'
-                                                 # → nothing. no model, no key, no endpoint.
+                                                 # → nothing. no model listed
 ```
 
 There is no inference call anywhere on the box. Claude Code seals the *operator*
@@ -203,24 +197,100 @@ hands it, and every tool call — Gmail, the cloud browser, a payment — leaves
 **GraphQL request to `api.instinct.com`**, executed server-side. The `--base-url`
 is a runtime argument, not compiled in.
 
-```mermaid
-flowchart TB
-  brain(["Instinct backend · agent loop + LLM<br/>api.instinct.com"])
-  subgraph BOX["E2B sandbox — hands only · no model · no key"]
-    aes["agent-exec-server · :8080 · Go"]
-    tools["tools daemon · Rust · unix socket"]
-  end
-  brain -->|"sends bash / code to run"| aes
-  aes -.->|"stdout / result"| brain
-  tools -->|"tool calls · GraphQL over TLS"| brain
+For the actual tool surface rather than MCPs seems like Instinct use one massive CLI:
+
 ```
 
-So the contrast sharpens: Claude Code keeps the **harness** on the box and sends
-only *inference* out; Instinct sends **both the harness and the model** out and
-keeps only hands on the box. Which is exactly the durability bet, one layer up —
-if the machine is disposable, you don't leave anything worth keeping on it,
-including the thing doing the thinking. The one fact the box genuinely can't tell
-you is *which* model — because it is never told.
+sandbox@e2b:~/ws-term-v1$ tools --help | wc
+     90    1466   10891
+sandbox@e2b:~/ws-term-v1$ tools --help
+Tools CLI
+
+You are a task agent. Your parent (the main agent) spawned you for a focused job. When the job is done, report back to your parent and hold. Your parent owns task-agent cleanup.
+
+Your direct-execute traits:
+  - work - integrations, files, web page fetching
+....
+
+Run `tools --help` for the current surface.
+
+USAGE
+  tools <command-path> [options]
+  tools help [<path>...]
+
+....
+
+Built-ins (no help read needed): help, async wait, async list.
+
+EXECUTABLE (you can call these directly)
+  agent_message        namespace (1 action)   Send messages to other agents.
+  browser_guidance     namespace (3 actions)  Search per-config website guidance and this user's past outcomes before browser navigation, and record how a config performed after an attempt. Missing guidance is normal and means unknown, not supported or blocked.
+  cloud_browser        namespace (27 actions) Drive a cloud-hosted Chrome lease with the user's saved logins. Use for agent-driven web tasks (order food, book rides, compare prices, fetch receipts) that need real authenticated capability on real sites. A task agent acquires its own `lease_id` with `tools cloud_browser_scheduler acquire` and drives it here.
+
+....
+
+DELEGATED (only callable by the other role)
+  account              namespace (2 actions) Read the user's Instinct account profile.
+  feedback             namespace (3 actions) Submit product feedback and respond to team follow-ups.
+  generate_referral_link action                Ask the main agent to get the member's reusable referral link and current lifetime allowance.
+  revoke_referral_link action                Ask the main agent to revoke the member's reusable referral link.
+  speak                action                Generate a WAV speech file from a transcript, optional director's notes, and a voice.
+
+UNAVAILABLE (does not apply to this role)
+  steer_voice_agent    action     Send an answer or context into the user's active live voice session.
+```
+
+The tool surface is the tell that this box isn't a coding sandbox at all —
+`tools --help` lists ~50 namespaces (Gmail, Notion, Slack, Stripe payments, a
+credential vault), but the one that reveals the design is the **cloud browser**:
+
+```
+$ tools --help | grep -iE 'cloud_browser|vault'
+cloud_browser            (27)  Drive a cloud-hosted Chrome lease with the user's saved logins.
+cloud_browser_scheduler  (4)   acquire, list, release, extend leases
+vault                    (7)   Manage, fill, and import the user's stored credentials
+```
+
+When Instinct orders food or books a flight "as you," it does **not** open a
+browser on this sandbox. It *leases* one from a separate pool of cloud browsers,
+each carrying your saved profile — cookies and logins — and drives it through the
+same `api.instinct.com` bridge:
+
+```
+tools cloud_browser_scheduler acquire      # → lease_id, on a browser "config" (a profile)
+tools cloud_browser <action>               # click / type / read / screenshot that Chrome
+```
+
+You can read the whole model off how leases behave: each profile has exactly **one
+write lease** (the only session allowed to save new logins), up to five run at
+once, and releasing a lease "saves its cookies first, so the next lease loads
+them." That persistence is the point — your browser identity is a **third durable
+thing**, sitting server-side next to the S3 vault and the observations index, kept
+so a disposable box can borrow it for one task and hand it back. Two details let
+it sign in without a secret ever touching the box:
+
+- **Scout before navigating.** `tools browser_guidance search` returns curated
+  per-site notes plus *your own* past outcomes per profile (`config-a: success`,
+  `config-b: blocked`) — a risk prior, not a verdict.
+- **Secrets go through the Vault, never chat.** `tools vault fill` types a stored
+  credential straight into the page; when the vault lacks one, `tools vault
+  request` mints a link *you* fill (`app.instinct.com/vault/fill?t=…`). One-time
+  codes it reads itself from your connected Gmail or Outlook.
+
+```mermaid
+flowchart TB
+  ta["task agent · off-box"] -->|acquire lease| sched["cloud_browser_scheduler"]
+  sched --> cb
+  ta -->|click / type / read| cb["cloud browser · your saved profile"]
+  vault[("Vault · your secrets<br/>server-side")] -->|fill| cb
+  cb -->|"logged in as you"| sites(["Amazon · Uber · airlines · …"])
+  box["disposable E2B box"] -.->|"issues tools calls · holds no cookies"| cb
+```
+
+*The sandbox never holds a cookie or a password. Like the model, your logged-in
+browser lives off the box — leased per task, persisted per profile.* (The box does
+boot its own throwaway desktop — `Xvfb :99` + xfce + noVNC, hence the wallpaper you see when you open the VM —
+but that's the stock E2B template, not the browser Instinct drives as you.)
 
 ---
 
