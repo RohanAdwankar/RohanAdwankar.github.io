@@ -35,6 +35,19 @@ PAGE_CSS = '''
     input:checked + .slider:before { transform: translateX(20px); background-color: #e0e0e0; }
     pre.mermaid { background: transparent; text-align: center; margin: 24px 0; overflow-x: auto; }
     pre code.hljs { border-radius: 6px; padding: 14px 16px; font-size: 13.5px; overflow-x: auto; }
+    .table-wrap { overflow-x: auto; margin: 24px 0; }
+    article table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.45; }
+    article th, article td { border: 1px solid #3a3a3a; padding: 10px 14px; text-align: left; vertical-align: top; }
+    article th { background: #2a2a2a; font-weight: bold; }
+    article thead th:first-child { background: transparent; border-top-color: transparent; border-left-color: transparent; }
+    article tbody tr:nth-child(even) { background: #202020; }
+    article td:first-child { font-weight: bold; white-space: nowrap; color: #f0f0f0; }
+    article td code, article th code { font-size: 13px; }
+    body.light article th, body.light article td { border-color: #d0d0d0; }
+    body.light article th { background: #f0f0f0; }
+    body.light article thead th:first-child { background: transparent; border-top-color: transparent; border-left-color: transparent; }
+    body.light article tbody tr:nth-child(even) { background: #f7f7f7; }
+    body.light article td:first-child { color: #111; }
     body.light { background: #fff; color: #111; }
     body.light .slider { background-color: #333; }
     body.light .slider:before { background-color: #fff; }
@@ -86,6 +99,8 @@ def build_post(md_path: Path):
         md = markdown.Markdown(extensions=['fenced_code', 'toc', 'tables'])
         html_body = md.convert(text)
         html_body = restore_mermaid(html_body, mermaid_blocks)
+        html_body = html_body.replace('<table>', '<div class="table-wrap"><table>')
+        html_body = html_body.replace('</table>', '</table></div>')
         toc_html = md.toc or ''
         mermaid_script = (
             f'<script src="{MERMAID_CDN}"></script>\n'

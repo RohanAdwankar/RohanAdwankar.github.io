@@ -297,8 +297,6 @@ but that's the stock E2B template, not the browser Instinct drives as you.)
 | Backing store | Local virtio-block | S3, keyed by per-user id |
 | Harness location | On the box — 324 MB Bun binary | Off the box — backend only; the box holds two execution shims |
 | How the model is reached | SSE → `/v1/messages` via egress gateway | Never from the box — GraphQL to `api.instinct.com`, server-side |
-| Operator in tenant space | Yes — `process_api` over vsock | No — brain *and* harness run off-box |
-| Boot cost (measured) | ~430 ms init, ~6.4 s to harness | fresh clone of a stock template |
 
 
 This was pretty fun to take a peak, I'll keep recording my notes down as new platforms come around! It's very useful to track how the end applications are progressing to understand how the general infra will develop. Like the rest of these notes I'll try to keep documenting other products and what infra they are using under the hood.
