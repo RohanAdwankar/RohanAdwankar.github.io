@@ -33,6 +33,7 @@ PAGE_CSS = '''
     .slider:before { position: absolute; content: ""; height: 18px; width: 18px; left: 3px; bottom: 3px; background-color: #1a1a1a; transition: .4s; border-radius: 50%; }
     input:checked + .slider { background-color: #333; }
     input:checked + .slider:before { transform: translateX(20px); background-color: #e0e0e0; }
+    pre.mermaid { background: transparent; text-align: center; margin: 24px 0; overflow-x: auto; }
     body.light { background: #fff; color: #111; }
     body.light .slider { background-color: #333; }
     body.light .slider:before { background-color: #fff; }
@@ -56,13 +57,39 @@ def title_from_markdown(text: str, default: str):
 def is_draft(md_path: Path):
     return md_path.stem.startswith('_')
 
+MERMAID_CDN = 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js'
+
+def extract_mermaid(text: str, store: list):
+    def repl(m):
+        store.append(m.group(1).rstrip('\n'))
+        return f'\n\nMERMAIDPLACEHOLDER{len(store) - 1}ENDMERMAID\n\n'
+    return re.sub(r'```mermaid\n(.*?)```', repl, text, flags=re.DOTALL)
+
+def restore_mermaid(html: str, store: list):
+    for i, block in enumerate(store):
+        # markdown wraps the bare placeholder line in <p>...</p>
+        html = html.replace(
+            f'<p>MERMAIDPLACEHOLDER{i}ENDMERMAID</p>',
+            f'<pre class="mermaid">{block}</pre>',
+        )
+    return html
+
 def build_post(md_path: Path):
         raw = md_path.read_text(encoding='utf-8')
         title = title_from_markdown(raw, slug_from_path(md_path))
         text = re.sub(r'^\s*#\s+.*\n', '\n', raw, count=1, flags=re.MULTILINE)
+        mermaid_blocks = []
+        text = extract_mermaid(text, mermaid_blocks)
         md = markdown.Markdown(extensions=['fenced_code', 'toc'])
         html_body = md.convert(text)
+        html_body = restore_mermaid(html_body, mermaid_blocks)
         toc_html = md.toc or ''
+        mermaid_script = (
+            f'<script src="{MERMAID_CDN}"></script>\n'
+            '<script>function initMermaid(){var d=document.body.classList.contains("light");'
+            'mermaid.initialize({startOnLoad:true,theme:d?"default":"dark",'
+            'securityLevel:"loose",fontFamily:"Georgia, serif"});}initMermaid();</script>'
+        ) if mermaid_blocks else ''
         slug = slug_from_path(md_path)
         out_path = OUT_POSTS_DIR / f'{slug}.html'
         page = f"""<!DOCTYPE html>
@@ -98,6 +125,7 @@ def build_post(md_path: Path):
             const toggle = document.getElementById('theme-toggle');
             if (toggle) toggle.addEventListener('change', () => document.body.classList.toggle('light'));
         </script>
+        {mermaid_script}
     </body>
     </html>"""
         out_path.write_text(page, encoding='utf-8')
