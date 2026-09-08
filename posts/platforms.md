@@ -1,8 +1,7 @@
 # The box an agent runs in 
 
-One awesome product evolution is that agents (Claude Code, Instinct, Poke, etc) are moving off our local computers so that you can use them from your phone.
-However this comes with its own set of challenges because this means they need their own VMs.
-Ultimately this is great for the customer because that means the agent companies provide us with VMs to use! Here's a tour of how the major platforms work based on looking around on [ws-term](https://github.com/RohanAdwankar/ws-term).
+One awesome product evolution is that agents (Claude Code, Instinct, Poke, etc) are moving off our local computers so that we can use them on our phones.
+Ultimately this is great for the customer because that means the agent companies provide us with VMs for them to run on! Here's some notes on how the major platforms work based on looking around on [ws-term](https://github.com/RohanAdwankar/ws-term).
 
 ## Claude Code on Your Phone
 
@@ -37,9 +36,7 @@ vde/vdf ... 1  /mnt/skills/...      # theirs: skills
 ```
 
 The **harness** is the thing running your tool calls and is a 324 MB compiled Bun
-binary on a read-only disk. The **model** runs somewhere else entirely; the box
-has no GPU. Inference goes out as **Server-Sent Events over HTTPS/2** (not a
-WebSocket) to `/v1/messages`, through an egress gateway that is 443-only and
+binary on a read-only disk. The model runs elsewhere, inference goes out as **Server-Sent Events over HTTPS/2** (not a WebSocket) to `/v1/messages`, through an egress gateway that is 443-only and
 MITM'd (`CN = Egress Gateway ... (production)`), with `api.anthropic.com` pinned
 in `/etc/hosts`. There is no inbound at all (`192.0.2.2`, an RFC-5737 test
 address). Auth is a **host-minted OAuth token**, cached root-only on disk and
@@ -64,8 +61,6 @@ flowchart TB
   end
   harness -->|inference over SSE| gw["egress gateway, 443, mitm, api.anthropic.com"]
 ```
-
-*The durable thing is the machine (`vda`), and the operator lives inside the VM, sealed off.*
 
 ---
 
@@ -142,9 +137,6 @@ flowchart TB
 
 *Durable thing = a git repo in S3. The machine is throwaway.*
 
-**The bet:** the *machine* is disposable. Move all durability into a per-user git
-repo in S3, and let each box be a fresh clone that dies without loss.
-
 Using a git repo for this is quite nice the default structure seems to be like this:
 ```
   ~/instinct-vault/..         │󰫎  24 󰲡 Vault
@@ -178,7 +170,7 @@ Using a git repo for this is quite nice the default structure seems to be like t
 :!tmux capture-pane -pS - | pbcopy
 ```
 
-Now Claude Code's harness in the VM is open source and the same as normal but how about Instincts?
+Now Claude Code's harness in the VM is open source and the same as normal but how about Instinct?
 
 ```
 $ ps -eo args | grep -E 'agent-exec|tools'
@@ -190,17 +182,16 @@ $ strings /usr/local/bin/tools /usr/local/bin/agent-exec-server \
                                                  # → nothing. no model listed
 ```
 
-There is no inference call anywhere on the box. Claude Code seals the *operator*
+So seems like no inference calls anywhere on the box. Claude Code seals the *operator*
 inside the guest; Instinct doesn't put the brain in the guest at all. The sandbox
 is a pure **execution surface**: `agent-exec-server` runs whatever bash the backend
 hands it, and every tool call — Gmail, the cloud browser, a payment — leaves as a
 **GraphQL request to `api.instinct.com`**, executed server-side. The `--base-url`
 is a runtime argument, not compiled in.
 
-For the actual tool surface rather than MCPs seems like Instinct use one massive CLI:
+For the actual tool surface rather than MCPs seems like Instinct uses a CLI for all tools:
 
 ```
-
 sandbox@e2b:~/ws-term-v1$ tools --help | wc
      90    1466   10891
 sandbox@e2b:~/ws-term-v1$ tools --help
@@ -310,4 +301,4 @@ but that's the stock E2B template, not the browser Instinct drives as you.)
 | Boot cost (measured) | ~430 ms init, ~6.4 s to harness | fresh clone of a stock template |
 
 
-This was pretty fun to take a peak, I'll keep recording my notes down as new platforms come around! 
+This was pretty fun to take a peak, I'll keep recording my notes down as new platforms come around! It's very useful to track how the end applications are progressing to understand how the general infra will develop. Like the rest of these notes I'll try to keep documenting other products and what infra they are using under the hood.
