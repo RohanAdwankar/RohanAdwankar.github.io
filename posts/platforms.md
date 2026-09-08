@@ -62,8 +62,6 @@ flowchart TB
   harness -->|inference over SSE| gw["egress gateway, 443, mitm, api.anthropic.com"]
 ```
 
----
-
 ## Instinct
 
 Instinct is a new startup which launched recently and it does some very nice things on the memory side which gives that feel of it being a real assistant rather than a chatbot.
@@ -309,13 +307,6 @@ flowchart TB
   box["disposable E2B box"] -->|"issues tools calls, holds no cookies"| cb
 ```
 
-*The sandbox never holds a cookie or a password. Like the model, your logged-in
-browser lives off the box, leased per task and persisted per profile.* (The box does
-boot its own throwaway desktop, `Xvfb :99` + xfce + noVNC, which is the wallpaper you see when you open the VM,
-but that's the stock E2B template, not the browser Instinct drives as you.)
-
----
-
 ## Summary
 
 | | **Claude Code** | **Instinct** |
@@ -332,4 +323,4 @@ but that's the stock E2B template, not the browser Instinct drives as you.)
 | How the model is reached | SSE to `/v1/messages` via egress gateway | Never from the box; GraphQL to `api.instinct.com`, server-side |
 
 
-This was pretty fun to take a peek, and I'll keep recording my notes as new platforms come around! It's very useful to track how the end applications are progressing to understand how the general infra will develop. Like the rest of these notes I'll try to keep documenting other products and what infra they are using under the hood.
+This was pretty fun to take a peek, and I'll keep recording my notes as new products come around!
