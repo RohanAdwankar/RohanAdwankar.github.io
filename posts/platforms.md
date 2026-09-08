@@ -1,12 +1,12 @@
-# The box an agent runs in
+# The box an agent runs in 
 
 One awesome product evolution is that agents are moving off our local computers so that you can use them from your phone.
 However this comes with its own set of challenges because this means they need their own VMs.
 Ultimately this is great for the customer because that means the agent companies provide us with VMs to use! Here's a tour of how the major platforms work based on poking around with [ws-term](https://github.com/RohanAdwankar/ws-term).
 
-## Claude Code
+## Claude Code on Your Phone
 
-Claude Code's box is its own **Firecracker microVM** — a real KVM guest with its
+Claude Code's box is its own **Firecracker microVM** a KVM guest with its
 own kernel, booted straight into an init written in Rust:
 
 ```
@@ -72,9 +72,9 @@ around it, and put the operator inside the guest but wall it off.
 
 ---
 
-## Platform 2: Instinct
+## Instinct
 
-Instinct makes the opposite bet, and you can see it in the first three commands:
+Instinct is a new startup which launched recently and it does some very nice things on the memory side which gives that feel of it being a real assistant rather than a chatbot.
 
 ```
 $ hostname
@@ -149,14 +149,46 @@ flowchart TB
 **The bet:** the *machine* is disposable. Move all durability into a per-user git
 repo in S3, and let each box be a fresh clone that dies without loss.
 
-### What harness, and how does it call the model?
+Using a git repo for this is quite nice the default structure seems to be like this:
+```
+  ~/instinct-vault/..         │󰫎  24 󰲡 Vault
+    .git                    │   23
+    comms                   │   22 Persistent memory for 󱗖 rohan-adwankar. Markdown + wiki-links, navigated by grep. Start here, then jump
+      chat                  │   21
+         rohan-adwankar--inst│   20 Who Rohan is, what he is working on, and what is connected live in entities/, workstreams/, and knowled
+    entities                │   19
+      people                │󰫎  18  󰲣 Layout
+         rohan-adwankar.md   │   17
+      projects              │   15 README.md
+         ws-term.md          │   14 timeline/     chronological record, coarsening upward: raw/ → hourly/ → daily/ → weekly/ → monthly/
+    knowledge               │   13 entities/     people/ projects/ — the nouns of Rohan's world, one file each
+      decisions             │   12 comms/        chat/ email/ meetings/ — one file per thread, named <who>--<topic>--<date>.md
+         x-account-signup-dec│   11 workstreams/  active/ completed/ someday/ — units of work; status: frontmatter matches the subdirectory
+      preferences           │   10 knowledge/    facts/ procedures/ preferences/ decisions/
+        instinct            │    8
+           autonomy.md       │    7 knowledge/preferences/instinct/ holds how Rohan wants the assistant itself to behave — autonomy, drafti
+           iteration-style.md│    6
+    timeline                │󰫎   5  󰲣 Conventions
+      daily                 │    4
+         2026-09-06.md       │    3 ● Every file has frontmatter with id, type, and aliases. [[id]] resolves to id.md or id/_index.md.
+    workstreams             │    2 ● Entity and knowledge files are updated in place and read as current state, never as a log. History li
+      active                │    1 ● Files that outgrow one page are promoted to a directory with an _index.md carrying the original id.
+         dragon-game-asset.md│  25  - Timeline and comms hold events and conversations; entities hold durable properties only.
+         startup-idea-search.│~
+    󰂺 README.md               │~
+~                             │~
+~                             │~
+~                             │~
+~                             │~
+~                             │~
+~                             │~
+~                             │~
 
-This was the question I most wanted answered, and the first pass couldn't: the
-recon got blocked by a safety classifier that reads "drive a remote shell and find
-how it calls the LLM" as exfiltration-shaped, regardless of intent. Once that was
-lifted, the answer turned out to be the sharpest part of the whole comparison —
-and it's an answer by *absence*. Look at the two binaries the box actually runs,
-then grep them for any sign of a model:
+:!tmux capture-pane -pS - | pbcopy
+```
+
+
+### What harness, and how does it call the model?
 
 ```
 $ ps -eo args | grep -E 'agent-exec|tools'
@@ -196,7 +228,7 @@ you is *which* model — because it is never told.
 
 ---
 
-## Side by side
+## Summary
 
 | | **Claude Code** | **Instinct** |
 |---|---|---|
@@ -211,8 +243,5 @@ you is *which* model — because it is never told.
 | Operator in tenant space | Yes — `process_api` over vsock | No — brain *and* harness run off-box |
 | Boot cost (measured) | ~430 ms init, ~6.4 s to harness | fresh clone of a stock template |
 
-The one-line contrast: **Claude Code makes the machine durable and seals an
-operator inside it; Instinct makes the machine disposable and puts durability in a
-per-user git repo.** Two opposite answers to the same question — *what does an
-agent stand on?* — and you can read the entire philosophy of each platform off the
-first few commands you run inside its box.
+
+This was pretty fun to take a peak, I'll keep recording my notes down as new platforms come around! 
