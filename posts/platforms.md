@@ -1,20 +1,10 @@
 # The box an agent runs in
 
-Every AI coding agent runs *somewhere* — some Linux box, spun up for you, that the
-model's tool calls actually execute on. I got curious about what those boxes
-actually are, so I did the same thing on two different platforms: bridged a real
-shell into the sandbox (a little WebSocket reverse-shell called
-[ws-term](https://github.com/RohanAdwankar/ws-term), because these boxes can dial
-*out* but nothing can connect *in*), and then just looked around with `cat`,
-`grep`, and `/proc`.
+One awesome product evolution is that agents are moving off our local computers so that you can use them from your phone.
+However this comes with its own set of challenges because this means they need their own VMs.
+Ultimately this is great for the customer because that means the agent companies provide us with VMs to use! Here's a tour of how the major platforms work based on poking around with [ws-term](https://github.com/RohanAdwankar/ws-term).
 
-This is a summary of what each platform's box actually is. Everything below is
-from real command output on the boxes, not documentation. The interesting part is
-that the two platforms make almost opposite bets about **what should be durable.**
-
----
-
-## Platform 1: Claude Code
+## Claude Code
 
 Claude Code's box is its own **Firecracker microVM** — a real KVM guest with its
 own kernel, booted straight into an init written in Rust:
@@ -159,12 +149,50 @@ flowchart TB
 **The bet:** the *machine* is disposable. Move all durability into a per-user git
 repo in S3, and let each box be a fresh clone that dies without loss.
 
-One honest gap: the single most interesting question — what harness Instinct runs
-and how it sends an LLM request — I couldn't answer on this pass; the recon for it
-got blocked by a safety classifier that reads "drive a remote shell and find how
-it calls the LLM" as exfiltration-shaped, regardless of intent. So I have the
-memory and storage layers cold and the inference layer not at all. A gap, not a
-guess.
+### What harness, and how does it call the model?
+
+This was the question I most wanted answered, and the first pass couldn't: the
+recon got blocked by a safety classifier that reads "drive a remote shell and find
+how it calls the LLM" as exfiltration-shaped, regardless of intent. Once that was
+lifted, the answer turned out to be the sharpest part of the whole comparison —
+and it's an answer by *absence*. Look at the two binaries the box actually runs,
+then grep them for any sign of a model:
+
+```
+$ ps -eo args | grep -E 'agent-exec|tools'
+agent-exec-server --port 8080                    # Go — runs the bash/code it's sent
+tools __internal_daemon --socket /tmp/.tools/bridge.sock \
+      --base-url https://api.instinct.com/-/api/graphql/tool-execute   # Rust
+$ strings /usr/local/bin/tools /usr/local/bin/agent-exec-server \
+    | grep -iE 'anthropic|openai|/v1/messages|x-api-key|claude|gpt|model'
+                                                 # → nothing. no model, no key, no endpoint.
+```
+
+There is no inference call anywhere on the box. Claude Code seals the *operator*
+inside the guest; Instinct doesn't put the brain in the guest at all. The sandbox
+is a pure **execution surface**: `agent-exec-server` runs whatever bash the backend
+hands it, and every tool call — Gmail, the cloud browser, a payment — leaves as a
+**GraphQL request to `api.instinct.com`**, executed server-side. The `--base-url`
+is a runtime argument, not compiled in.
+
+```mermaid
+flowchart TB
+  brain(["Instinct backend · agent loop + LLM<br/>api.instinct.com"])
+  subgraph BOX["E2B sandbox — hands only · no model · no key"]
+    aes["agent-exec-server · :8080 · Go"]
+    tools["tools daemon · Rust · unix socket"]
+  end
+  brain -->|"sends bash / code to run"| aes
+  aes -.->|"stdout / result"| brain
+  tools -->|"tool calls · GraphQL over TLS"| brain
+```
+
+So the contrast sharpens: Claude Code keeps the **harness** on the box and sends
+only *inference* out; Instinct sends **both the harness and the model** out and
+keeps only hands on the box. Which is exactly the durability bet, one layer up —
+if the machine is disposable, you don't leave anything worth keeping on it,
+including the thing doing the thinking. The one fact the box genuinely can't tell
+you is *which* model — because it is never told.
 
 ---
 
@@ -178,7 +206,9 @@ guess.
 | Memory model | Conversation state on disk | Markdown vault, git-versioned, agent-authored |
 | Credentials | Host-minted OAuth, on disk, rotated | Short-lived STS, role-scoped |
 | Backing store | Local virtio-block | S3, keyed by per-user id |
-| Operator in tenant space | Yes — `process_api` over vsock | Not observed |
+| Harness location | On the box — 324 MB Bun binary | Off the box — backend only; the box holds two execution shims |
+| How the model is reached | SSE → `/v1/messages` via egress gateway | Never from the box — GraphQL to `api.instinct.com`, server-side |
+| Operator in tenant space | Yes — `process_api` over vsock | No — brain *and* harness run off-box |
 | Boot cost (measured) | ~430 ms init, ~6.4 s to harness | fresh clone of a stock template |
 
 The one-line contrast: **Claude Code makes the machine durable and seals an
