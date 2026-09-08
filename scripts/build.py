@@ -80,7 +80,7 @@ def build_post(md_path: Path):
         text = re.sub(r'^\s*#\s+.*\n', '\n', raw, count=1, flags=re.MULTILINE)
         mermaid_blocks = []
         text = extract_mermaid(text, mermaid_blocks)
-        md = markdown.Markdown(extensions=['fenced_code', 'toc'])
+        md = markdown.Markdown(extensions=['fenced_code', 'toc', 'tables'])
         html_body = md.convert(text)
         html_body = restore_mermaid(html_body, mermaid_blocks)
         toc_html = md.toc or ''
