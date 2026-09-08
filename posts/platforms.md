@@ -1,11 +1,11 @@
-# The box an agent runs in 
+# The box an agent runs in
 
 One awesome product evolution is that agents (Claude Code, Instinct, Poke, etc) are moving off our local computers so that we can use them on our phones.
 Ultimately this is great for the customer because that means the agent companies provide us with VMs for them to run on! Here's some notes on how the major platforms work based on looking around on [ws-term](https://github.com/RohanAdwankar/ws-term).
 
 ## Claude Code on Your Phone
 
-Claude Code's box is its own **Firecracker microVM** a KVM guest with its
+Claude Code's box is its own **Firecracker microVM**, a KVM guest with its
 own kernel, booted straight into an init written in Rust:
 
 ```
@@ -14,12 +14,12 @@ $ cat /proc/cmdline
 $ uname -r
 6.18.5-fc-v20                 # -fc- = Firecracker; a custom-built guest kernel
 $ ps -o comm -p 1
-process_api                   # PID 1 is not systemd — it's a Rust/Tokio binary
+process_api                   # PID 1 is not systemd; it's a Rust/Tokio binary
 ```
 
 `process_api` is PID 1 and the host's control agent living
 inside your VM: it mounts the disks, then listens on **vsock port 2024** so the
-host can drive the session from outside. That's the platform's defining trait —
+host can drive the session from outside. That's the platform's defining trait:
 **the operator lives inside your tenant space**, and a lot of engineering goes into
 sealing it off (PID 1 is non-dumpable, `/proc/1/mem` is denied even with
 `CAP_SYS_PTRACE`, your shell is missing `CAP_SYS_RESOURCE`).
@@ -36,7 +36,7 @@ vde/vdf ... 1  /mnt/skills/...      # theirs: skills
 ```
 
 The **harness** is the thing running your tool calls and is a 324 MB compiled Bun
-binary on a read-only disk. The model runs elsewhere, inference goes out as **Server-Sent Events over HTTPS/2** (not a WebSocket) to `/v1/messages`, through an egress gateway that is 443-only and
+binary on a read-only disk. The model runs elsewhere; inference goes out as **Server-Sent Events over HTTPS/2** (not a WebSocket) to `/v1/messages`, through an egress gateway that is 443-only and
 MITM'd (`CN = Egress Gateway ... (production)`), with `api.anthropic.com` pinned
 in `/etc/hosts`. There is no inbound at all (`192.0.2.2`, an RFC-5737 test
 address). Auth is a **host-minted OAuth token**, cached root-only on disk and
@@ -46,7 +46,7 @@ Lifecycle is host-driven and measured from the inside: **~430 ms** to init,
 **~6.4 s** to the harness process. Spin-up is triggered by an inbound message
 (the host wakes the VM over vsock and runs `--session-mode resume`); spin-down is
 idle reclaim decided by the host. When it's reclaimed, the *processes* die but
-`vda` detaches intact and reattaches on the next cold boot — which is why the
+`vda` detaches intact and reattaches on the next cold boot, which is why the
 conversation feels continuous even though the compute was destroyed.
 
 ```mermaid
@@ -75,7 +75,7 @@ $ cat /.e2b
 n038afjvewg7jnc9pwdz
 ```
 
-`e2b.local` means Instinct doesn't operate its own VM fleet — it rents
+`e2b.local` means Instinct doesn't operate its own VM fleet; it rents
 [E2B](https://e2b.dev) sandboxes ("sandbox-as-a-service"), a throwaway Ubuntu box
 you hand an agent so it has a computer:
 
@@ -83,7 +83,7 @@ you hand an agent so it has a computer:
 Ubuntu 22.04.5, 2 vCPU, 1.9 GB RAM, 29 GB disk, up ~30 min, user sandbox (uid 1001)
 ```
 
-And lets look under the hood...
+And let's look under the hood...
 
 ```
 $ systemd-detect-virt                  →  kvm
@@ -97,10 +97,10 @@ $ ps -o comm -p 1                      →  systemd       # init=/sbin/init, not
 Firecracker again!
 
 `pci=off` + virtio-over-MMIO + empty DMI + `tap0` networking is the Firecracker
-signature wth no PCI bus, no SMBIOS, minimal devices. So both apps sit on the
+signature: no PCI bus, no SMBIOS, minimal devices. So both apps sit on the
 *same* microVM; the difference is who runs the fleet and **what boots inside it.**
 Where Claude Code boots a stripped custom init (`process_api` as PID 1), E2B boots a
-Ubuntu with systemd XFCE desktop:
+full Ubuntu with systemd and a whole XFCE desktop:
 
 ```
 $ systemd-analyze
@@ -109,11 +109,13 @@ graphical.target reached after 977ms
 ```
 
 ~1.26 s to cold-boot all the way to a graphical desktop. The operator-in-guest exists
-here too, but it's just E2B's `envd` running as an ordinary systemd service — not a
-sealed PID 1.
+here too, but it's just E2B's `envd` running as an ordinary systemd service, not a
+sealed PID 1. E2B sandboxes are configurable too (you pick the vCPU, RAM, disk, and idle
+timeout, and whether the box can be paused and resumed from a memory snapshot instead of
+cold-booted); Instinct runs a modest 2 vCPU / 1.9 GB desktop template.
 
 So if the box is disposable, where does the agent's memory live? In a directory
-called `/memory` — and this is the platform's defining idea:
+called `/memory`, and this is the platform's defining idea:
 
 ```
 $ cat /memory/README.md
@@ -126,10 +128,10 @@ Instinct Agent <agent@instinct.com>
 
 The agent's memory is a **git repo of Markdown files** with `[[wiki-links]]`,
 navigated by `grep`. The `timeline/` *coarsens* over time (raw → hourly → daily →
-weekly, like human memory), and the agent is literally the **git author** — it
+weekly, like human memory), and the agent is literally the **git author**: it
 doesn't call a memory API, it writes Markdown and commits it as itself.
 
-The durable layer is that repo, pushed to **S3**, keyed by a per-user id — and
+The durable layer is that repo, pushed to **S3**, keyed by a per-user id, and
 stored not as files but as a single **git bundle**, which is a great little gotcha:
 
 ```
@@ -137,16 +139,16 @@ $ git -C /memory remote -v
 origin  s3://instinct-prod-agent-memory/filesystem-memory/user-01M1VW7...
 $ aws s3 ls s3://.../user-01M1VW7.../ --recursive
   HEAD
-  refs/heads/main/<sha>.bundle     # the ENTIRE vault, packed — `ls` after sync looks empty
+  refs/heads/main/<sha>.bundle     # the ENTIRE vault, packed; `ls` after sync looks empty
 ```
 
-Auth is **short-lived STS credentials**, not long-lived keys — so a leaked
+Auth is **short-lived STS credentials**, not long-lived keys, so a leaked
 sandbox self-heals when the token lapses:
 
 ```
 $ cat /etc/instinct-aws-creds
 export AWS_ACCESS_KEY_ID='ASIA…'     # ASIA prefix + session token = temporary STS
-...                                   # (values redacted — live secrets)
+...                                   # (values redacted, live secrets)
 # role: instinct-sandbox-observations-role
 ```
 
@@ -166,7 +168,7 @@ flowchart TB
 
 *Durable thing = a git repo in S3. The machine is throwaway.*
 
-Using a git repo for this is quite nice the default structure seems to be like this:
+Using a git repo for this is quite nice; the default structure seems to be like this:
 ```
   ~/instinct-vault/..         │󰫎  24 󰲡 Vault
     .git                    │   23
@@ -203,7 +205,7 @@ Now Claude Code's harness in the VM is open source and the same as normal but ho
 
 ```
 $ ps -eo args | grep -E 'agent-exec|tools'
-agent-exec-server --port 8080                    # Go — runs the bash/code it's sent
+agent-exec-server --port 8080                    # Go, runs the bash/code it's sent
 tools __internal_daemon --socket /tmp/.tools/bridge.sock \
       --base-url https://api.instinct.com/-/api/graphql/tool-execute   # Rust
 $ strings /usr/local/bin/tools /usr/local/bin/agent-exec-server \
@@ -211,14 +213,14 @@ $ strings /usr/local/bin/tools /usr/local/bin/agent-exec-server \
                                                  # → nothing. no model listed
 ```
 
-So seems like no inference calls anywhere on the box. Claude Code seals the *operator*
+So it seems like there are no inference calls anywhere on the box. Claude Code seals the *operator*
 inside the guest; Instinct doesn't put the brain in the guest at all. The sandbox
 is a pure **execution surface**: `agent-exec-server` runs whatever bash the backend
-hands it, and every tool call — Gmail, the cloud browser, a payment — leaves as a
+hands it, and every tool call (Gmail, the cloud browser, a payment) leaves as a
 **GraphQL request to `api.instinct.com`**, executed server-side. The `--base-url`
 is a runtime argument, not compiled in.
 
-For the actual tool surface rather than MCPs seems like Instinct uses a CLI for all tools:
+For the actual tool surface, rather than MCPs, Instinct seems to use a CLI for all tools:
 
 ```
 sandbox@e2b:~/ws-term-v1$ tools --help | wc
@@ -260,7 +262,7 @@ UNAVAILABLE (does not apply to this role)
   steer_voice_agent    action     Send an answer or context into the user's active live voice session.
 ```
 
-The tool surface is the tell that this box isn't a coding sandbox at all —
+The tool surface is the tell that this box isn't a coding sandbox at all.
 `tools --help` lists ~50 namespaces (Gmail, Notion, Slack, Stripe payments, a
 credential vault), but the one that reveals the design is the **cloud browser**:
 
@@ -273,7 +275,7 @@ vault                    (7)   Manage, fill, and import the user's stored creden
 
 When Instinct orders food or books a flight "as you," it does **not** open a
 browser on this sandbox. It *leases* one from a separate pool of cloud browsers,
-each carrying your saved profile — cookies and logins — and drives it through the
+each carrying your saved profile (cookies and logins) and drives it through the
 same `api.instinct.com` bridge:
 
 ```
@@ -284,14 +286,14 @@ tools cloud_browser <action>               # click / type / read / screenshot th
 You can read the whole model off how leases behave: each profile has exactly **one
 write lease** (the only session allowed to save new logins), up to five run at
 once, and releasing a lease "saves its cookies first, so the next lease loads
-them." That persistence is the point — your browser identity is a **third durable
+them." That persistence is the point: your browser identity is a **third durable
 thing**, sitting server-side next to the S3 vault and the observations index, kept
 so a disposable box can borrow it for one task and hand it back. Two details let
 it sign in without a secret ever touching the box:
 
 - **Scout before navigating.** `tools browser_guidance search` returns curated
   per-site notes plus *your own* past outcomes per profile (`config-a: success`,
-  `config-b: blocked`) — a risk prior, not a verdict.
+  `config-b: blocked`), a risk prior, not a verdict.
 - **Secrets go through the Vault, never chat.** `tools vault fill` types a stored
   credential straight into the page; when the vault lacks one, `tools vault
   request` mints a link *you* fill (`app.instinct.com/vault/fill?t=…`). One-time
@@ -308,8 +310,8 @@ flowchart TB
 ```
 
 *The sandbox never holds a cookie or a password. Like the model, your logged-in
-browser lives off the box — leased per task, persisted per profile.* (The box does
-boot its own throwaway desktop — `Xvfb :99` + xfce + noVNC, hence the wallpaper you see when you open the VM —
+browser lives off the box, leased per task and persisted per profile.* (The box does
+boot its own throwaway desktop, `Xvfb :99` + xfce + noVNC, which is the wallpaper you see when you open the VM,
 but that's the stock E2B template, not the browser Instinct drives as you.)
 
 ---
@@ -319,15 +321,15 @@ but that's the stock E2B template, not the browser Instinct drives as you.)
 | | **Claude Code** | **Instinct** |
 |---|---|---|
 | Isolation primitive | Firecracker microVM (KVM) | Firecracker microVM (KVM) |
-| Who runs the fleet | Anthropic — its own | E2B — rented, third party |
+| Who runs the fleet | Anthropic, its own | E2B, rented, third party |
 | Guest inside the VM | Stripped custom init (`process_api`) | Full Ubuntu + systemd + XFCE desktop |
 | Cold boot (measured) | ~430 ms init, ~6.4 s to harness | ~1.26 s to graphical desktop |
 | What's durable | The machine (`vda` block volume) | A git repo in S3 |
 | Memory model | Conversation state on disk | Markdown vault, git-versioned, agent-authored |
 | Credentials | Host-minted OAuth, on disk, rotated | Short-lived STS, role-scoped |
 | Backing store | Local virtio-block | S3, keyed by per-user id |
-| Harness location | On the box — 324 MB Bun binary | Off the box — backend only; the box holds two execution shims |
-| How the model is reached | SSE → `/v1/messages` via egress gateway | Never from the box — GraphQL to `api.instinct.com`, server-side |
+| Harness location | On the box (324 MB Bun binary) | Off the box; the box holds two execution shims |
+| How the model is reached | SSE to `/v1/messages` via egress gateway | Never from the box; GraphQL to `api.instinct.com`, server-side |
 
 
-This was pretty fun to take a peak, I'll keep recording my notes down as new platforms come around! It's very useful to track how the end applications are progressing to understand how the general infra will develop. Like the rest of these notes I'll try to keep documenting other products and what infra they are using under the hood.
+This was pretty fun to take a peek, and I'll keep recording my notes as new platforms come around! It's very useful to track how the end applications are progressing to understand how the general infra will develop. Like the rest of these notes I'll try to keep documenting other products and what infra they are using under the hood.
