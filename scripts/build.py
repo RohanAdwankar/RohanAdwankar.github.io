@@ -34,6 +34,7 @@ PAGE_CSS = '''
     input:checked + .slider { background-color: #333; }
     input:checked + .slider:before { transform: translateX(20px); background-color: #e0e0e0; }
     pre.mermaid { background: transparent; text-align: center; margin: 24px 0; overflow-x: auto; }
+    article pre { overflow-x: auto; max-width: 100%; }
     pre code.hljs { border-radius: 6px; padding: 14px 16px; font-size: 13.5px; overflow-x: auto; }
     .table-wrap { overflow-x: auto; margin: 24px 0; }
     article table { border-collapse: collapse; width: 100%; font-size: 15px; line-height: 1.45; }
@@ -52,9 +53,14 @@ PAGE_CSS = '''
     body.light .slider { background-color: #333; }
     body.light .slider:before { background-color: #fff; }
         @media (max-width: 720px) {
+            body { margin: 20px auto; }
             aside.toc { display: none; }
             .post-wrapper { gap: 12px; }
-            .mobile-back { display: inline-block; }
+            header { flex-wrap: wrap; margin-bottom: 20px; }
+            header h1 { flex: 1 1 100%; font-size: 1.75em; line-height: 1.2; margin: 0; }
+            .header-controls { order: -1; flex: 1 1 100%; margin-bottom: 14px; }
+            .header-controls .theme-switch { margin-left: auto; }
+            .mobile-back { display: inline-block; white-space: nowrap; margin-right: 0; }
         }
         </style>
 '''
