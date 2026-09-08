@@ -75,13 +75,42 @@ $ cat /.e2b
 n038afjvewg7jnc9pwdz
 ```
 
-Instinct doesn't run its own hypervisor. `e2b.local` means this is a rented
-[E2B](https://e2b.dev) sandbox — "sandbox-as-a-service," a throwaway Ubuntu box
+`e2b.local` means Instinct doesn't operate its own VM fleet — it rents
+[E2B](https://e2b.dev) sandboxes ("sandbox-as-a-service"), a throwaway Ubuntu box
 you hand an agent so it has a computer:
 
 ```
 Ubuntu 22.04.5, 2 vCPU, 1.9 GB RAM, 29 GB disk, up ~30 min, user sandbox (uid 1001)
 ```
+
+And lets look under the hood...
+
+```
+$ systemd-detect-virt                  →  kvm
+$ cat /proc/cmdline
+  pci=off  virtio_mmio.device=4K@...  i8042.noaux i8042.nokbd  reboot=k  panic=1
+  clocksource=kvm-clock  root=/dev/vda  ip=169.254.0.21::...:eth0:off:tap0
+$ cat /sys/class/dmi/id/product_name   →  (empty)      # no SMBIOS at all
+$ ps -o comm -p 1                      →  systemd       # init=/sbin/init, not a custom PID 1
+```
+
+Firecracker again!
+
+`pci=off` + virtio-over-MMIO + empty DMI + `tap0` networking is the Firecracker
+signature wth no PCI bus, no SMBIOS, minimal devices. So both apps sit on the
+*same* microVM; the difference is who runs the fleet and **what boots inside it.**
+Where Claude Code boots a stripped custom init (`process_api` as PID 1), E2B boots a
+Ubuntu with systemd XFCE desktop:
+
+```
+$ systemd-analyze
+Startup finished in 265ms (kernel) + 992ms (userspace) = 1.258s
+graphical.target reached after 977ms
+```
+
+~1.26 s to cold-boot all the way to a graphical desktop. The operator-in-guest exists
+here too, but it's just E2B's `envd` running as an ordinary systemd service — not a
+sealed PID 1.
 
 So if the box is disposable, where does the agent's memory live? In a directory
 called `/memory` — and this is the platform's defining idea:
@@ -289,8 +318,10 @@ but that's the stock E2B template, not the browser Instinct drives as you.)
 
 | | **Claude Code** | **Instinct** |
 |---|---|---|
-| Isolation primitive | Own Firecracker microVM | Rented E2B sandbox |
-| Who runs the hypervisor | The platform | E2B (third party) |
+| Isolation primitive | Firecracker microVM (KVM) | Firecracker microVM (KVM) |
+| Who runs the fleet | Anthropic — its own | E2B — rented, third party |
+| Guest inside the VM | Stripped custom init (`process_api`) | Full Ubuntu + systemd + XFCE desktop |
+| Cold boot (measured) | ~430 ms init, ~6.4 s to harness | ~1.26 s to graphical desktop |
 | What's durable | The machine (`vda` block volume) | A git repo in S3 |
 | Memory model | Conversation state on disk | Markdown vault, git-versioned, agent-authored |
 | Credentials | Host-minted OAuth, on disk, rotated | Short-lived STS, role-scoped |
