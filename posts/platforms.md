@@ -1,8 +1,8 @@
 # The box an agent runs in 
 
-One awesome product evolution is that agents are moving off our local computers so that you can use them from your phone.
+One awesome product evolution is that agents (Claude Code, Instinct, Poke, etc) are moving off our local computers so that you can use them from your phone.
 However this comes with its own set of challenges because this means they need their own VMs.
-Ultimately this is great for the customer because that means the agent companies provide us with VMs to use! Here's a tour of how the major platforms work based on poking around with [ws-term](https://github.com/RohanAdwankar/ws-term).
+Ultimately this is great for the customer because that means the agent companies provide us with VMs to use! Here's a tour of how the major platforms work based on looking around on [ws-term](https://github.com/RohanAdwankar/ws-term).
 
 ## Claude Code on Your Phone
 
@@ -18,7 +18,7 @@ $ ps -o comm -p 1
 process_api                   # PID 1 is not systemd — it's a Rust/Tokio binary
 ```
 
-`process_api` is the whole story. It's PID 1 *and* the host's control agent living
+`process_api` is PID 1 and the host's control agent living
 inside your VM: it mounts the disks, then listens on **vsock port 2024** so the
 host can drive the session from outside. That's the platform's defining trait —
 **the operator lives inside your tenant space**, and a lot of engineering goes into
@@ -36,7 +36,7 @@ vdd  45.6M  1  /opt/env-runner      # theirs: the task launcher
 vde/vdf ... 1  /mnt/skills/...      # theirs: skills
 ```
 
-The **harness** — the thing running your tool calls — is a 324 MB compiled Bun
+The **harness** is the thing running your tool calls and is a 324 MB compiled Bun
 binary on a read-only disk. The **model** runs somewhere else entirely; the box
 has no GPU. Inference goes out as **Server-Sent Events over HTTPS/2** (not a
 WebSocket) to `/v1/messages`, through an egress gateway that is 443-only and
@@ -67,9 +67,6 @@ flowchart TB
 
 *Durable thing = the machine (`vda`). The operator lives inside the VM, sealed.*
 
-**The bet:** the *machine* is durable. Keep your disk, cold-boot fresh compute
-around it, and put the operator inside the guest but wall it off.
-
 ---
 
 ## Instinct
@@ -85,8 +82,7 @@ n038afjvewg7jnc9pwdz
 
 Instinct doesn't run its own hypervisor. `e2b.local` means this is a rented
 [E2B](https://e2b.dev) sandbox — "sandbox-as-a-service," a throwaway Ubuntu box
-you hand an agent so it has a computer. The `.e2b` file is the template it was
-cloned from. The box is deliberately forgettable:
+you hand an agent so it has a computer:
 
 ```
 Ubuntu 22.04.5 · 2 vCPU · 1.9 GB RAM · 29 GB disk · up ~30 min · user sandbox (uid 1001)
