@@ -7,6 +7,7 @@ import markdown
 
 ROOT = Path(__file__).resolve().parents[1]
 POSTS_DIR = ROOT / 'posts'
+STATIC_DIR = ROOT / 'static'
 DIST_DIR = ROOT / 'dist'
 OUT_POSTS_DIR = DIST_DIR / 'posts'
 OUT_INDEX = DIST_DIR / 'index.html'
@@ -238,6 +239,20 @@ def main():
         slug, title = build_post(md)
         posts.append((slug, title))
     build_index(posts)
+    copy_static()
+
+
+def copy_static():
+    """Copy static/ verbatim into dist/, preserving subdirectories."""
+    if not STATIC_DIR.exists():
+        return
+    for src in sorted(STATIC_DIR.rglob('*')):
+        if not src.is_file():
+            continue
+        dest = DIST_DIR / src.relative_to(STATIC_DIR)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(src, dest)
+        print(f'Copied {src.relative_to(ROOT)} -> {dest.relative_to(ROOT)}')
 
 if __name__ == '__main__':
     main()
