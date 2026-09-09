@@ -324,3 +324,5 @@ flowchart TB
 
 
 This was pretty fun to take a peek, and I'll keep recording my notes as new products come around!
+
+<a class="hn-badge" href="https://news.ycombinator.com/item?id=49605644"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="4" fill="#ff6600"/><text x="12" y="17.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="15" fill="#fff">Y</text></svg>Hacker News Discussion</a>
