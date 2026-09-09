@@ -20,6 +20,10 @@ PAGE_CSS = '''
     .header-controls { display:flex; gap:12px; align-items:center }
     .back-link { text-decoration: none; color: inherit; font-size: 14px; display: block; margin-bottom: 8px }
     .mobile-back { display: none; text-decoration: none; color: inherit; font-size: 14px; margin-right: 8px }
+    .hn-badge { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; border: 1px solid #3a3a3a; border-radius: 6px; background: #222; font-size: 14px; line-height: 1; text-decoration: none; color: inherit; }
+    .hn-badge:hover { border-color: #ff6600; }
+    .hn-badge svg { flex: 0 0 auto; display: block; }
+    body.light .hn-badge { border-color: #d0d0d0; background: #f7f7f7; }
     .post-wrapper { display: flex; gap: 28px; align-items: flex-start }
     aside.toc { width: 220px; flex: 0 0 220px; margin-top: 4px; }
     aside.toc nav { position: sticky; top: 80px; background: transparent; }
