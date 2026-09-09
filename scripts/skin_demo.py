@@ -10,12 +10,18 @@ static/, so dropping in a freshly packed page needs no re-editing.
 import re
 
 STYLE = '''<style>
-  html,body{margin:0;background:#1a1a1a;color:#e0e0e0;
+  /* No background on html: an unpainted html lets body's background paint the
+     whole canvas, so the light toggle repaints the page and not just the body
+     box. Setting one here is what left a dark band above and below. */
+  html,body{margin:0}
+  body{background:#1a1a1a;color:#e0e0e0;
     font-family:Georgia,serif;line-height:1.6}
   body.light{background:#fff;color:#111}
-  #wrap{max-width:980px;margin:60px auto;padding:0 20px;
+  /* padding, not margin: a top margin here collapses out through body */
+  #wrap{max-width:980px;margin:0 auto;padding:60px 20px;
     display:flex;flex-direction:column;gap:14px}
   header{display:flex;justify-content:space-between;align-items:center;gap:12px}
+  .header-controls{display:flex;gap:12px;align-items:center}
   header h1{font-size:1.75em;line-height:1.2;margin:0;font-weight:normal}
   .back-link{text-decoration:none;color:inherit;font-size:14px;white-space:nowrap}
   .theme-switch{position:relative;display:inline-block;width:44px;height:24px;flex:0 0 auto}
@@ -37,15 +43,18 @@ STYLE = '''<style>
   #stat{font:12px/1.4 ui-monospace,Menlo,Consolas,monospace;color:#8b8b8b}
   .ok{color:#9ece6a}.err{color:#f7768e}
   @media (max-width:720px){
-    #wrap{margin:20px auto}
+    #wrap{padding:20px}
     header{flex-wrap:wrap}
     header h1{flex:1 1 100%;font-size:1.4em}
+    /* controls above the title, the way the rest of the site stacks them */
+    .header-controls{order:-1;flex:1 1 100%;margin-bottom:6px}
+    .header-controls .theme-switch{margin-left:auto}
   }
 </style>'''
 
 HEADER = '''<header>
     <h1>GIMP, in this tab</h1>
-    <div style="display:flex;gap:12px;align-items:center">
+    <div class="header-controls">
       <a class="back-link" href="/">← Home</a>
       <label class="theme-switch">
         <input type="checkbox" id="theme-toggle">
