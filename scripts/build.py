@@ -3,6 +3,8 @@ import re
 import shutil
 from pathlib import Path
 
+from skin_demo import skin
+
 import markdown
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -242,17 +244,28 @@ def main():
     copy_static()
 
 
+# Generated pages whose chrome gets reskinned to match the site on the way
+# into dist/. Keyed by path relative to static/.
+SKINNED = {'gimp/index.html'}
+
+
 def copy_static():
-    """Copy static/ verbatim into dist/, preserving subdirectories."""
+    """Copy static/ into dist/, reskinning the pages listed in SKINNED."""
     if not STATIC_DIR.exists():
         return
     for src in sorted(STATIC_DIR.rglob('*')):
         if not src.is_file():
             continue
-        dest = DIST_DIR / src.relative_to(STATIC_DIR)
+        rel = src.relative_to(STATIC_DIR)
+        dest = DIST_DIR / rel
         dest.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy2(src, dest)
-        print(f'Copied {src.relative_to(ROOT)} -> {dest.relative_to(ROOT)}')
+        if rel.as_posix() in SKINNED:
+            dest.write_text(skin(src.read_text(encoding='utf-8')),
+                            encoding='utf-8')
+            print(f'Skinned {src.relative_to(ROOT)} -> {dest.relative_to(ROOT)}')
+        else:
+            shutil.copy2(src, dest)
+            print(f'Copied {src.relative_to(ROOT)} -> {dest.relative_to(ROOT)}')
 
 if __name__ == '__main__':
     main()
