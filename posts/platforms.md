@@ -1,5 +1,7 @@
 # The box an agent runs in
 
+<a class="hn-badge" href="https://news.ycombinator.com/item?id=49605644"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="4" fill="#ff6600"/><text x="12" y="17.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="15" fill="#fff">Y</text></svg>Discussed on Hacker News</a>
+
 One awesome product evolution is that agents (Claude Code, Instinct, Poke, etc) are moving off our local computers so that we can use them on our phones.
 Ultimately this is great for the customer because that means the agent companies provide us with VMs for them to run on! Here's some notes on how the major platforms work based on looking around on [ws-term](https://github.com/RohanAdwankar/ws-term).
 
