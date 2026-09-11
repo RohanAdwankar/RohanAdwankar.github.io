@@ -2,7 +2,7 @@
 
 This is a follow up to a post on [on agent sandboxes](https://rohanadwankar.github.io/posts/platforms.html).
 
-Last time as one commentator wrote [its firecracker all the way down](https://news.ycombinator.com/item?id=49605644#:~:text=It%27s%20always%2C%20firecracker%20all%20the%20way%20down!), but lucky for us a day later Meta launched Muse to give us a new VM to explore!
+The last time we reviewed a couple agent sandboxes as one commenter wrote [its firecracker all the way down](https://news.ycombinator.com/item?id=49605644#:~:text=It%27s%20always%2C%20firecracker%20all%20the%20way%20down!), but lucky for us a day later Meta launched Muse to give us a new VM to explore!
 
 As part of the launch one of the bold claims was that Muse is the faster alternative to some of their competition which was covered last time. So lets look under the hood and see what they have been up to. Like last time we will do this by dialing a shell out through [ws-term](https://github.com/RohanAdwankar/ws-term) and looking around with the usual tools.
 
@@ -173,8 +173,7 @@ namespace from the cell's PID 1. Every `exec` the agent runs gets its own view.
 
 ## How it boots
 
-The scripts in `/opt/hatch/runtime-cell/` and `/opt/hatch-image/bin/` are unusually
-well commented, and they describe a VM that boots with no owner and gets one attached.
+Lucky for us this is well documented in the scripts `/opt/hatch/runtime-cell/` and `/opt/hatch-image/bin/` which describe a VM that boots with no owner and gets one attached. Lets summarize the key points for performance as I see it.
 
 **The VM boots with no identity.** `hatch-prewarm` runs "after hatch-init, before any RV
 attach" and describes the cell boot files as *"identityless preboot."* The env carries
@@ -563,7 +562,7 @@ TOOLS.md                  dreams
 root@htch-runtime:~#
 
 ```
-Here we can also see the design which imbraces subagents goals and cron jobs
+Here we can also see the design which embraces subagents goals and cron jobs:
 ```
 PROACTIVE_PREFERENCES.md      # "Muse reads this whole file before composing the day's edition"
 agents/agent-<uuid>/sessions/<uuid>.jsonl     # 18 sub-agents so far, transcripts as JSONL
@@ -612,7 +611,7 @@ a `stripe-link-checkout-card` privsep socket and a `checkout-spend.sock` on the 
 side, and the post explains that a single-use card number is issued "tied to that
 particular merchant, a particular dollar amount, and only valid for a limited period."
 
-The browser is the same lesson Instinct taught: don't keep it in the sandbox.
+The browser system is very similar to what we saw with Instinct with a broker/scheduler concept to route over sessions:
 
 ```
 $ browser-broker --help
@@ -660,7 +659,7 @@ parse Stefi onboarding avatars:                             # onboarding assets
 Opaque monotonic Stefi version. Compare only; do not display as a count.
 ```
 
-So `stefi-proxy` is the VM's one door into Meta's control plane: anything that needs a
+So it seems like `stefi-proxy` is the VM's one door into Meta's control plane: anything that needs a
 backend decision (lease a VM, link an account, pair a messaging channel, send a push)
 goes out through that socket, and the cell has no path to it either.
 
@@ -704,7 +703,7 @@ $ strings hatch | grep -oE '/run/hatch/[a-z0-9_./-]+\.sock' | sort -u
 | Model | Claude via SSE | never from the box | Server-side routing: `avocado-*`, `claude-*`, `gpt-*` via `genai` |
 
 
-It was a great time seeing how similar products can diverge in implementation strategies. Either way both clearly have had a lot of thoughtful engineering behind them to make a complex collection of moving parts become a very smooth user experience. I'm looking forward to see how the space evolves and how these different architectural decisions eventually converge :).
+It was a great time seeing how similar products can diverge in implementation strategies. Either way all of them clearly have had a lot of thoughtful engineering behind them to make a complex collection of moving parts become a very smooth user experience. I'm looking forward to see how the space evolves and how these different architectural decisions eventually converge :).
 
 ## PS
 
