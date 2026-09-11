@@ -4,7 +4,9 @@ This is a follow up to a post on [on agent sandboxes](https://rohanadwankar.gith
 
 The last time we reviewed a couple agent sandboxes as one commenter wrote [its firecracker all the way down](https://news.ycombinator.com/item?id=49605644#:~:text=It%27s%20always%2C%20firecracker%20all%20the%20way%20down!), but lucky for us a day later Meta launched Muse to give us a new VM to explore!
 
-As part of the launch one of the bold claims was that Muse is the faster alternative to some of their competition which was covered last time. So lets look under the hood and see what they have been up to. Like last time we will do this by dialing a shell out through [ws-term](https://github.com/RohanAdwankar/ws-term) and looking around with the usual tools.
+As part of the launch one of the bold claims was that Muse is the faster alternative to some of their competition which was covered last time. So lets look under the hood and see what they have been up to. Like last time we will do this by dialing a shell out through [ws-term](https://github.com/RohanAdwankar/ws-term) and looking around with the usual tools. One last note before we begin is I'll spend the first half on the sandbox itself and the second half on the agent harness bits we can see from inside it so feel free to skip to the section you're interested in since this post is a tad bit longer than the last!
+
+## Not Firecracker
 
 Right of the bat the first thing you notice is that `systemd-detect-virt` and the DMI table
 disagree about what kind of machine this is, and both are right:
@@ -38,7 +40,7 @@ whole file before composing the day's edition," the skills tree has `muse_db` an
 confirms it: "Muse (codebase name: Hatch)." I'll come back to that post at the end,
 because it turns out to describe this box quite precisely.
 
-## Not Firecracker
+
 
 ```
 $ cat /sys/class/dmi/id/sys_vendor /sys/class/dmi/id/product_name /sys/class/dmi/id/bios_version
