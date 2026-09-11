@@ -713,40 +713,6 @@ $ strings hatch | grep -oE '/run/hatch/[a-z0-9_./-]+\.sock' | sort -u
 /run/hatch/privsep/<tool>.sock  x60        # the tool workers
 ```
 
-## What Meta says, and what's on disk
-
-Meta published a
-[security and safety post](https://research.meta.ai/blog/security-and-safety-for-ai-agents-our-approach-with-muse)
-with an architecture diagram: a user-controls layer, an isolated runtime cell holding
-the Hatch daemon, workspace and tools, host-side safety and credential services, and a
-Sentinel gateway in front of external services. It lines up with the box almost
-component for component.
-
-| Meta's post says | What I saw |
-|---|---|
-| "systemd-nspawn runtime container" with "its own root filesystem" | `systemd-detect-virt` → `systemd-nspawn`, machine `htch-runtime`, overlay root over a base rootfs |
-| "Root inside the runtime cell is mapped to an unprivileged host user" | tmpfs mounts owned by `uid=131072`; the daemon's dir is "hatch-daemon-owned == cell-root-forgeable" |
-| "filtered system calls (for example no `io_uring`)" | `io_uring_setup` → `EPERM`, four stacked seccomp filters, `seccompiler` in the daemon |
-| "no `CAP_SYS_PTRACE` and no `CAP_NET_ADMIN`" | both absent from the bounding set, along with `CAP_NET_RAW`, `CAP_SYS_MODULE`, `CAP_MKNOD` |
-| "eBPF cgroup programs and LSM hooks" | `spawnd attach-cell-gate` (`connect4`/`connect6`), `lsm=landlock,lockdown,yama,integrity,apparmor,bpf` |
-| Sentinel is "the sole permission authority ... for all egress," evaluating "hostname, resolved and final IP, port, protocol, HTTP method, path" | MITM proxy with its own CA, fake-IP DNS so names are attributable, `connect_classification` / `mase_outcome` fields, held CONNECTs |
-| Approvals are "strict capabilities ... one-time, session-scoped, task-scoped, time-bounded, or perpetual" | `matched_network_grant_id`, `hitl_scope`, `hitl_snoozed`, `approval_lifecycle_phase` |
-| `hatch-safety` runs "an independent set of models and classifiers" | `/run/hatch/safety/security.sock`; `9b_safety_classifier`, `2b_tool_call_classifier`, `pi_3b_prefilter`, 70+ guard/judge symbols |
-| "An ensemble of multiple prompt injection detection classifiers ... in parallel" | the ORIGIN GATE prompt, `JARVIS_EXTERNAL_CONTENT_BOUNDARIES_ENABLED`, `cbrne_returned_text_guard` |
-| privsep workers "execute built-in connector code with restricted credential access" | 60 `hatch-w-<tool>` workers behind `/run/hatch/privsep/*.sock` |
-| `authd` does "credential storage and surrogate token generation"; "the agent never sees real tokens" | `authd.sock`, `authdc cred` for "dynamic credentials," a 403 for untrusted callers |
-| Postgres "separately from runtime cell and credentials" | per-VM server at `/opt/metasql`, data dir mode 000 to the cell, credential via authd only |
-| "Unix domain sockets with SO_PEERCRED and peer ACLs" | every host service is a socket; `browser-broker --help` describes `SO_PEERCRED` + cgroup `PeerAcl` |
-| Browser "behind a virtualization layer," agent sees an "accessibility tree snapshot," DevTools disabled | leased VMVM browsers, broker unreachable from the cell, `browser_action_guard` |
-| Stripe Link single-use card "tied to that merchant, amount, and time" | `stripe-link-checkout-card` worker, `checkout-spend.sock`, `approval_type=checkout_provider` |
-| "Your VM data is backed up continuously" | `btrfs snapshot` / `subvolume snapshot` / `backup_path` in `spawnd` and the daemon |
-| Planned "Muse Confidential VM" to "prevent Meta from accessing data in your VM" | today: the RV is LUKS2, with the key held outside the guest |
-
-Two small divergences: the post says the cell has "a full debian image" and it's
-Ubuntu 24.04, and the post doesn't mention Cloud Hypervisor, the per-VM public
-hostname, or the multi-provider model routing at all. Those are the parts you only
-learn by being inside.
-
 ## Summary
 
 | | Claude Code | Instinct | Muse |
