@@ -736,5 +736,5 @@ It was a great time seeing how similar products can diverge in implementation st
 
 ## PS
 
-If you are interested in sandboxs one other massive piece of news that I'd be remiss not to mention is the launch of the open ai agents sdk using the e2b sandbox 
-You may remember E2B from its mention in the last post where the CEO even popped by to answer questions. I'd reccomend checking out their accouncment here https://e2b.dev/resources/e2b-is-now-in-agents-sdk
+If you are interested in sandboxes one other massive piece of news that I'd be remiss not to mention is the launch of the Open AI agents sdk using the e2b sandboxs.
+You may remember E2B from its mention in the last post where the CEO even popped by to answer questions. I'd reccomend checking out their [announcement](https://e2b.dev/resources/e2b-is-now-in-agents-sdk) if you're curious.
