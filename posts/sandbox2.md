@@ -514,8 +514,15 @@ memory.claims  memory.entries  memory.entry_attributes  memory.embeddings
 memory.embedding_models  memory.metadata
 ```
 
-`memory.entries` is chunked text keyed by a `memory_uri`, `memory.embeddings` holds the
-vectors from the on-box MiniLM model, and the jina reranker sorts hits at query time.
+The memory itself is Markdown under `~/memory/` (dated logs, `bank/{world,experience,
+opinions}.md`, people and group pages), and Postgres is the index over it: every chunk
+lands in `memory.entries` with a `path#L<line>` citation, as a 384-dim pgvector row in
+`memory.embeddings` from the on-box MiniLM model, and as a `tsvector` for keyword
+search, and the daemon's `memory_search` tool and the pre-inference recall step run
+hybrid retrieval over both with the jina reranker ordering the hits. That's why the
+embedder is local: the corpus is the most personal data on the box, it's re-embedded
+every time a memory flush appends to it, and a 91 MB model on two cores does that
+without the chunks ever leaving the LUKS volume.
 The `device.*` schema is your phone synced in (contacts, call log, calendar events,
 upload sessions), `agent.*` is transcripts, compactions, and sub-agent progress, and
 the schema notes say reasoning columns are served through a redacted projection.
@@ -608,15 +615,31 @@ particular merchant, a particular dollar amount, and only valid for a limited pe
 The browser is the same lesson Instinct taught: don't keep it in the sandbox.
 
 ```
-$ browser-broker --help | head -3
+$ browser-broker --help
 Long-running broker daemon that routes browser sessions to leased VMVM browsers
-  --socket    ... that subdir is DELIBERATELY not bind-mounted into the runtime cell:
-              the cell has NO path to the broker. The sole client is the host daemon ...
-              the in-cell→broker bind remains absent to close the HiTL-consent bypass
+
+  --browser-vm-image <BROWSER_VM_IMAGE>
+          Immutable leased browser VM image ref
+  --socket <SOCKET>
+          ... that subdir is DELIBERATELY not bind-mounted into the runtime cell:
+          the cell has NO path to the broker. The sole client is the host daemon,
+          admitted by exact cgroup identity plus --allowed-peer-uid; the in-cell→broker
+          bind remains absent to close the HiTL-consent bypass
+  --lease-helper-socket <LEASE_HELPER_SOCKET>
+          UDS of the privileged lease helper the on-demand lease router relays lease
+          ops through (forwards to the stefi-proxy; performs the viewer bind-mount)
+  --retain-vmvm-for-debug
+          Development only: retain an already-active failed VMVM route and its
+          broker-private Docker API socket until the 15-minute lease TTL or broker
+          shutdown ... restarts an exited retained browser container without
+          recreating it. Has no effect on local-cell routes or VMVM admission
 ```
 
-A "VMVM" is a browser VM leased per task (15-minute TTL), routed by a broker that only
-the daemon can talk to, so a tool the agent runs in the cell can't drive a logged-in
+"VMVM" is Meta's word, never expanded, and that help text is the whole evidence for
+it: a browser session is routed to a *leased VM* built from an "immutable browser VM
+image," inside which the browser is a Docker container reachable over a broker-private
+Docker API socket, on a 15-minute lease obtained through `stefi-proxy`. Only the daemon
+can reach the broker, so a tool the agent runs in the cell can't drive a logged-in
 browser without going through the consent flow. The sub-agent driving it gets an
 accessibility-tree snapshot rather than the DOM, with no script execution and DevTools
 disabled (`visual_browser_screenshot_guard` and `browser_action_guard` are the
