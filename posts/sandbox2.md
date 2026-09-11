@@ -2,7 +2,7 @@
 
 This is a follow up to a post on [on agent sandboxes](https://rohanadwankar.github.io/posts/platforms.html).
 
-Last time as one commentator wrote (its firecracker all the way down)[https://news.ycombinator.com/item?id=49605644#:~:text=It%27s%20always%2C%20firecracker%20all%20the%20way%20down!], but lucky for us a day later Meta launched Muse to give us a new VM to explore!
+Last time as one commentator wrote [its firecracker all the way down](https://news.ycombinator.com/item?id=49605644#:~:text=It%27s%20always%2C%20firecracker%20all%20the%20way%20down!), but lucky for us a day later Meta launched Muse to give us a new VM to explore!
 
 As part of the launch one of the bold claims was that Muse is the faster alternative to some of their competition which was covered last time. So lets look under the hood and see what they have been up to. Like last time we will do this by dialing a shell out through [ws-term](https://github.com/RohanAdwankar/ws-term) and looking around with the usual tools.
 
@@ -342,7 +342,7 @@ flowchart LR
   sentinel -->|allowlist + HITL approval| internet(["internet"])
 ```
 
-## Egress: fake IPs and a MITM
+## Egress
 
 The cell has one veth with a /30 and a gateway that is also the DNS server and the
 proxy:
@@ -400,55 +400,7 @@ box never sees is an inference endpoint: `api.anthropic.com` returned a 404 thro
 proxy, reachable but keyless, and the daemon's inference socket isn't mounted in the
 cell.
 
-### How an approval reaches your phone
-
-The daemon binary carries the whole approval path in its symbol names:
-
-```
-$ strings /opt/hatch/bin/hatch | grep -oiE '[a-z_./]*(hitl|approval|push_notif)[a-z_./]*' | sort | uniq -c | sort -rn | head
-  119 egress_approval_runtime
-   51 push_notifications.rs
-    9 approval_decision_forward.rs
-      /crates/hatch-agent/src/agent_manager/control/agent_lifecycle/approval_terminalization
-      /crates/hatch-agent/src/session/impl_session/message_execution/tool_dispatch_batch/approval_intent
-      //localhost/hatch/send_push_notification
-      //notifications/approval-refresh/     //notifications/missed-chat/
-      /approval-sync   hitl_fetch_approvals   hitl_decisions   channel_hitl_decision_terminal
-      approval_id approval_lifecycle_phase approval_attention_mode approval_delivery_mode
-      hitl_governing_surface hitl_configured_enabled hitl_effective_enabled hitl_snoozed hitl_scope
-      connect_mitm_eligibility matched_network_grant_id mase_outcome hitl_never_resolved
-```
-
-Read in order:
-
-1. **Sentinel** (VM side) classifies the CONNECT (`connect_classification`,
-   `connect_mitm_eligibility`, `mase_outcome` against the `mase_*` blocklist shipped in
-   `/home/hatch/assets/blocklist/`) and either matches an existing grant
-   (`matched_network_grant_id`) or holds the connection and emits an event on
-   `egress-approvals-events.sock`.
-2. **The daemon's `egress_approval_runtime`** registers it (`approval_registration`,
-   `approval_delivery_mode`) and checks whether HITL applies right now
-   (`hitl_configured_enabled`, `hitl_effective_enabled`, `hitl_snoozed`, `hitl_scope`,
-   `hitl_governing_surface`). Tool calls that will need consent are flagged earlier, at
-   `tool_dispatch_batch/approval_intent`.
-3. **Push.** The daemon POSTs to `localhost/hatch/send_push_notification`, a local
-   endpoint that fronts the backend, and the phone receives a
-   `notifications/approval-refresh/` push.
-4. **Fetch and decide.** The app pulls pending approvals over the Noise session
-   (`hitl_fetch_approvals`) and posts `hitl_decisions` back the same way, or through a
-   messaging channel (`channel_hitl_decision_terminal` exists for WhatsApp/Telegram-style
-   surfaces).
-5. **Forward.** `approval_decision_forward.rs` relays the decision to Sentinel over
-   `egress-approvals-admin.sock`, the held CONNECT is released or reset, and the
-   approval is "terminalized" (`approval_terminalization`; `hitl_never_resolved` is the
-   timeout state my 8443 test landed in).
-
-Purchases go through the same machinery with `approval_type=checkout_provider`, and the
-Shopify skill comments note "the purchase HITL is new spend ... Shopify completion
-itself must not prompt again." One queue shared by network egress, browser actions
-(`hatch_safety_enable_browser_classifier_hitl`), and money.
-
-## Inside the harness
+## Harness
 
 The harness is  one 327 MB Rust binary (similar size to Claude Code's Bun
 harness was 324 MB), and the Cargo registry paths baked
@@ -545,7 +497,7 @@ $ /opt/hatch-image/bin/codex --version
 codex-cli 0.149.0                                        # OpenAI's Codex CLI, 258 MB, used by hatch-rescue
 ```
 
-## Memory: Postgres
+## Memory
 
 Memory is not a git repo of Markdown like Instinct. It's on-VM **Postgres**, and the
 `muse_db` skill ships the whole schema as a 4,116-line reference so the agent can
@@ -614,7 +566,7 @@ workspace/feed/  workspace/scheduler/
 ```
 
 
-## Tools: 70 CLIs, 60 sandboxes, one browser broker
+## Tools
 
 ```
 $ ls /opt/hatch/bin | wc -l
@@ -718,7 +670,6 @@ $ strings hatch | grep -oE '/run/hatch/[a-z0-9_./-]+\.sock' | sort -u
 | | Claude Code | Instinct | Muse |
 |---|---|---|---|
 | Isolation primitive | Firecracker microVM | Firecracker microVM (E2B) | Cloud Hypervisor microVM **+ nspawn cell** |
-| Who runs the fleet | Anthropic | E2B, rented | Meta |
 | Guest inside the VM | Custom Rust PID 1 | Full Ubuntu + XFCE | Ubuntu host services + Ubuntu container |
 | Boot (measured) | ~6.4 s to harness | ~1.26 s to desktop | 13 s to cell, ~40 s to ready |
 | Lifecycle | Reclaim when idle, wake on message | Timeout, cold boot or snapshot resume | Pre-booted hatchling, RV grafted; replaced per rollout; balloon reclaims idle memory |
@@ -728,8 +679,6 @@ $ strings hatch | grep -oE '/run/hatch/[a-z0-9_./-]+\.sock' | sort -u
 | Egress | 443-only MITM gateway | open | MITM proxy + eBPF gate + fake-IP DNS + HITL approvals |
 | Harness | On the box, Bun | Off the box | On the box, 327 MB Rust, sealed, entered from the VM side |
 | Model | Claude via SSE | never from the box | Server-side routing: `avocado-*`, `claude-*`, `gpt-*` via `genai` |
-| Safety sidecars | | | ~10 classifier/judge families, on-box ONNX + `hatch-safety` |
-| Tools | MCP / built in | CLI, executed server-side | 70 CLIs, each a privsep uid, browser in a leased VM |
 
 
 It was a great time seeing how similar products can diverge in implementation strategies. Either way both clearly have had a lot of thoughtful engineering behind them to make a complex collection of moving parts become a very smooth user experience. I'm looking forward to see how the space evolves and how these different architectural decisions eventually converge :).
