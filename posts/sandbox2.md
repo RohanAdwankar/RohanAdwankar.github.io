@@ -731,13 +731,8 @@ $ strings hatch | grep -oE '/run/hatch/[a-z0-9_./-]+\.sock' | sort -u
 | Safety sidecars | | | ~10 classifier/judge families, on-box ONNX + `hatch-safety` |
 | Tools | MCP / built in | CLI, executed server-side | 70 CLIs, each a privsep uid, browser in a leased VM |
 
-Three products, three answers to "where does the agent live." Claude Code says the VM is
-the session. Instinct says the VM is disposable and the git repo is the agent. Muse says
-the VM is disposable, *your volume* is the agent, and there should always be a VM
-already wearing it.
 
-Every command in this post was run through a reverse shell the agent itself set up,
-with secrets (proxy password, ws-term token) redacted.
+It was a great time seeing how similar products can diverge in implementation strategies. Either way both clearly have had a lot of thoughtful engineering behind them to make a complex collection of moving parts become a very smooth user experience. I'm looking forward to see how the space evolves and how these different architectural decisions eventually converge :).
 
 ## PS
 
