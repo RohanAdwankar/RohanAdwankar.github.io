@@ -60,13 +60,46 @@ The scores come from small lexicons and a few local rules, not a model. Negation
 
 That is what makes it usable as a font rather than a feature. A page of prose scores in about a millisecond, synchronously, offline, with the same answer every time. It runs on every keystroke, during a server render, on a plane. A model would read sarcasm better and could never do that.
 
-## What it gets wrong
-
-Sarcasm, irony, and jargon it has not been taught. It reads words, not arguments, so a calm sentence describing a catastrophe goes straight past it. English only.
-
 ## Using it
 
-One React component, no build step, no dependency but React. `analyze(text)` is the engine on its own, four numbers per word, no React and no CSS. Code and demo at [github.com/RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont). MIT.
+One React component, no build step, no dependency but React.
+
+```jsx
+import { SemanticText } from 'semfont';
+
+<SemanticText as="p">
+  The migration ran clean on staging. In production it deleted the index,
+  and the rollback failed too.
+</SemanticText>
+```
+
+Pick a theme, or only the channels you want. Nothing but colour:
+
+```jsx
+<SemanticText text={incident} theme="monochrome" />
+<SemanticText text={incident} channels={['valence']} />
+```
+
+Teach it your own vocabulary:
+
+```jsx
+<SemanticText
+  lexicon={{ valence: { flaky: -0.7, oncall: -0.4 }, salience: { rollback: 0.8 } }}
+  text={incident}
+/>
+```
+
+Or skip React and take the scores. `analyze` is the engine alone, four numbers per word, no CSS:
+
+```js
+import { analyze, styleFor, themes } from 'semfont';
+
+const { tokens } = analyze('The rollback failed too.');
+tokens[4];   // { text: 'failed', valence: -0.7, salience: 0.23, surprise: 0.06, certainty: 0, ... }
+styleFor(tokens[4], themes.editorial).style;   // { color: 'color-mix(in oklab, currentColor, oklch(0.58 0.19 25) 53%)' }
+```
+
+Code and demo at [github.com/RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont). MIT.
 
 <script type="module">
 import { analyze } from '/js/semfont/analyze.js';
