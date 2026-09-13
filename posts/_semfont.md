@@ -19,10 +19,10 @@ The box below is live and every word in it is editable. It is running the same e
 .sf-out { outline: none; cursor: text; caret-color: currentColor; }
 .sf-out:empty::before { content: attr(data-placeholder); opacity: .45; }
 .sf-demo:focus-within { border-color: #6a6a6a; }
-.sf-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; margin: 10px 0 30px; font-family: 'Recursive', ui-sans-serif, system-ui, sans-serif; font-size: .8rem; }
+.sf-bar { display: flex; flex-wrap: wrap; justify-content: flex-start; align-items: center; gap: 8px 24px; margin: 10px 0 30px; font-family: 'Recursive', ui-sans-serif, system-ui, sans-serif; font-size: .8rem; }
 .sf-themes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .sf-themes span { opacity: .7; margin-right: 4px; }
-.sf-timing { opacity: .7; font-variation-settings: 'MONO' 1; font-variant-numeric: tabular-nums; margin-left: auto; }
+.sf-timing { opacity: .7; font-variation-settings: 'MONO' 1; font-variant-numeric: tabular-nums; }
 body.light .sf-demo, body.light .sf-samples button, body.light .sf-themes label { border-color: #d0d0d0; }
 body.light .sf-samples button[aria-pressed="true"], body.light .sf-themes label:has(input:checked) { border-color: currentColor; }
 body.light .sf-demo:focus-within { border-color: #888; }
