@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import re
 import shutil
+import sys
 from pathlib import Path
 
 import markdown
@@ -71,7 +72,9 @@ PAGE_CSS = '''
 '''
 
 def slug_from_path(p: Path):
-    return p.stem
+    # A draft keeps the same URL it will have once it is listed, so a link
+    # shared while it is unlisted keeps working after the underscore comes off.
+    return p.stem.lstrip('_')
 
 def title_from_markdown(text: str, default: str):
     m = re.search(r'^#\s+(.+)', text, re.MULTILINE)
@@ -80,6 +83,8 @@ def title_from_markdown(text: str, default: str):
     return default
 
 def is_draft(md_path: Path):
+    """Drafts are built and published like any other post; they are only left
+    off the homepage list. Rename the file without the underscore to list it."""
     return md_path.stem.startswith('_')
 
 MERMAID_CDN = 'https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js'
@@ -165,7 +170,8 @@ def build_post(md_path: Path):
     </body>
     </html>"""
         out_path.write_text(page, encoding='utf-8')
-        print(f'Wrote {out_path.relative_to(ROOT)}')
+        note = ' (draft, not listed on the homepage)' if is_draft(md_path) else ''
+        print(f'Wrote {out_path.relative_to(ROOT)}{note}')
         return slug, title
 
 def build_index(posts):
@@ -235,14 +241,18 @@ def main():
     shutil.rmtree(DIST_DIR, ignore_errors=True)
     OUT_POSTS_DIR.mkdir(parents=True, exist_ok=True)
     md_files = sorted(POSTS_DIR.glob('*.md'))
-    posts = []
+    by_slug = {}
     for md in md_files:
-        if is_draft(md):
-            print(f'Skipped draft {md.relative_to(ROOT)}')
-            continue
+        other = by_slug.setdefault(slug_from_path(md), md)
+        if other is not md:
+            sys.exit(f'{md.relative_to(ROOT)} and {other.relative_to(ROOT)} '
+                     f'would both be written to posts/{slug_from_path(md)}.html')
+    listed = []
+    for md in md_files:
         slug, title = build_post(md)
-        posts.append((slug, title))
-    build_index(posts)
+        if not is_draft(md):
+            listed.append((slug, title))
+    build_index(listed)
     copy_static()
 
 
