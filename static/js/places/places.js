@@ -398,17 +398,41 @@ async function buildScene(scene, spec, place, figureObjects) {
   scene.add(sun);
 
   let gltf = null;
+  let mixer = null;
   if (spec.glb) {
     try {
       gltf = await new GLTFLoader().loadAsync(`${place.assets}/${spec.glb}`);
-      gltf.scene.traverse((o) => { if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; } });
+      gltf.scene.traverse((o) => {
+        if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
+        // The Blender file marks where lamps hang with empties named light_*.
+        if (o.name.startsWith('light_')) {
+          const l = new THREE.PointLight('#ffd9a0', o.name.includes('chandelier') ? 18 : 6, o.name.includes('chandelier') ? 14 : 6, 2);
+          o.add(l);
+        }
+      });
       scene.add(gltf.scene);
+      // One clip per figure, named anim_<id>, bound to that figure's own rig
+      // (rig_<id>): every rig shares the kit's bone names, so a clip has to
+      // be resolved inside its own subtree or they all drive the first one.
+      if (gltf.animations.length) {
+        mixer = new THREE.AnimationMixer(gltf.scene);
+        for (const clip of gltf.animations) {
+          const rig = gltf.scene.getObjectByName(clip.name.replace(/^anim_/, 'rig_'));
+          const action = mixer.clipAction(clip, rig || gltf.scene);
+          action.time = Math.random() * clip.duration;
+          action.play();
+        }
+      }
     } catch (err) {
       console.warn(`No usable ${spec.glb}; building the procedural set instead.`, err);
     }
   }
   if (!gltf) buildRoom(scene, room);
   if (!gltf) for (const prop of spec.props || []) scene.add(buildProp(prop));
+  if (mixer) {
+    let last = null;
+    figureObjects.set('__mixer', { tick: (t) => { if (last !== null) mixer.update(t - last); last = t; } });
+  }
 
   for (const fig of spec.figures) {
     // With a Blender scene the figure lives in the file; the annotation hangs
