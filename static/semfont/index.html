@@ -1,0 +1,493 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>semfont: a font that reads what you wrote</title>
+<meta name="description" content="Typography that modulates on meaning instead of markup. Four semantic channels, four type axes, one millisecond, no model.">
+<meta property="og:title" content="A font that reads what you wrote">
+<meta property="og:description" content="Typography that modulates on meaning instead of markup. Four semantic channels, four type axes, one millisecond, no model.">
+<meta property="og:type" content="article">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Recursive:CASL,MONO,slnt,wght@0..1,0..1,-15..0,300..1000&display=swap">
+<style>
+  :root {
+    color-scheme: light dark;
+    --paper: #f2f3f6;
+    --card: #fbfbfd;
+    --ink: #15171c;
+    --dim: #666d7c;
+    --rule: #d6d9e1;
+    --rule-soft: #e4e6ec;
+    --mark: oklch(0.86 0.16 92);
+    --accent: oklch(0.72 0.15 78);
+    --focus: oklch(0.55 0.16 250);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --paper: #101217;
+      --card: #171a21;
+      --ink: #e6e8ee;
+      --dim: #939aab;
+      --rule: #2a2f39;
+      --rule-soft: #21252d;
+      --mark: oklch(0.78 0.15 92);
+      --accent: oklch(0.8 0.14 80);
+      --focus: oklch(0.72 0.14 250);
+    }
+  }
+  :root[data-theme="dark"] {
+    --paper: #101217;
+    --card: #171a21;
+    --ink: #e6e8ee;
+    --dim: #939aab;
+    --rule: #2a2f39;
+    --rule-soft: #21252d;
+    --mark: oklch(0.78 0.15 92);
+    --accent: oklch(0.8 0.14 80);
+    --focus: oklch(0.72 0.14 250);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: 'Recursive', ui-sans-serif, system-ui, sans-serif;
+    font-variation-settings: 'MONO' 0, 'CASL' 0;
+    font-size: 17px;
+    line-height: 1.62;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap {
+    max-width: 76rem;
+    margin: 0 auto;
+    padding: clamp(2rem, 5vw, 4rem) clamp(1.1rem, 4vw, 3rem) 5rem;
+    display: grid;
+    grid-template-columns: 13.5rem minmax(0, 1fr);
+    gap: clamp(1.5rem, 4vw, 3.5rem);
+    align-items: start;
+  }
+  @media (max-width: 880px) { .wrap { grid-template-columns: minmax(0, 1fr); } }
+
+  /* ---------- the channel rail ---------- */
+  .rail { position: sticky; top: 1.5rem; font-size: .78rem; color: var(--dim); }
+  @media (max-width: 880px) {
+    .rail { position: static; padding-bottom: 1.2rem; border-bottom: 1px solid var(--rule); }
+  }
+  .rail h2, .legend caption, .eyebrow {
+    font-size: .74rem; letter-spacing: .005em;
+    font-variation-settings: 'MONO' 1, 'CASL' 0; font-weight: 600; color: var(--dim);
+  }
+  .rail h2 { margin: 0 0 .7rem; }
+  .rail fieldset { border: 0; margin: 0 0 1.4rem; padding: 0; display: grid; gap: .1rem; }
+  .rail label { display: flex; gap: .5rem; align-items: baseline; cursor: pointer; padding: .18rem 0; }
+  .rail label:hover { color: var(--ink); }
+  .rail input { accent-color: var(--accent); margin: 0; translate: 0 2px; }
+  .rail .axis { color: var(--dim); font-size: .72rem; }
+  .rail input[type=range] { width: 100%; accent-color: var(--accent); }
+  .note { font-size: .72rem; line-height: 1.5; border-top: 1px solid var(--rule); padding-top: .9rem; }
+
+  /* ---------- article ---------- */
+  article { max-width: 40rem; }
+  .eyebrow { display: block; margin-bottom: 1rem; }
+  /* Headings are set in the same face as everything else, at a base weight
+     the engine can still push a word above. See HEADING_WEIGHT in the script:
+     a salient word in a heading has to come out heavier than the heading, not
+     lighter, so the theme's weight base is raised to match per element. */
+  h1 {
+    font-weight: 520;
+    font-size: clamp(2.2rem, 6vw, 3.5rem);
+    line-height: 1.05;
+    letter-spacing: -0.035em;
+    margin: 0 0 1.1rem;
+    text-wrap: balance;
+  }
+  h2 {
+    font-weight: 560;
+    font-size: 1.45rem;
+    line-height: 1.25;
+    letter-spacing: -0.02em;
+    margin: 3.2rem 0 .9rem;
+    text-wrap: balance;
+  }
+  .standfirst { font-size: 1.16rem; color: var(--dim); margin: 0 0 2rem; text-wrap: pretty; }
+  p { margin: 0 0 1.1rem; text-wrap: pretty; }
+  a { color: inherit; text-underline-offset: .18em; text-decoration-color: var(--accent); }
+  a:focus-visible, input:focus-visible, button:focus-visible, textarea:focus-visible {
+    outline: 2px solid var(--focus); outline-offset: 3px;
+  }
+  code, .mono { font-variation-settings: 'MONO' 1, 'CASL' 0; font-size: .92em; }
+
+  /* ---------- the live window ---------- */
+  .stage {
+    border: 1px solid var(--rule);
+    border-radius: .6rem;
+    background: var(--card);
+    margin: 0 0 .8rem;
+    overflow: hidden;
+  }
+  .stage .out {
+    padding: 1.5rem 1.6rem;
+    font-size: clamp(1.3rem, 3vw, 1.7rem);
+    line-height: 1.5;
+    letter-spacing: -0.006em;
+    min-height: 4em;
+  }
+  .stage .edit {
+    display: block; width: 100%; border: 0; border-top: 1px solid var(--rule-soft);
+    background: transparent; color: var(--dim); resize: vertical;
+    padding: .85rem 1.6rem 1rem; font: inherit; font-size: .85rem; line-height: 1.55;
+    min-height: 4.4rem;
+  }
+  .stage .edit::placeholder { color: var(--dim); }
+  .stagecap {
+    display: flex; flex-wrap: wrap; gap: .4rem 1.2rem; justify-content: space-between;
+    font-size: .72rem; color: var(--dim); margin: 0 0 2.4rem;
+  }
+  .timing { font-variation-settings: 'MONO' 1; font-variant-numeric: tabular-nums; }
+  .samples { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0 0 1.6rem; }
+  .samples button {
+    font: inherit; font-size: .76rem; color: var(--dim); cursor: pointer;
+    background: transparent; border: 1px solid var(--rule); border-radius: 2rem;
+    padding: .22rem .8rem;
+  }
+  .samples button:hover { color: var(--ink); border-color: var(--dim); }
+  .samples button[aria-pressed="true"] { color: var(--ink); border-color: var(--accent); }
+
+  /* ---------- specimens ---------- */
+  .specimen {
+    background: var(--card); border: 1px solid var(--rule-soft); border-radius: .55rem;
+    padding: 1.4rem 1.5rem 1.2rem; margin: 1.7rem 0 2rem;
+  }
+  .specimen.plain {
+    background: none; border: 0; border-left: 2px solid var(--rule);
+    border-radius: 0; padding: .1rem 0 .1rem 1.4rem;
+  }
+  /* Only the live box keeps the reader's own line breaks; prose collapses
+     whitespace the way prose should. */
+  .stage .out { white-space: pre-wrap; }
+  .sf span { transition: font-variation-settings .22s ease, color .22s ease, background .22s ease, font-size .22s ease; }
+  @media (prefers-reduced-motion: reduce) { .sf span { transition: none; } }
+  .mid-sf { font-size: 1.18rem; line-height: 1.58; }
+  .cap {
+    font-size: .72rem; color: var(--dim); margin-top: 1rem;
+    padding-top: .8rem; border-top: 1px solid var(--rule-soft);
+    font-variation-settings: 'MONO' 0, 'CASL' 1;
+  }
+  .specimen.plain .cap { border: 0; padding-top: .35rem; }
+
+  .pair { display: grid; gap: 1px; background: var(--rule-soft); border: 1px solid var(--rule-soft); border-radius: .55rem; overflow: hidden; }
+  @media (min-width: 620px) { .pair { grid-template-columns: 1fr 1fr; } }
+  .pair > div { background: var(--card); padding: 1.2rem 1.3rem; }
+  .pair .sf { font-size: 1.05rem; }
+
+  /* ---------- the legend, which styles itself ---------- */
+  .legend { width: 100%; border-collapse: collapse; margin: 1.6rem 0 2rem; font-size: .92rem; }
+  .legend caption { text-align: left; padding-bottom: .6rem; }
+  .legend th, .legend td { text-align: left; padding: .62rem .8rem .62rem 0; border-bottom: 1px solid var(--rule-soft); vertical-align: baseline; }
+  .legend th { font-weight: 600; color: var(--dim); font-size: .74rem; font-variation-settings: 'MONO' 1; }
+  .legend td:first-child { font-size: 1.05rem; white-space: nowrap; }
+  .legend td:last-child { color: var(--dim); }
+  .ch-val { color: oklch(0.55 0.19 25); }
+  .ch-sal { font-variation-settings: 'wght' 750; }
+  .ch-sur { background: color-mix(in oklab, transparent, var(--mark) 42%); border-radius: .18em; box-shadow: 0 0 0 .12em color-mix(in oklab, transparent, var(--mark) 42%); }
+  .ch-cer { font-variation-settings: 'slnt' -12; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .ch-val { color: oklch(0.72 0.17 27); }
+  }
+  :root[data-theme="dark"] .ch-val { color: oklch(0.72 0.17 27); }
+
+  pre {
+    background: var(--card); border: 1px solid var(--rule-soft); border-radius: .5rem;
+    padding: 1rem 1.1rem; overflow-x: auto; font-size: .82rem; line-height: 1.5;
+    font-variation-settings: 'MONO' 1; margin: 1.2rem 0 1.4rem;
+  }
+  footer { margin-top: 3.5rem; padding-top: 1.4rem; border-top: 1px solid var(--rule); font-size: .82rem; color: var(--dim); }
+  footer a { font-variation-settings: 'MONO' 1; }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="rail">
+    <h2>Channels</h2>
+    <fieldset>
+      <label><input type="checkbox" data-channel="valence" checked> valence <span class="axis">&rarr; colour</span></label>
+      <label><input type="checkbox" data-channel="salience" checked> salience <span class="axis">&rarr; weight</span></label>
+      <label><input type="checkbox" data-channel="surprise" checked> surprise <span class="axis">&rarr; mark</span></label>
+      <label><input type="checkbox" data-channel="certainty" checked> certainty <span class="axis">&rarr; slant</span></label>
+      <label><input type="checkbox" data-channel="technicality" checked> technicality <span class="axis">&rarr; mono</span></label>
+    </fieldset>
+    <h2>Sensitivity</h2>
+    <fieldset>
+      <input id="sens" type="range" min="0.3" max="1.8" step="0.05" value="1" aria-label="sensitivity">
+    </fieldset>
+    <h2>Theme</h2>
+    <fieldset>
+      <label><input type="radio" name="th" value="editorial" checked> editorial</label>
+      <label><input type="radio" name="th" value="loud"> loud</label>
+      <label><input type="radio" name="th" value="monochrome"> monochrome</label>
+      <label><input type="radio" name="th" value="technical"> technical</label>
+    </fieldset>
+    <p class="note">Every word of this page is set by the engine.
+    These controls re-run it.<br><span class="timing" id="pagetime"></span></p>
+  </div>
+
+  <article>
+    <span class="eyebrow">semfont &middot; MIT &middot; no dependencies</span>
+    <h1>A font that reads what you wrote</h1>
+    <p class="standfirst">Every emphasis in your document is a claim you made by
+    hand. The file keeps the bold and forgets the reason, so when the sentence
+    changes, the emphasis stays where it was.</p>
+
+    <p>This page is set by semfont. Every word you are reading was scored and
+    styled by it as the page loaded, this sentence included, and the controls on
+    the left re-run the whole thing. The box below is the part you can put your
+    own words into.</p>
+
+    <div class="samples" id="samples"></div>
+
+    <div class="stage">
+      <div class="out sf" id="out"></div>
+      <textarea class="edit" id="edit" spellcheck="false" aria-label="text to set"></textarea>
+    </div>
+    <p class="stagecap">
+      <span>Nothing here was marked up.</span>
+      <span class="timing" id="timing"></span>
+    </p>
+
+    <h2>Four channels, four axes</h2>
+
+    <p>Every token gets four scores, and each score drives a different axis, so
+    they compose rather than collide.</p>
+
+    <table class="legend">
+      <caption>each row set in its own channel</caption>
+      <tr><th scope="col">Channel</th><th scope="col">Detects</th><th scope="col">Moves</th></tr>
+      <tr><td class="ch-val">valence</td><td>how the text feels</td><td>colour</td></tr>
+      <tr><td class="ch-sal">salience</td><td>what it points at</td><td>weight, size</td></tr>
+      <tr><td><span class="ch-sur">surprise</span></td><td>where it turns</td><td>highlight</td></tr>
+      <tr><td class="ch-cer">certainty</td><td>how sure it is</td><td>slant, opacity</td></tr>
+    </table>
+
+    <p>A word can be negative and hedged and the subject of the paragraph all at
+    once, and you see all three: dark red, leaning, heavy. Switch a channel off
+    in the rail and the other three carry on, independent down to the CSS.</p>
+
+    <p>Four is the default rather than the limit. The map from channel to axis
+    is a list of rows, so adding one is a line of data: pick the technical
+    theme in the rail and a fifth channel wakes up, reading identifiers by
+    their shape and sending readFileSync and cluster_config toward monospace on
+    Recursive's MONO axis while the other four carry on as they were. The whole
+    map runs in about half a millisecond per page against one and a half for
+    the scoring, so the ceiling on this is legibility.</p>
+
+    <h2>Negation, where the naive version dies</h2>
+
+    <p>These two sentences are made of the same words.</p>
+
+    <div class="pair">
+      <div><div class="sf">The launch was great and the numbers were excellent.</div></div>
+      <div><div class="sf">The launch was not great and the numbers were not excellent.</div></div>
+    </div>
+    <p class="cap" style="border:0;padding-top:.7rem">The second goes red, and a
+    paler red than a sentence of genuinely nasty words, because <span class="mono">not great</span>
+    registers as a complaint rather than a catastrophe. One rule does it: on hitting
+    a negator within three content words, flip the sign and multiply by 0.74.
+    Sentiment analysis has known that number since VADER, and it still separates a
+    demo from something you would ship.</p>
+
+    <h2>One millisecond, no model</h2>
+
+    <p>Sending the paragraph to a model buys you sarcasm detection, at a few
+    hundred milliseconds, an API key, a network, and a copy of the reader's
+    draft on someone else's machine, per keystroke.</p>
+
+    <p>The number under the box is the argument. Four lexicons and about two
+    hundred lines of rules score a page of prose in roughly a millisecond,
+    synchronously, offline, with the same answer every time. Cheap enough to run
+    inside the input event, during a server render, on a plane, which is what
+    lets it behave the way italics do.</p>
+
+    <p>The lexicons are small enough to read in one sitting and to argue with.
+    When the styling is wrong you can see which entry did it and fix it in a
+    line, or teach it your own vocabulary.</p>
+
+<pre>&lt;SemanticText
+  lexicon={{ valence: { flaky: -0.7, oncall: -0.4 } }}
+  text={incident}
+/&gt;</pre>
+
+    <h2>Restraint</h2>
+
+    <p>The first version styled every word it had an opinion about and looked
+    like a ransom note. The default thresholds now leave most words alone. A
+    paragraph gets a handful. Emphasis works by contrast, so it exists only
+    relative to text that nothing happened to. Push sensitivity up in the rail
+    to watch that stop being true.</p>
+
+    <p>Colour also never carries a channel by itself. Switch to monochrome and
+    all four ride on weight, size, slant and tracking, which is both the
+    accessible answer and the better looking one in print.</p>
+
+    <h2>Where it fails</h2>
+
+    <p>It reads words rather than arguments, so a calm sentence describing a
+    catastrophe goes straight past it. Sarcasm defeats it. It speaks only
+    English. A model beats it on all three, and could never be a font.</p>
+
+    <h2>Using it</h2>
+
+<pre>import { SemanticText } from 'semfont';
+
+&lt;SemanticText as="p"&gt;{incident}&lt;/SemanticText&gt;</pre>
+
+    <p class="no-sf">One React component, no build step, no dependency but React.
+    Take only the part you want: <code>channels={['valence']}</code> for colour
+    and nothing else, a theme object to change which axis a channel drives,
+    <code>useSemanticText</code> for the scores with your own rendering, or
+    <code>analyze(text)</code> for four numbers per token with no React and no
+    CSS at all.</p>
+
+    <footer class="no-sf">
+      <a href="https://github.com/RohanAdwankar/semfont">github.com/RohanAdwankar/semfont</a>
+      &middot; MIT &middot; set in Recursive, whose
+      <span class="mono">wght</span> and <span class="mono">slnt</span> axes the
+      engine drives directly.
+    </footer>
+  </article>
+</div>
+
+<script type="module">
+  import { analyze } from './src/analyze.js';
+  import { styleFor, themes } from './src/theme.js';
+
+  const CHANNELS = ['valence', 'salience', 'surprise', 'certainty', 'technicality'];
+
+  const SAMPLES = {
+    'incident': 'The migration ran clean on staging. In production it deleted the '
+      + 'index, and the rollback failed too. Nobody lost data, but the postmortem '
+      + 'is going to be painful.',
+    'a dangerous command': 'WARNING: this operation is irreversible. It will drop '
+      + '1.2TB of production user data immediately and there is no undo. Type the '
+      + 'cluster name to continue.',
+    'a hedged review': 'I think the allocator might be the culprit, but honestly '
+      + 'the profiler output is unreadable. The regression is definitely real: p99 '
+      + 'doubled on Tuesday and never came back.',
+    'a bad review': 'Absolutely the worst onboarding I have ever suffered through. '
+      + 'Three broken links, a crash on signup, and then it silently deleted my '
+      + 'project. Support was lovely about it.',
+    'release notes': 'The new scheduler shipped on Tuesday. Startup is 40% faster '
+      + 'and the old crash on reload is fixed. One known bug: watch mode still '
+      + 'leaks file descriptors on very large trees.',
+    'a bug report': 'readFileSync throws ENOENT on cluster_config.yaml whenever the '
+      + 'kubelet restarts, and p99 latency doubles while the retry loop spins. '
+      + 'Probably a race in the watcher, but the stack trace is unreadable.',
+  };
+
+  const out = document.getElementById('out');
+  const edit = document.getElementById('edit');
+  const timing = document.getElementById('timing');
+  const sens = document.getElementById('sens');
+
+  // Wrap every run of prose in the article so the engine can set the page
+  // itself. Code, the legend (which is styled by hand to name the channels)
+  // and the live box are left alone; everything else is scored as you read it.
+  const OPAQUE = new Set(['PRE', 'CODE', 'TABLE', 'TEXTAREA', 'BUTTON', 'SCRIPT', 'STYLE']);
+
+  // A salient word inside a heading must read heavier than the heading around
+  // it, so each heading level lends the theme its own weight base.
+  const HEADING_WEIGHT = { H1: { base: 520, range: 420 }, H2: { base: 560, range: 380 } };
+
+  function claimProse(root) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+      acceptNode(node) {
+        if (!node.nodeValue.trim()) return NodeFilter.FILTER_REJECT;
+        for (let el = node.parentElement; el && el !== root; el = el.parentElement) {
+          if (OPAQUE.has(el.tagName)) return NodeFilter.FILTER_REJECT;
+          if (el.classList.contains('no-sf') || el === out) return NodeFilter.FILTER_REJECT;
+        }
+        return NodeFilter.FILTER_ACCEPT;
+      },
+    });
+    const nodes = [];
+    for (let n = walker.nextNode(); n; n = walker.nextNode()) nodes.push(n);
+    return nodes.map((node) => {
+      const span = document.createElement('span');
+      span.className = 'sf';
+      const heading = node.parentElement.closest('h1, h2');
+      node.parentNode.replaceChild(span, node);
+      return { el: span, text: node.nodeValue, weight: heading && HEADING_WEIGHT[heading.tagName] };
+    });
+  }
+
+  const prose = claimProse(document.querySelector('article'));
+
+  for (const name of Object.keys(SAMPLES)) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.textContent = name;
+    b.setAttribute('aria-pressed', String(name === 'incident'));
+    b.addEventListener('click', () => {
+      edit.value = SAMPLES[name];
+      for (const other of document.querySelectorAll('.samples button')) {
+        other.setAttribute('aria-pressed', String(other === b));
+      }
+      renderStage();
+    });
+    document.getElementById('samples').append(b);
+  }
+
+  function config() {
+    return {
+      channels: [...document.querySelectorAll('[data-channel]')]
+        .filter((c) => c.checked).map((c) => c.dataset.channel),
+      theme: themes[document.querySelector('[name=th]:checked').value],
+      sensitivity: Number(sens.value),
+    };
+  }
+
+  // The same three lines the React component runs: analyze, style, render.
+  function paint(el, text, cfg, weight) {
+    const theme = weight ? { ...cfg.theme, weight } : cfg.theme;
+    const result = analyze(text, { sensitivity: cfg.sensitivity });
+    const frag = document.createDocumentFragment();
+    for (const token of result.tokens) {
+      for (const c of CHANNELS) if (!cfg.channels.includes(c)) token[c] = 0;
+      const styled = styleFor(token, theme);
+      if (!styled) { frag.append(token.text); continue; }
+      const span = document.createElement('span');
+      Object.assign(span.style, styled.style);
+      span.title = CHANNELS.map((c) => `${c} ${token[c].toFixed(2)}`).join(' · ');
+      span.textContent = token.text;
+      frag.append(span);
+    }
+    el.replaceChildren(frag);
+  }
+
+  function renderStage(cfg = config()) {
+    const started = performance.now();
+    paint(out, edit.value, cfg);
+    const ms = performance.now() - started;
+    timing.textContent = `${edit.value.length} characters scored and set in ${ms.toFixed(2)} ms`;
+  }
+
+  function renderAll() {
+    const cfg = config();
+    const started = performance.now();
+    for (const { el, text, weight } of prose) paint(el, text, cfg, weight);
+    const ms = performance.now() - started;
+    renderStage(cfg);
+    document.getElementById('pagetime').textContent =
+      `whole page re-set in ${ms.toFixed(1)} ms`;
+  }
+
+  document.addEventListener('change', renderAll);
+  sens.addEventListener('input', renderAll);
+  edit.addEventListener('input', () => renderStage());
+  edit.value = SAMPLES.incident;
+  renderAll();
+</script>
+</body>
+</html>
