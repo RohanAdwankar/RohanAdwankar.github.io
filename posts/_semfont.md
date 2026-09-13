@@ -19,10 +19,10 @@ The box below is live and every word in it is editable. It is running the same e
 .sf-out { outline: none; cursor: text; caret-color: currentColor; }
 .sf-out:empty::before { content: attr(data-placeholder); opacity: .45; }
 .sf-demo:focus-within { border-color: #6a6a6a; }
-.sf-cap { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px 16px; font-size: .8rem; opacity: .7; margin: 0 0 12px; }
-.sf-themes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .8rem; margin: 0 0 30px; }
+.sf-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 8px 16px; margin: 10px 0 30px; font-family: 'Recursive', ui-sans-serif, system-ui, sans-serif; font-size: .8rem; }
+.sf-themes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .sf-themes span { opacity: .7; margin-right: 4px; }
-.sf-timing { font-variation-settings: 'MONO' 1; font-variant-numeric: tabular-nums; }
+.sf-timing { opacity: .7; font-variation-settings: 'MONO' 1; font-variant-numeric: tabular-nums; margin-left: auto; }
 body.light .sf-demo, body.light .sf-samples button, body.light .sf-themes label { border-color: #d0d0d0; }
 body.light .sf-samples button[aria-pressed="true"], body.light .sf-themes label:has(input:checked) { border-color: currentColor; }
 body.light .sf-demo:focus-within { border-color: #888; }
@@ -34,14 +34,15 @@ body.light .sf-demo:focus-within { border-color: #888; }
 <div class="sf-out" id="sf-out" contenteditable="plaintext-only" spellcheck="false" role="textbox" aria-multiline="true" aria-label="text to set" data-placeholder="Type anything. It is set as you type."></div>
 </div>
 
-<p class="sf-cap"><span class="sf-timing" id="sf-timing"></span></p>
-
+<div class="sf-bar">
 <div class="sf-themes" id="sf-themes">
 <span>theme</span>
 <label><input type="radio" name="sf-theme" value="editorial" checked> editorial</label>
 <label><input type="radio" name="sf-theme" value="loud"> loud</label>
 <label><input type="radio" name="sf-theme" value="monochrome"> monochrome</label>
 <label><input type="radio" name="sf-theme" value="technical"> technical</label>
+</div>
+<span class="sf-timing" id="sf-timing"></span>
 </div>
 
 ## How it works
