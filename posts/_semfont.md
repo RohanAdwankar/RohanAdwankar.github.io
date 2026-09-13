@@ -7,16 +7,15 @@ The box below is live and every word in it is editable. It is running the same e
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Recursive:CASL,MONO,slnt,wght@0..1,0..1,-15..0,300..1000&display=swap');
 .sf, .sf-demo { font-family: 'Recursive', ui-sans-serif, system-ui, sans-serif; font-variation-settings: 'MONO' 0, 'CASL' 0; -webkit-font-smoothing: antialiased; }
-.sf span, .sf-out span { transition: color .22s ease, background .22s ease, opacity .22s ease; }
+.sf span, .sf-out span { transition: color .22s ease, background .22s ease, opacity .22s ease; line-height: 1; }
 @media (prefers-reduced-motion: reduce) { .sf span, .sf-out span { transition: none; } }
 .sf-samples { display: flex; flex-wrap: wrap; gap: 8px; margin: 22px 0 10px; }
 .sf-samples button, .sf-themes label { font: inherit; font-family: 'Recursive', ui-sans-serif, system-ui, sans-serif; font-size: .8rem; color: inherit; opacity: .75; cursor: pointer; background: transparent; border: 1px solid #3a3a3a; border-radius: 2rem; padding: 4px 13px; }
 .sf-samples button:hover, .sf-themes label:hover { opacity: 1; }
 .sf-samples button[aria-pressed="true"], .sf-themes label:has(input:checked) { opacity: 1; border-color: currentColor; }
 .sf-themes input { position: absolute; opacity: 0; width: 0; height: 0; }
-.sf-demo { position: relative; border: 1px solid #3a3a3a; border-radius: 8px; overflow: hidden; margin: 0 0 8px; }
-.sf-measure { position: absolute; left: 0; top: 0; box-sizing: border-box; visibility: hidden; pointer-events: none; min-height: 0; }
-.sf-out { padding: 22px 24px; font-size: clamp(1.25rem, 2.6vw, 1.6rem); line-height: 1.5; letter-spacing: -0.006em; min-height: 4em; white-space: pre-wrap; }
+.sf-demo { border: 1px solid #3a3a3a; border-radius: 8px; overflow: hidden; margin: 0 0 8px; }
+.sf-out { padding: 22px 24px; font-size: clamp(1.25rem, 2.6vw, 1.6rem); line-height: 1.5; letter-spacing: -0.006em; height: 6em; overflow-y: auto; white-space: pre-wrap; }
 .sf-out { outline: none; cursor: text; caret-color: currentColor; }
 .sf-out:empty::before { content: attr(data-placeholder); opacity: .45; }
 .sf-demo:focus-within { border-color: #6a6a6a; }
@@ -33,7 +32,6 @@ body.light .sf-demo:focus-within { border-color: #888; }
 
 <div class="sf-demo">
 <div class="sf-out" id="sf-out" contenteditable="plaintext-only" spellcheck="false" role="textbox" aria-multiline="true" aria-label="text to set" data-placeholder="Type anything. It is set as you type."></div>
-<div class="sf-out sf-measure" id="sf-measure" aria-hidden="true"></div>
 </div>
 
 <p class="sf-cap"><span class="sf-timing" id="sf-timing"></span></p>
@@ -97,7 +95,6 @@ const SAMPLES = {
 };
 
 const out = document.getElementById('sf-out');
-const measure = document.getElementById('sf-measure');
 const timing = document.getElementById('sf-timing');
 const samples = document.getElementById('sf-samples');
 
@@ -160,28 +157,23 @@ function placeCaret(offset) {
   sel.addRange(range);
 }
 
-// The themes set the same text at different sizes and weights, so the box
-// would change height when the theme changes and shove the page around.
-// It is held at the height of the tallest theme for the current text.
-function lockHeight() {
-  measure.style.width = `${out.getBoundingClientRect().width}px`;
-  let tallest = 0;
-  for (const th of Object.values(themes)) {
-    paint(measure, text, th);
-    tallest = Math.max(tallest, measure.offsetHeight);
-  }
-  measure.replaceChildren();
-  out.style.minHeight = `${tallest}px`;
-}
-
+// The box is a fixed four lines and scrolls past that, so re-setting it
+// keeps the scroll position and then makes sure the caret is in view.
 function renderBox() {
   const caret = caretOffset();
+  const scrollTop = out.scrollTop;
   const started = performance.now();
   paint(out, text, theme());
   const ms = performance.now() - started;
   timing.textContent = text ? `${text.length} characters scored and set in ${ms.toFixed(2)} ms` : '';
+  out.scrollTop = scrollTop;
   placeCaret(caret);
-  lockHeight();
+  if (caret !== null) {
+    const r = window.getSelection().getRangeAt(0).getBoundingClientRect();
+    const b = out.getBoundingClientRect();
+    if (r.bottom > b.bottom) out.scrollTop += r.bottom - b.bottom + 8;
+    else if (r.top < b.top) out.scrollTop -= b.top - r.top + 8;
+  }
 }
 
 function select(button) {
@@ -238,7 +230,5 @@ out.addEventListener('paste', (e) => {
   document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
 });
 document.getElementById('sf-themes').addEventListener('change', renderAll);
-let resizeTimer;
-window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(lockHeight, 100); });
 renderAll();
 </script>
