@@ -2,7 +2,7 @@
 
 [semfont](https://github.com/RohanAdwankar/semfont) is a small library that sets typography from what the text means instead of from markup. Negative things go red. Important things get heavier. Surprising things get highlighted. Hedged things lean. Nothing in the pipeline is a model.
 
-The box below is live. It is running the same engine the library ships.
+The box below is live and every word in it is editable. It is running the same engine the library ships.
 
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Recursive:CASL,MONO,slnt,wght@0..1,0..1,-15..0,300..1000&display=swap');
@@ -16,23 +16,22 @@ The box below is live. It is running the same engine the library ships.
 .sf-themes input { position: absolute; opacity: 0; width: 0; height: 0; }
 .sf-demo { border: 1px solid #3a3a3a; border-radius: 8px; overflow: hidden; margin: 0 0 8px; }
 .sf-out { padding: 22px 24px; font-size: clamp(1.25rem, 2.6vw, 1.6rem); line-height: 1.5; letter-spacing: -0.006em; min-height: 4em; white-space: pre-wrap; }
-.sf-edit { display: block; }
-.sf-edit[hidden] { display: none; }
-.sf-edit { width: 100%; box-sizing: border-box; border: 0; border-top: 1px solid #3a3a3a; background: transparent; color: inherit; opacity: .7; resize: vertical; padding: 12px 24px 14px; font: inherit; font-family: 'Recursive', ui-sans-serif, system-ui, sans-serif; font-size: .9rem; line-height: 1.5; min-height: 4.6rem; }
-.sf-edit:focus { opacity: 1; outline: none; }
+.sf-out { outline: none; cursor: text; caret-color: currentColor; }
+.sf-out:empty::before { content: attr(data-placeholder); opacity: .45; }
+.sf-demo:focus-within { border-color: #6a6a6a; }
 .sf-cap { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px 16px; font-size: .8rem; opacity: .7; margin: 0 0 12px; }
 .sf-themes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .8rem; margin: 0 0 30px; }
 .sf-themes span { opacity: .7; margin-right: 4px; }
 .sf-timing { font-variation-settings: 'MONO' 1; font-variant-numeric: tabular-nums; }
-body.light .sf-demo, body.light .sf-edit, body.light .sf-samples button, body.light .sf-themes label { border-color: #d0d0d0; }
+body.light .sf-demo, body.light .sf-samples button, body.light .sf-themes label { border-color: #d0d0d0; }
 body.light .sf-samples button[aria-pressed="true"], body.light .sf-themes label:has(input:checked) { border-color: currentColor; }
+body.light .sf-demo:focus-within { border-color: #888; }
 </style>
 
 <div class="sf-samples" id="sf-samples"></div>
 
 <div class="sf-demo">
-<div class="sf-out" id="sf-out"></div>
-<textarea class="sf-edit" id="sf-edit" spellcheck="false" aria-label="text to set" placeholder="Type anything. It is set as you type." hidden></textarea>
+<div class="sf-out" id="sf-out" contenteditable="plaintext-only" spellcheck="false" role="textbox" aria-multiline="true" aria-label="text to set" data-placeholder="Type anything. It is set as you type."></div>
 </div>
 
 <p class="sf-cap"><span class="sf-timing" id="sf-timing"></span></p>
@@ -96,7 +95,6 @@ const SAMPLES = {
 };
 
 const out = document.getElementById('sf-out');
-const edit = document.getElementById('sf-edit');
 const timing = document.getElementById('sf-timing');
 const samples = document.getElementById('sf-samples');
 
@@ -125,11 +123,47 @@ function paint(el, text, th) {
   el.replaceChildren(frag);
 }
 
+// The box is the editor. Re-setting it replaces every node under the
+// caret, so the caret's position is saved as a character offset first and
+// put back afterwards.
+function caretOffset() {
+  const sel = window.getSelection();
+  if (!sel || !sel.rangeCount || !out.contains(sel.anchorNode)) return null;
+  const range = sel.getRangeAt(0).cloneRange();
+  range.selectNodeContents(out);
+  range.setEnd(sel.getRangeAt(0).endContainer, sel.getRangeAt(0).endOffset);
+  return range.toString().length;
+}
+
+function placeCaret(offset) {
+  if (offset === null) return;
+  const walker = document.createTreeWalker(out, NodeFilter.SHOW_TEXT);
+  let remaining = offset;
+  let node = walker.nextNode();
+  let last = null;
+  while (node) {
+    if (remaining <= node.nodeValue.length) break;
+    remaining -= node.nodeValue.length;
+    last = node;
+    node = walker.nextNode();
+  }
+  const range = document.createRange();
+  if (node) range.setStart(node, remaining);
+  else if (last) range.setStart(last, last.nodeValue.length);
+  else range.setStart(out, 0);
+  range.collapse(true);
+  const sel = window.getSelection();
+  sel.removeAllRanges();
+  sel.addRange(range);
+}
+
 function renderBox() {
+  const caret = caretOffset();
   const started = performance.now();
   paint(out, text, theme());
   const ms = performance.now() - started;
   timing.textContent = text ? `${text.length} characters scored and set in ${ms.toFixed(2)} ms` : '';
+  placeCaret(caret);
 }
 
 function select(button) {
@@ -151,30 +185,39 @@ for (const name of Object.keys(SAMPLES)) {
   b.setAttribute('aria-pressed', String(name === 'incident'));
   b.addEventListener('click', () => {
     text = SAMPLES[name];
-    edit.hidden = true;
     select(b);
     renderBox();
   });
   samples.append(b);
 }
 
-// The last chip is a text box of your own.
+// The last chip empties the box for text of your own.
 const tryIt = document.createElement('button');
 tryIt.type = 'button';
 tryIt.textContent = 'try it!';
 tryIt.setAttribute('aria-pressed', 'false');
 tryIt.addEventListener('click', () => {
-  text = edit.value;
-  edit.hidden = false;
+  text = '';
   select(tryIt);
   renderBox();
-  edit.focus();
+  out.focus();
 });
 samples.append(tryIt);
 
-edit.addEventListener('input', () => {
-  text = edit.value;
+// Typing into the box re-sets it on every keystroke, except mid-way through
+// an IME composition, which would be broken by replacing the nodes.
+let composing = false;
+out.addEventListener('compositionstart', () => { composing = true; });
+out.addEventListener('compositionend', () => { composing = false; text = out.innerText; renderBox(); });
+out.addEventListener('input', () => {
+  if (composing) return;
+  text = out.innerText.replace(/\n$/, '');
   renderBox();
+});
+// Pasted rich text comes in as plain text.
+out.addEventListener('paste', (e) => {
+  e.preventDefault();
+  document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
 });
 document.getElementById('sf-themes').addEventListener('change', renderAll);
 renderAll();
