@@ -16,4 +16,4 @@ The GitHub Actions workflow at `.github/workflows/deploy.yml` rebuilds the site 
 
 Posts whose filename starts with `_` are drafts. A draft is still built and deployed at `posts/<name>.html` (without the underscore), so it can be previewed and shared by link, but it is not listed on the homepage. Rename the file without the underscore to list it.
 
-Files under `static/` are copied into `dist/` as they are. `static/js/semfont/` is a copy of the [semfont](https://github.com/RohanAdwankar/semfont) engine, which the semfont post runs in the browser.
+Files under `static/` are copied into `dist/` as they are. `static/js/semfont/` is a copy of the [semfont](https://github.com/RohanAdwankar/semfont) engine, which the semfont post runs in the browser. `static/js/three/` is three.js 0.170.0 (`three.module.min.js` and the four addons the map posts use), which the map posts under `static/places/` load through an import map.
