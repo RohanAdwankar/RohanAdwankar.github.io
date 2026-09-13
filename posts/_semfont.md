@@ -16,9 +16,11 @@ Every emphasis in your document is a claim you made by hand. The file keeps the 
 .sf-themes input { position: absolute; opacity: 0; width: 0; height: 0; }
 .sf-demo { border: 1px solid #3a3a3a; border-radius: 8px; overflow: hidden; margin: 0 0 8px; }
 .sf-out { padding: 22px 24px; font-size: clamp(1.25rem, 2.6vw, 1.6rem); line-height: 1.5; letter-spacing: -0.006em; min-height: 4em; white-space: pre-wrap; }
-.sf-edit { display: block; width: 100%; box-sizing: border-box; border: 0; border-top: 1px solid #3a3a3a; background: transparent; color: inherit; opacity: .7; resize: vertical; padding: 12px 24px 14px; font: inherit; font-family: 'Recursive', ui-sans-serif, system-ui, sans-serif; font-size: .9rem; line-height: 1.5; min-height: 4.6rem; }
+.sf-edit { display: block; }
+.sf-edit[hidden] { display: none; }
+.sf-edit { width: 100%; box-sizing: border-box; border: 0; border-top: 1px solid #3a3a3a; background: transparent; color: inherit; opacity: .7; resize: vertical; padding: 12px 24px 14px; font: inherit; font-family: 'Recursive', ui-sans-serif, system-ui, sans-serif; font-size: .9rem; line-height: 1.5; min-height: 4.6rem; }
 .sf-edit:focus { opacity: 1; outline: none; }
-.sf-cap { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 6px 16px; font-size: .8rem; opacity: .7; margin: 0 0 12px; }
+.sf-cap { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px 16px; font-size: .8rem; opacity: .7; margin: 0 0 12px; }
 .sf-themes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .8rem; margin: 0 0 30px; }
 .sf-themes span { opacity: .7; margin-right: 4px; }
 .sf-timing { font-variation-settings: 'MONO' 1; font-variant-numeric: tabular-nums; }
@@ -34,10 +36,10 @@ body.light .sf-samples button[aria-pressed="true"], body.light .sf-themes label:
 
 <div class="sf-demo">
 <div class="sf-out" id="sf-out"></div>
-<textarea class="sf-edit" id="sf-edit" spellcheck="false" aria-label="text to set" placeholder="Type anything. It is set as you type."></textarea>
+<textarea class="sf-edit" id="sf-edit" spellcheck="false" aria-label="text to set" placeholder="Type anything. It is set as you type." hidden></textarea>
 </div>
 
-<p class="sf-cap"><span>Nothing here was marked up.</span> <span class="sf-timing" id="sf-timing"></span></p>
+<p class="sf-cap"><span class="sf-timing" id="sf-timing"></span></p>
 
 <div class="sf-themes" id="sf-themes">
 <span>theme</span>
@@ -47,9 +49,7 @@ body.light .sf-samples button[aria-pressed="true"], body.light .sf-themes label:
 <label><input type="radio" name="sf-theme" value="technical"> technical</label>
 </div>
 
-Start with the first sample. `clean` comes out green, `deleted` gains weight, `failed` and `painful` go red, and `postmortem` is marked because it sits in the clause after `but`, the half of the sentence that turned. Then edit it. Put a `not` in front of `clean` and watch it change its mind.
-
-If you would rather see it set a whole page, headings included, [this page](/semfont/) is the engine let loose on itself. Every word on it is scored and styled at load, and the rail on the left re-runs it.
+Start with the first sample. `clean` comes out green, `deleted` gains weight, `failed` and `painful` go red, and `postmortem` is marked because it sits in the clause after `but`, the half of the sentence that turned. Then pick `try it!` and write your own. Put a `not` in front of a word it coloured and watch it change its mind.
 
 ## Four channels, four axes
 
@@ -138,8 +138,8 @@ Take only the part you want. `channels={['valence']}` gives you colour and nothi
 The code, the tests and the demo are at [github.com/RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont). MIT.
 
 <script type="module">
-import { analyze } from '/semfont/src/analyze.js';
-import { styleFor, themes } from '/semfont/src/theme.js';
+import { analyze } from '/js/semfont/analyze.js';
+import { styleFor, themes } from '/js/semfont/theme.js';
 
 const CHANNELS = ['valence', 'salience', 'surprise', 'certainty', 'technicality'];
 
@@ -169,6 +169,8 @@ const edit = document.getElementById('sf-edit');
 const timing = document.getElementById('sf-timing');
 const samples = document.getElementById('sf-samples');
 
+let text = SAMPLES.incident;
+
 // The prose specimens keep their original text so a theme change can re-set them.
 const specimens = [...document.querySelectorAll('.sf')].map((el) => ({ el, text: el.textContent }));
 
@@ -194,9 +196,15 @@ function paint(el, text, th) {
 
 function renderBox() {
   const started = performance.now();
-  paint(out, edit.value, theme());
+  paint(out, text, theme());
   const ms = performance.now() - started;
-  timing.textContent = `${edit.value.length} characters scored and set in ${ms.toFixed(2)} ms`;
+  timing.textContent = text ? `${text.length} characters scored and set in ${ms.toFixed(2)} ms` : '';
+}
+
+function select(button) {
+  for (const other of samples.querySelectorAll('button')) {
+    other.setAttribute('aria-pressed', String(other === button));
+  }
 }
 
 function renderAll() {
@@ -211,20 +219,32 @@ for (const name of Object.keys(SAMPLES)) {
   b.textContent = name;
   b.setAttribute('aria-pressed', String(name === 'incident'));
   b.addEventListener('click', () => {
-    edit.value = SAMPLES[name];
-    for (const other of samples.querySelectorAll('button')) {
-      other.setAttribute('aria-pressed', String(other === b));
-    }
+    text = SAMPLES[name];
+    edit.hidden = true;
+    select(b);
     renderBox();
   });
   samples.append(b);
 }
 
+// The last chip is a text box of your own.
+const tryIt = document.createElement('button');
+tryIt.type = 'button';
+tryIt.textContent = 'try it!';
+tryIt.setAttribute('aria-pressed', 'false');
+tryIt.addEventListener('click', () => {
+  text = edit.value;
+  edit.hidden = false;
+  select(tryIt);
+  renderBox();
+  edit.focus();
+});
+samples.append(tryIt);
+
 edit.addEventListener('input', () => {
-  for (const b of samples.querySelectorAll('button')) b.setAttribute('aria-pressed', 'false');
+  text = edit.value;
   renderBox();
 });
 document.getElementById('sf-themes').addEventListener('change', renderAll);
-edit.value = SAMPLES.incident;
 renderAll();
 </script>
