@@ -112,6 +112,8 @@ POSES = {
     'idle': STANDING,
 }
 SEAT_HEIGHT = 0.46  # a kit chair at scene scale
+BODY_BONES = ('root', 'pelvis', 'spine', 'neck', 'head', 'clavicle', 'shoulder', 'upperarm', 'lowerarm', 'wrist',
+              'finger', 'metacarpal', 'upperleg', 'lowerleg', 'foot', 'toe', 'breast')
 
 
 def age_macro(years):
@@ -206,6 +208,12 @@ def figure(fig, group, box, cyl, mat):
         Animation.import_bvh_file_as_pose(rig, str(bvh))
     else:
         print(f'  no pose {pose_name}')
+    # The pose files were made for other rigs: they leave the eyes rolled
+    # back and the jaw hanging. Only the body bones keep the pose; every
+    # face bone goes back to rest.
+    for pb in rig.pose.bones:
+        if not pb.name.startswith(BODY_BONES):
+            pb.matrix_basis.identity()
     Rig.apply_pose_as_rest_pose(rig)
     # Where the hands and head are, before the rig goes.
     bpy.context.view_layer.update()
@@ -237,7 +245,9 @@ def figure(fig, group, box, cyl, mat):
     fix_materials(meshes, fig)
     shrink_under_clothes(h)
     if fig.get('beard') or fig.get('moustache'):
-        facial_hair(h, fig, parts, mat)
+        shell = facial_hair(h, fig, parts, mat)
+        if shell is not None:
+            meshes.append(shell)
 
     # Sitting figures: the seat of the trousers goes on the chair, centred on
     # it, whatever the pose did with the hips.
@@ -352,11 +362,14 @@ def tint_material(nt, bsdf, colour):
 def shrink_under_clothes(body):
     """Pull the body in a little wherever clothes could cover it, leaving
     the head, neck and hands alone, so knees and elbows stay inside."""
-    keep = ('head', 'neck', 'wrist', 'finger', 'palm', 'hand', 'eye', 'jaw', 'tongue', 'teeth', 'special', 'clavicle')
+    # Only what the clothes cover: vertices that belong to the trunk and
+    # limbs. The face is full of muscle bones, so it is left alone by being
+    # outside this list rather than inside a list of exceptions.
+    covered = ('spine', 'pelvis', 'breast', 'shoulder', 'upperarm', 'lowerarm', 'upperleg', 'lowerleg', 'root')
     names = {vg.index: vg.name for vg in body.vertex_groups}
     for v in body.data.vertices:
-        exposed = sum(g.weight for g in v.groups if names[g.group].startswith(keep))
-        if exposed < 0.5:
+        under = sum(g.weight for g in v.groups if names[g.group].startswith(covered))
+        if under > 0.6:
             v.co -= v.normal * 0.006
 
 
@@ -408,3 +421,4 @@ def facial_hair(body, fig, parts, mat):
         colour = '#2a2016'
     shell.data.materials.append(mat(colour, 0.95))
     shell.vertex_groups.clear()
+    return shell
