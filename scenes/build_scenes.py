@@ -546,11 +546,16 @@ def prop_bookshelf(p):
     w = p.get('w', 1.6)
     g = group('bookshelf', p['at'], p.get('rot', 0))
     n = max(1, round(w / (0.4 * KIT_SCALE)))
+    # The kit bookcase's shelf boards sit at these heights once scaled;
+    # two bundles of books stand on each, and one on the top.
+    shelves = [z * KIT_SCALE for z in (0.13, 0.37, 0.61)]
     for i in range(n):
         x = (i - (n - 1) / 2) * 0.4 * KIT_SCALE
         furniture('bookcaseOpen', [x, 0], 0, p.get('color'), parent=g)
-        for level in (0.5, 1.0, 1.5):
-            furniture('books', [x, 0.02], 0, parent=g, y=level, name='books')
+        for level in shelves:
+            for dx in (-0.21, 0.19):
+                furniture('books', [x + dx, 0.0], 0, parent=g, y=level, name='books')
+        furniture('books', [x - 0.1, 0.0], 0, parent=g, y=0.85 * KIT_SCALE, name='books')
     return g
 
 def prop_cabinet(p):
