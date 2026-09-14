@@ -89,10 +89,11 @@ Teach it your own vocabulary:
 />
 ```
 
-Or skip React and take the scores. `analyze` is the engine alone, four numbers per word, no CSS:
+Or skip React and take the scores. `analyze` is the engine alone, four numbers per word, no CSS, and these imports work with no React installed:
 
 ```js
-import { analyze, styleFor, themes } from 'semfont';
+import { analyze } from 'semfont/analyze';
+import { styleFor, themes } from 'semfont/theme';
 
 const { tokens } = analyze('The rollback failed too.');
 tokens[4];   // { text: 'failed', valence: -0.7, salience: 0.23, surprise: 0.06, certainty: 0, ... }
