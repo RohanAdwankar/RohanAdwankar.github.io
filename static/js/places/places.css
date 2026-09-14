@@ -1,0 +1,89 @@
+/* The map post: a mock map, a draggable man, and a full-screen scene viewer. */
+.pl-root { margin: 24px 0 32px; }
+.pl-stage { position: relative; border-radius: 10px; overflow: hidden; border: 1px solid #3a3a3a; background: #f2efe9; }
+body.light .pl-stage { border-color: #d0d0d0; }
+.pl-map { aspect-ratio: 1000 / 640; transition: transform .55s cubic-bezier(.4,0,.2,1), filter .55s; transform-origin: 50% 50%; }
+.pl-map.pl-zoomed { transform: scale(3.2); filter: saturate(.5) brightness(.85); }
+.pl-map-svg { display: block; width: 100%; height: 100%; font-family: Roboto, Arial, Helvetica, sans-serif; }
+
+/* Map colours borrowed from the app everyone already knows how to read. */
+.pl-land { fill: #f2efe9; }
+.pl-water { fill: #aadaff; }
+.pl-park { fill: #c9e6c4; }
+.pl-block { fill: #e8e4dc; }
+.pl-road-case { fill: none; stroke: #d6d2c8; stroke-linecap: round; stroke-linejoin: round; }
+.pl-road-fill { fill: none; stroke: #ffffff; stroke-linecap: round; stroke-linejoin: round; }
+.pl-road-case.pl-minor { stroke-width: 4; }  .pl-road-fill.pl-minor { stroke-width: 2.4; }
+.pl-road-case.pl-major { stroke-width: 7; }  .pl-road-fill.pl-major { stroke-width: 5; }
+.pl-road-case.pl-ring  { stroke-width: 12; stroke: #e6c98a; } .pl-road-fill.pl-ring { stroke-width: 9; stroke: #ffe9a8; }
+.pl-road-case.pl-rail  { stroke-width: 3; stroke: #b9b5ad; } .pl-road-fill.pl-rail { stroke-width: 1; stroke: #f2efe9; stroke-dasharray: 6 6; }
+.pl-label { fill: #6b6b6b; font-size: 11px; pointer-events: none; }
+.pl-label-area { font-size: 13px; fill: #8a8a8a; letter-spacing: .08em; text-transform: uppercase; }
+.pl-label-water { fill: #3a7fc1; font-style: italic; font-size: 12px; }
+.pl-label-park { fill: #4c8a45; font-size: 11px; }
+.pl-label-road { fill: #7a7a7a; font-size: 9.5px; }
+
+.pl-pin { cursor: pointer; }
+.pl-pin-halo { fill: #4a8cf7; opacity: 0; transition: opacity .2s; }
+.pl-pin-shadow { fill: rgba(0,0,0,.25); }
+.pl-pin-body { fill: #ea4335; stroke: #b3261e; stroke-width: 1; transition: transform .15s; }
+.pl-pin-dot { fill: #7a1d17; }
+.pl-pin-label { font-size: 12px; font-weight: 600; fill: #222; paint-order: stroke; }
+.pl-pin-label-bg { fill: rgba(255,255,255,.85); }
+.pl-root.pl-armed .pl-pin-halo { opacity: .22; animation: pl-pulse 1.4s ease-in-out infinite; }
+.pl-pin.pl-hover .pl-pin-halo { opacity: .55 !important; animation: none; }
+.pl-pin.pl-hover .pl-pin-body { fill: #4a8cf7; stroke: #2a5fc0; transform: scale(1.25); }
+.pl-pin.pl-active .pl-pin-body { fill: #4a8cf7; stroke: #2a5fc0; }
+@keyframes pl-pulse { 0%,100% { transform: scale(.9); } 50% { transform: scale(1.15); } }
+
+/* The man lives in a control in the corner, like the app. */
+.pl-dock { position: absolute; right: 12px; bottom: 12px; display: flex; align-items: flex-end; gap: 10px; }
+.pl-hint { font-family: Roboto, Arial, sans-serif; font-size: 12px; color: #333; background: rgba(255,255,255,.92); padding: 6px 10px; border-radius: 6px; box-shadow: 0 1px 4px rgba(0,0,0,.25); margin-bottom: 4px; }
+.pl-pegman { width: 44px; height: 52px; background: #fff; border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.3); display: grid; place-items: center; cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; z-index: 5; transition: transform .15s; }
+.pl-pegman:hover { transform: translateY(-2px); }
+.pl-pegman-svg { width: 26px; height: 42px; }
+.pl-pegman-body { fill: #f6b400; }
+.pl-pegman.pl-dragging { cursor: grabbing; background: transparent; box-shadow: none; z-index: 1000; transform: scale(1.3) rotate(-8deg); pointer-events: auto; }
+.pl-pegman.pl-dragging .pl-pegman-svg { filter: drop-shadow(0 6px 6px rgba(0,0,0,.35)); }
+
+/* The scene viewer covers the page. */
+.pl-viewer { position: fixed; inset: 0; z-index: 900; background: #1a1a1a; opacity: 0; transition: opacity .35s; }
+.pl-viewer.pl-visible { opacity: 1; }
+.pl-viewer[hidden] { display: none; }
+body.pl-open { overflow: hidden; }
+.pl-gl { position: absolute; inset: 0; }
+.pl-gl canvas { display: block; }
+.pl-labels { position: absolute; inset: 0; overflow: hidden; }
+.pl-top { position: absolute; top: 0; left: 0; right: 0; display: flex; align-items: center; gap: 16px; padding: 14px 18px; background: linear-gradient(rgba(0,0,0,.55), rgba(0,0,0,0)); pointer-events: none; }
+.pl-top > * { pointer-events: auto; }
+.pl-back { font: inherit; font-size: 14px; color: #fff; background: rgba(0,0,0,.55); border: 1px solid rgba(255,255,255,.3); border-radius: 6px; padding: 8px 12px; cursor: pointer; }
+.pl-back:hover { background: rgba(0,0,0,.8); }
+.pl-title { color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.6); }
+.pl-title-name { font-size: 20px; font-weight: bold; }
+.pl-title-sub { font-size: 13px; opacity: .85; }
+.pl-loading { position: absolute; inset: 0; display: grid; place-items: center; color: #fff; font-size: 16px; background: rgba(0,0,0,.4); }
+.pl-loading[hidden] { display: none; }
+
+/* Name chips float over each head; the notes live in the panel. */
+.pl-chip { transform: translateY(-50%); background: rgba(255,255,255,.94); color: #111; font-family: Roboto, Arial, sans-serif; font-size: 12px; font-weight: 600; padding: 4px 8px; border-radius: 4px; box-shadow: 0 1px 4px rgba(0,0,0,.35); white-space: nowrap; position: relative; transition: transform .15s, background .15s; }
+.pl-chip::after { content: ''; position: absolute; left: 50%; bottom: -5px; width: 8px; height: 8px; background: inherit; transform: translateX(-50%) rotate(45deg); }
+.pl-chip-hot { background: #4a8cf7; color: #fff; transform: translateY(-50%) scale(1.15); }
+
+.pl-panel { position: absolute; right: 0; top: 0; bottom: 0; width: 340px; padding: 84px 20px 20px; overflow-y: auto; background: linear-gradient(90deg, rgba(20,20,20,0), rgba(20,20,20,.88) 30%); color: #eee; font-family: Georgia, serif; }
+.pl-panel-head { font-size: 15px; line-height: 1.45; opacity: .9; margin-bottom: 16px; }
+.pl-notes { list-style: none; margin: 0; padding: 0; }
+.pl-note { padding: 10px 12px; margin: 0 0 8px; border-radius: 6px; background: rgba(255,255,255,.06); cursor: pointer; border-left: 3px solid transparent; transition: background .15s, border-color .15s; }
+.pl-note:hover { background: rgba(255,255,255,.14); border-left-color: #4a8cf7; }
+.pl-note-name { display: block; font-weight: bold; font-size: 14px; margin-bottom: 3px; }
+.pl-note-text { display: block; font-size: 13px; line-height: 1.45; opacity: .88; }
+.pl-sources { margin-top: 18px; font-size: 11.5px; opacity: .6; line-height: 1.4; }
+
+@media (max-width: 720px) {
+  .pl-hint { display: none; }
+  .pl-title-name { font-size: 16px; }
+  .pl-title-sub { font-size: 12px; }
+  .pl-panel { top: auto; left: 0; right: 0; width: auto; max-height: 42vh; padding: 12px 14px 14px; background: linear-gradient(rgba(20,20,20,0), rgba(20,20,20,.92) 25%); }
+  .pl-notes { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 6px; scroll-snap-type: x mandatory; }
+  .pl-note { flex: 0 0 78%; scroll-snap-align: start; }
+  .pl-panel-head { font-size: 13px; margin-bottom: 10px; }
+}
