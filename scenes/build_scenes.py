@@ -32,6 +32,13 @@ import bpy
 from mathutils import Vector
 from PIL import Image, ImageDraw
 
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import makehuman_figures as mh  # noqa: E402
+
+# Where the people come from: 'makehuman' builds proportioned humans with
+# MPFB; 'kenney' uses the kit's chibi characters.
+FIGURES = os.environ.get('FIGURES', 'makehuman')
+
 ROOT = Path(__file__).resolve().parents[1]
 CACHE = ROOT / '.cache' / 'kits'
 KITS = {
@@ -650,6 +657,30 @@ PROPS = {name[5:]: fn for name, fn in globals().items() if name.startswith('prop
 # ---------------------------------------------------------------------------
 
 def figure(fig):
+    if FIGURES == 'makehuman':
+        g = group(f'fig_{fig["id"]}', fig['at'], fig.get('face', 0))
+        fig = dict(fig, _seat=seat_height_at(fig['at']))
+        anchor_h = mh.figure(fig, g, box, cyl, mat)
+        empty(f'figure_{fig["id"]}', 0, anchor_h, 0, parent=g)
+        return g
+    return kenney_figure(fig)
+
+
+# How high the seat is on each thing a figure can sit on, at kit scale.
+SEATS = {'chair': 0.46, 'armchair': 0.37, 'couch': 0.37, 'bench': 0.46, 'seats': 0.46}
+_props_in_scene = []
+
+def seat_height_at(at):
+    best, best_d = mh.SEAT_HEIGHT, 0.9
+    for p in _props_in_scene:
+        if p['type'] in SEATS:
+            d = math.hypot(p['at'][0] - at[0], p['at'][1] - at[1])
+            if d < best_d:
+                best, best_d = SEATS[p['type']], d
+    return best
+
+
+def kenney_figure(fig):
     model = fig.get('model', 'male-a')
     scale = KIT_SCALE
     g = group(f'fig_{fig["id"]}', fig['at'], fig.get('face', 0), y=0.42 if fig.get('pose') == 'sit' else 0)
@@ -871,6 +902,7 @@ def build(pin, out_path):
     spec = pin['scene']
     reset()
     build_room(spec.get('room', {}))
+    _props_in_scene[:] = spec.get('props', [])
     for p in spec.get('props', []):
         fn = PROPS.get(p['type'])
         if fn is None:
@@ -885,6 +917,7 @@ def build(pin, out_path):
     for a in list(bpy.data.actions):
         if a not in _actions.values():
             bpy.data.actions.remove(a)
+    shrink_images()
     bpy.ops.export_scene.gltf(
         filepath=str(out_path),
         export_format='GLB',
@@ -894,10 +927,30 @@ def build(pin, out_path):
         export_animation_mode='NLA_TRACKS',
         export_lights=False,
         export_cameras=False,
-        export_image_format='AUTO',
-        export_jpeg_quality=85,
+        export_image_format='WEBP',
+        export_image_webp_fallback=False,
+        export_image_quality=75,
     )
     print(f'  wrote {out_path.relative_to(ROOT)} ({out_path.stat().st_size // 1024} KB)')
+
+
+def shrink_images():
+    """Every figure loads its own copy of the skin and suit textures; keep
+    one of each, and none larger than the page needs."""
+    by_path = {}
+    for img in list(bpy.data.images):
+        key = bpy.path.abspath(img.filepath) if img.filepath else None
+        if key and key in by_path and by_path[key] is not img:
+            img.user_remap(by_path[key])
+            bpy.data.images.remove(img)
+        elif key:
+            by_path[key] = img
+    for img in bpy.data.images:
+        if not img.has_data:
+            continue
+        limit = 1024 if 'skin' in (img.filepath or '').lower() or 'suit' in img.name.lower() else 512
+        if img.size[0] > limit or img.size[1] > limit:
+            img.scale(min(img.size[0], limit), min(img.size[1], limit))
 
 
 def main():
@@ -905,6 +958,8 @@ def main():
     only = set(sys.argv[2:])
     CACHE.mkdir(parents=True, exist_ok=True)
     fetch_kits()
+    if FIGURES == 'makehuman':
+        mh.install(CACHE)
     out_dir = ROOT / 'static' / 'places' / place
     for pin in load_pins(place):
         if only and pin['id'] not in only:

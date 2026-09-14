@@ -8,12 +8,19 @@ the note that annotates each of them.
 
 Every scene ships as a `.glb` next to the data file, built in Blender by
 `scenes/build_scenes.py` from that same data. The script assembles the room
-from the Kenney CC0 kits (furniture, mini characters, car kit), builds the
-pieces the kits do not have from primitives, recolours and dresses each
-figure, poses it with the kit's rig, and exports. Rebuild after editing the
-data:
+from the Kenney CC0 kits (furniture, car kit), builds the pieces the kits do
+not have from primitives, and makes each person with MakeHuman through the
+MPFB Blender extension (`scenes/makehuman_figures.py`): body by age, sex and
+build, a suit or dress tinted to the `coat`/`dress` colour, hair, hat,
+spectacles, and a pose from the MakeHuman pose library, then exports.
+Rebuild after editing the data:
 
     uv run --python 3.13 --with bpy --with pillow scenes/build_scenes.py vienna-1913
+
+The first run clones MPFB into Blender's extensions directory and downloads
+the MakeHuman asset packs it uses (system assets, poses, hats, glasses) into
+`.cache/`. `FIGURES=kenney` builds the people from the Kenney mini
+characters instead.
 
 The page loads the glb a scene names in its `glb` field. If the file is
 missing it falls back to a rough procedural set built in the browser from the
