@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -84,12 +85,14 @@ function makePin(pin) {
   t.textContent = text;
   const bg = svg('rect', { class: 'pl-pin-label-bg', rx: 4, ry: 4 });
   g.append(bg, t);
-  // Size the label plate once it is in the document.
-  requestAnimationFrame(() => {
+  // Size the label plate once it is in the document, and again whenever
+  // the type size changes.
+  g.sizeLabel = () => {
     const b = t.getBBox();
     bg.setAttribute('x', b.x - 6); bg.setAttribute('y', b.y - 3);
     bg.setAttribute('width', b.width + 12); bg.setAttribute('height', b.height + 6);
-  });
+  };
+  requestAnimationFrame(g.sizeLabel);
   return g;
 }
 
@@ -112,9 +115,35 @@ export function mountPlace(root, place) {
   const stage = el('div', { class: 'pl-stage' });
   const mapWrap = el('div', { class: 'pl-map' });
   const canvas = new MapCanvas(mapWrap, place.map.width, place.map.height);
-  place.map.draw(canvas);
+  if (place.map.image) {
+    // A rendered map of the real city; pins are placed from lat/lon with
+    // the same Mercator projection that drew it.
+    const img = svg('image', { href: `${place.assets}/${place.map.image}`, x: 0, y: 0, width: place.map.width, height: place.map.height, preserveAspectRatio: 'none' });
+    canvas.layers.land.append(img);
+    const [s, w, n, e] = place.map.bbox;
+    const mercY = (lat) => Math.log(Math.tan(Math.PI / 4 + (lat * Math.PI / 180) / 2));
+    const y0 = mercY(n), y1 = mercY(s);
+    const margin = 34;
+    for (const pin of place.pins) {
+      if (pin.lat === undefined) continue;
+      let x = (pin.lon - w) / (e - w) * place.map.width;
+      let y = (mercY(pin.lat) - y0) / (y1 - y0) * place.map.height;
+      if (pin.offmap || x < 0 || x > place.map.width || y < 0 || y > place.map.height) {
+        // Off the edge: pin it to the border in the right direction.
+        x = Math.min(place.map.width - margin, Math.max(margin, x));
+        y = Math.min(place.map.height - 12, Math.max(margin + 12, y));
+        pin.offmap = pin.offmap || { arrow: '→', distance: '' };
+      }
+      pin.x = x;
+      pin.y = y;
+    }
+  } else {
+    place.map.draw(canvas);
+  }
   const pinNodes = new Map();
   for (const pin of place.pins) {
+    pin.baseX = pin.x;
+    pin.baseY = pin.y;
     const node = makePin(pin);
     canvas.layers.pin.append(node);
     pinNodes.set(pin.id, node);
@@ -122,6 +151,25 @@ export function mountPlace(root, place) {
     node.addEventListener('click', () => open(pin));
   }
 
+  // On a narrow screen show the middle of the map, where the pins are,
+  // rather than the whole city at postage-stamp size.
+  const crop = place.map.crop || [0.14, 0.64];
+  function fitMap() {
+    const narrow = mapWrap.clientWidth < 600;
+    root.classList.toggle('pl-narrow', narrow);
+    const W = place.map.width, H = place.map.height;
+    const x0 = narrow ? W * crop[0] : 0, w = narrow ? W * crop[1] : W;
+    canvas.svg.setAttribute('viewBox', `${x0} 0 ${w} ${H}`);
+    mapWrap.style.aspectRatio = `${w} / ${H}`;
+    for (const pin of place.pins) {
+      const node = pinNodes.get(pin.id);
+      if (!node || pin.baseX === undefined) continue;
+      let x = pin.baseX;
+      if (narrow && (x < x0 + 30 || x > x0 + w - 30)) x = Math.min(x0 + w - 30, Math.max(x0 + 30, x));
+      node.setAttribute('transform', `translate(${x} ${pin.baseY})${narrow ? ' scale(1.5)' : ''}`);
+    }
+    requestAnimationFrame(() => { for (const n of pinNodes.values()) n.sizeLabel?.(); });
+  }
   const hint = el('div', { class: 'pl-hint', text: place.hint || 'Drag him onto a pin.' });
   const pegman = el('div', { class: 'pl-pegman', html: PEGMAN_SVG, title: 'Drag me onto a pin' });
   const dock = el('div', { class: 'pl-dock' }, [pegman, hint]);
@@ -130,6 +178,8 @@ export function mountPlace(root, place) {
 
   const viewer = new SceneViewer(place, () => leaveScene());
   root.append(viewer.root);
+  fitMap();
+  addEventListener('resize', fitMap);
 
   // Drag the man. Pointer events cover mouse and touch; capture keeps the
   // drag alive when the finger leaves the element.
@@ -228,9 +278,12 @@ class SceneViewer {
     this.back = el('button', { class: 'pl-back', type: 'button', text: '← Back to the map' });
     this.top.append(this.back, this.title);
     this.panel = el('aside', { class: 'pl-panel' });
+    this.notesToggle = el('button', { class: 'pl-notes-toggle', type: 'button', text: 'Hide notes', 'aria-expanded': 'true' });
+    this.top.append(this.notesToggle);
     this.loading = el('div', { class: 'pl-loading', text: 'Building the scene…' });
     this.root.append(this.gl, this.top, this.panel, this.loading);
     this.back.addEventListener('click', () => this.hide());
+    this.notesToggle.addEventListener('click', () => this.toggleNotes());
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !this.root.hidden) this.hide(); });
     this.renderer = null;
   }
@@ -242,16 +295,25 @@ class SceneViewer {
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.05;
+    this.renderer.toneMappingExposure = 1.0;
+    // A neutral room environment gives cloth, skin and wood something to
+    // reflect, which is most of what separates a render from a diagram.
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    this.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    pmrem.dispose();
     this.labels = new CSS2DRenderer();
     this.labels.domElement.className = 'pl-labels';
     this.gl.append(this.renderer.domElement, this.labels.domElement);
     this.camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
     this.controls = new OrbitControls(this.camera, this.labels.domElement);
     this.controls.enableDamping = true;
-    this.controls.maxPolarAngle = Math.PI * 0.48;
-    this.controls.minDistance = 2;
-    this.controls.maxDistance = 40;
+    this.controls.maxPolarAngle = Math.PI * 0.47;
+    this.controls.minPolarAngle = Math.PI * 0.12;
+    this.controls.minDistance = 1.5;
+    this.controls.maxDistance = 18;
+    this.controls.zoomToCursor = true;
+    this.controls.enablePan = true;
+    this.controls.screenSpacePanning = false;
     this.controls.autoRotate = true;
     this.controls.autoRotateSpeed = 0.35;
     this.labels.domElement.addEventListener('pointerdown', () => { this.controls.autoRotate = false; }, { once: true });
@@ -264,11 +326,20 @@ class SceneViewer {
     this.renderer.setSize(w, h);
     this.labels.setSize(w, h);
     this.camera.aspect = w / h;
-    // On a wide screen the notes panel covers the right edge, so render the
-    // frame shifted left by half the panel and the set sits in the clear.
-    if (w > 720) this.camera.setViewOffset(w, h, 170, 0, w, h);
+    // With the notes open on a wide screen, render the frame shifted left
+    // by half the panel so the set sits in the clear.
+    const notesOpen = !this.root.classList.contains('pl-notes-hidden');
+    if (w > 720 && notesOpen) this.camera.setViewOffset(w, h, 160, 0, w, h);
     else this.camera.clearViewOffset();
     this.camera.updateProjectionMatrix();
+  }
+
+  toggleNotes(show) {
+    const hidden = show === undefined ? !this.root.classList.contains('pl-notes-hidden') : !show;
+    this.root.classList.toggle('pl-notes-hidden', hidden);
+    this.notesToggle.textContent = hidden ? 'Show notes' : 'Hide notes';
+    this.notesToggle.setAttribute('aria-expanded', String(!hidden));
+    this.resize();
   }
 
   async show(pin) {
@@ -285,6 +356,8 @@ class SceneViewer {
     this.resize();
     if (this.scene) this.disposeScene();
     this.scene = new THREE.Scene();
+    this.scene.environment = this.environment;
+    this.scene.environmentIntensity = 0.55;
     this.figureObjects = new Map();
     await buildScene(this.scene, pin.scene, this.place, this.figureObjects);
     this.placeCamera(pin.scene);
@@ -353,6 +426,8 @@ class SceneViewer {
     if (this.root.hidden) return;
     this.raf = requestAnimationFrame(() => this.animate());
     this.controls.update();
+    if (this.controls.target.y < 0.3) { this.controls.target.y = 0.3; }
+    if (this.camera.position.y < 0.4) { this.camera.position.y = 0.4; }
     for (const obj of this.figureObjects.values()) obj.tick?.(performance.now() / 1000);
     this.renderer.render(this.scene, this.camera);
     this.labels.render(this.scene, this.camera);
@@ -387,8 +462,8 @@ async function buildScene(scene, spec, place, figureObjects) {
   scene.background = new THREE.Color(room.sky || '#e9dcc3');
   scene.fog = new THREE.Fog(scene.background, 18, 60);
 
-  scene.add(new THREE.HemisphereLight(0xfff2dc, 0x6b5a45, 0.9));
-  const sun = new THREE.DirectionalLight(0xffe7c4, 2.2);
+  scene.add(new THREE.HemisphereLight(0xfff2dc, 0x6b5a45, 0.5));
+  const sun = new THREE.DirectionalLight(0xffe7c4, 1.8);
   sun.position.set(...(room.light || [6, 9, 4]));
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);

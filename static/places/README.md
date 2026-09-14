@@ -4,6 +4,19 @@ One folder per map post. `data.js` holds the map drawing, the pins, and a
 scene per pin: the room, the props, and who was there, where they stood, and
 the note that annotates each of them.
 
+## The map
+
+`map.webp` is the real city, drawn from OpenStreetMap by `scenes/build_map.py`
+in the style of the map app everyone reads without thinking. `data.js` gives
+the bounding box (south, west, north, east) and a few hand-placed labels; each
+pin carries a latitude and longitude and the page projects it onto the image
+with the same Mercator projection. Pins outside the box sit on the border
+with an arrow. Rebuild after moving the box or the labels:
+
+    uv run --with pillow scenes/build_map.py vienna-1913
+
+The Overpass query result is cached in `.cache/`.
+
 ## The scenes
 
 Every scene ships as a `.glb` next to the data file, built in Blender by
@@ -21,6 +34,11 @@ The first run clones MPFB into Blender's extensions directory and downloads
 the MakeHuman asset packs it uses (system assets, poses, hats, glasses) into
 `.cache/`. `FIGURES=kenney` builds the people from the Kenney mini
 characters instead.
+
+Surfaces come from ambientCG (CC0): parquet, plaster, marble, travertine,
+carpet, cloth and leather, tiled by world size over the floors, walls, trim,
+columns, rugs and the kit furniture (`scenes/textures.py`). They download
+once into `.cache/textures/`.
 
 The page loads the glb a scene names in its `glb` field. If the file is
 missing it falls back to a rough procedural set built in the browser from the

@@ -34,6 +34,7 @@ from PIL import Image, ImageDraw
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 import makehuman_figures as mh  # noqa: E402
+import textures as tex  # noqa: E402
 
 # Where the people come from: 'makehuman' builds proportioned humans with
 # MPFB; 'kenney' uses the kit's chibi characters.
@@ -96,6 +97,7 @@ def reset():
     _mats.clear()
     _imports.clear()
     _actions.clear()
+    tex.reset()
 
 
 _mats = {}
@@ -291,7 +293,40 @@ def furniture(model, at, rot=0, color=None, scale=KIT_SCALE, y=0, colour_mats=No
         r.location = (r.location.x - centre.x, r.location.y - centre.y, r.location.z - bottom.z)
     if color:
         recolour(mapping.values(), color, colour_mats)
+    dress_kit_piece(mapping.values(), model, color)
     return g
+
+
+BOOK_COLOURS = ['#6a2a24', '#2e3f5c', '#4a5a34', '#8a6a2a', '#3a3a3a', '#7a4a2e', '#5a2a4a', '#2a5a5a']
+
+def dress_kit_piece(objs, model, color):
+    """Real surfaces on a kit piece: its wood gets grain, its cushions get
+    cloth or leather. The kit's own tiny colour swatches are replaced."""
+    import random
+    rnd = random.Random(sum(ord(c) for c in model) + len(objs))
+    for o in objs:
+        if o.type != 'MESH' or not o.data.materials:
+            continue
+        if model == 'books':
+            for i, m in enumerate(o.data.materials):
+                o.data.materials[i] = mat(rnd.choice(BOOK_COLOURS), 0.8)
+            continue
+        names = [m.name.split('.')[0] if m else '' for m in o.data.materials]
+        if len(o.data.materials) == 1:
+            base = names[0]
+            if base in ('wood', 'woodDark'):
+                tex.apply(o, 'darkwood' if model in ('desk', 'bookcaseOpen', 'bookcaseClosedDoors') else 'wood', rough=0.45)
+            elif base in ('fabric', 'cushion', 'fabricBed', 'sheets', 'carpet', 'carpetWhite', 'carpetDarker'):
+                tex.apply(o, 'leather' if model.startswith('lounge') else 'fabric', tint=color, rough=0.9)
+            continue
+        # Several materials on one mesh: swap each slot in place, keep the faces.
+        for i, m in enumerate(o.data.materials):
+            base = names[i]
+            if base in ('wood', 'woodDark'):
+                o.data.materials[i] = tex.material('darkwood' if model in ('desk', 'bookcaseOpen', 'bookcaseClosedDoors') else 'wood', rough=0.45)
+            elif base in ('fabric', 'cushion', 'fabricBed', 'sheets', 'carpet', 'carpetWhite', 'carpetDarker'):
+                o.data.materials[i] = tex.material('leather' if model.startswith('lounge') else 'fabric', tint=color if base != 'carpetWhite' else None, rough=0.9)
+        tex.box_uv(o)
 
 
 def recolour(objs, color, only=None):
@@ -396,26 +431,38 @@ def build_room(room):
     floor.name = 'floor'
     floor.scale = (fw, fd, 1)
     kind = room.get('floor', '#8a6a48')
-    floor.data.materials.append(floor_material(kind, max(fw, fd) / (1.2 if kind == 'checker' else 3.0)))
+    if kind == 'checker':
+        floor.data.materials.append(floor_material(kind, max(fw, fd) / 1.2))
+    elif kind == 'concrete':
+        tex.apply(floor, 'concrete', rough=0.9)
+    elif kind == 'grass':
+        floor.data.materials.append(mat('#7a9a5a', 0.95))
+    elif kind == 'planks':
+        tex.apply(floor, 'planks', rough=0.4)
+    else:
+        # A hex colour tints the parquet.
+        tex.apply(floor, 'parquet', tint=kind if kind.startswith('#') and kind != '#8a6a48' else None, rough=0.35)
     if outdoor:
         return
     wall = room.get('wall', '#d9c9a6')
     trim = room.get('trim', '#8a6a48')
     t = 0.24
     # Three walls; the fourth side is where the camera stands.
-    box(w + t, h, t, wall, 0, h / 2, -d / 2 - t / 2, bev=0, name='wall_back')
-    box(t, h, d + t, wall, -w / 2 - t / 2, h / 2, 0, bev=0, name='wall_left')
-    box(t, h, d + t, wall, w / 2 + t / 2, h / 2, 0, bev=0, name='wall_right')
+    for wobj in (box(w + t, h, t, wall, 0, h / 2, -d / 2 - t / 2, bev=0, name='wall_back'),
+                 box(t, h, d + t, wall, -w / 2 - t / 2, h / 2, 0, bev=0, name='wall_left'),
+                 box(t, h, d + t, wall, w / 2 + t / 2, h / 2, 0, bev=0, name='wall_right')):
+        tex.apply(wobj, 'plaster', tint=wall, rough=0.9)
     # Skirting, dado rail, cornice: the three lines that make a wall a room.
     for yy, hh, dd in ((0.09, 0.18, 0.06), (1.05, 0.05, 0.04), (h - 0.12, 0.24, 0.08)):
-        box(w, hh, dd, trim, 0, yy, -d / 2 + dd / 2, bev=0.008)
-        box(dd, hh, d, trim, -w / 2 + dd / 2, yy, 0, bev=0.008)
-        box(dd, hh, d, trim, w / 2 - dd / 2, yy, 0, bev=0.008)
+        for tobj in (box(w, hh, dd, trim, 0, yy, -d / 2 + dd / 2, bev=0.008),
+                     box(dd, hh, d, trim, -w / 2 + dd / 2, yy, 0, bev=0.008),
+                     box(dd, hh, d, trim, w / 2 - dd / 2, yy, 0, bev=0.008)):
+            tex.apply(tobj, 'darkwood', rough=0.45)
     # Panels below the dado.
     n = max(2, int(w / 1.4))
     for i in range(n):
         x = -w / 2 + (i + 0.5) * (w / n)
-        box(w / n - 0.3, 0.6, 0.03, trim, x, 0.62, -d / 2 + 0.03, bev=0.006)
+        tex.apply(box(w / n - 0.3, 0.6, 0.03, trim, x, 0.62, -d / 2 + 0.03, bev=0.006), 'darkwood', rough=0.45)
     for win in room.get('windows', []):
         window(win, w, d, h, room.get('sky', '#fff4dc'))
 
@@ -433,11 +480,20 @@ def window(win, w, d, h, sky):
         g.location = (w / 2 - 0.02, -win['at'], 2.1)
         g.rotation_euler = (0, 0, math.radians(90))
     # Frame, a glowing pane, and a cross bar. Recess suggested by a sill.
-    box(ww + 0.3, wh + 0.3, 0.12, '#f4efe4', 0, 0, 0, parent=g, bev=0.01, name='frame')
-    box(ww, wh, 0.02, '#fff6e0', 0, 0, 0.04, parent=g, emission='#ffe9c0', strength=2.5, bev=0, name='pane')
-    box(0.06, wh, 0.1, '#f4efe4', 0, 0, 0.06, parent=g, bev=0.004)
-    box(ww, 0.06, 0.1, '#f4efe4', 0, 0.3, 0.06, parent=g, bev=0.004)
-    box(ww + 0.5, 0.08, 0.3, '#f4efe4', 0, -wh / 2 - 0.19, 0.12, parent=g, bev=0.01, name='sill')
+    # A dark wooden case standing proud of the wall as four strips round an
+    # open middle, sky through the glass behind white glazing bars, a sill.
+    t = 0.16
+    for part in (box(ww + 2 * t, t, 0.12, '#5a4632', 0, wh / 2 + t / 2, 0.04, parent=g, bev=0.01),
+                 box(ww + 2 * t, t, 0.12, '#5a4632', 0, -wh / 2 - t / 2, 0.04, parent=g, bev=0.01),
+                 box(t, wh, 0.12, '#5a4632', -ww / 2 - t / 2, 0, 0.04, parent=g, bev=0.01),
+                 box(t, wh, 0.12, '#5a4632', ww / 2 + t / 2, 0, 0.04, parent=g, bev=0.01)):
+        tex.apply(part, 'darkwood', rough=0.5)
+    box(ww, wh, 0.02, '#b9cfe2', 0, 0, 0.025, parent=g, emission='#9fbdd8', strength=0.9, bev=0, rough=0.15, name='pane')
+    for x in (-ww / 3, 0, ww / 3):
+        box(0.04, wh, 0.04, '#f3efe6', x, 0, 0.05, parent=g, bev=0.004)
+    for yy in (-wh / 4, wh / 4):
+        box(ww, 0.04, 0.04, '#f3efe6', 0, yy, 0.05, parent=g, bev=0.004)
+    tex.apply(box(ww + 0.5, 0.07, 0.3, '#5a4632', 0, -wh / 2 - t - 0.03, 0.12, parent=g, bev=0.01, name='sill'), 'darkwood', rough=0.5)
 
 
 # ---------------------------------------------------------------------------
@@ -453,7 +509,11 @@ def prop_table(p):
     r = p.get('r', 0.55)
     g = group('table', p['at'], p.get('rot', 0))
     top = p.get('color', '#f2ede4')
-    cyl(r, r, 0.05, top, 0, 0.75, 0, parent=g, seg=36, rough=0.5)
+    tabletop = cyl(r, r, 0.05, top, 0, 0.75, 0, parent=g, seg=36, rough=0.5)
+    if top == '#f2ede4':
+        tex.apply(tabletop, 'marble', rough=0.25)
+    else:
+        tex.apply(tabletop, 'wood', tint=top, rough=0.4)
     cyl(0.05, 0.05, 0.72, '#2b2b2b', 0, 0.37, 0, parent=g)
     cyl(0.28, 0.32, 0.04, '#2b2b2b', 0, 0.02, 0, parent=g, seg=28)
     return g
@@ -545,18 +605,19 @@ def prop_seats(p):
 def prop_column(p):
     g = group('column', p['at'], 0)
     c = '#e6dfcf'
-    cyl(0.36, 0.36, 0.3, c, 0, 0.15, 0, parent=g, seg=32, bev=0.03)
-    cyl(0.28, 0.32, 4.4, c, 0, 2.35, 0, parent=g, seg=32, bev=0)
-    cyl(0.44, 0.3, 0.35, c, 0, 4.72, 0, parent=g, seg=32, bev=0.03)
-    box(0.9, 0.12, 0.9, c, 0, 4.95, 0, parent=g, bev=0.02)
+    for part in (cyl(0.36, 0.36, 0.3, c, 0, 0.15, 0, parent=g, seg=32, bev=0.03),
+                 cyl(0.28, 0.32, 4.4, c, 0, 2.35, 0, parent=g, seg=32, bev=0),
+                 cyl(0.44, 0.3, 0.35, c, 0, 4.72, 0, parent=g, seg=32, bev=0.03),
+                 box(0.9, 0.12, 0.9, c, 0, 4.95, 0, parent=g, bev=0.02)):
+        tex.apply(part, 'stone', rough=0.3)
     return g
 
 def prop_rug(p):
     g = group('rug', p['at'], p.get('rot', 0))
     w, d = p.get('w', 3), p.get('d', 2)
-    box(w, 0.02, d, p.get('color', '#7a3030'), 0, 0.01, 0, parent=g, rough=0.95, bev=0.006)
-    box(w - 0.4, 0.005, d - 0.4, p.get('color2', '#c8a878'), 0, 0.022, 0, parent=g, rough=0.95, bev=0)
-    box(w - 0.6, 0.005, d - 0.6, p.get('color', '#7a3030'), 0, 0.024, 0, parent=g, rough=0.95, bev=0)
+    tex.apply(box(w, 0.02, d, p.get('color', '#7a3030'), 0, 0.01, 0, parent=g, rough=0.95, bev=0.006), 'carpet', tint=p.get('color', '#7a3030'), rough=0.95)
+    tex.apply(box(w - 0.4, 0.005, d - 0.4, p.get('color2', '#c8a878'), 0, 0.022, 0, parent=g, rough=0.95, bev=0), 'carpet', tint=p.get('color2', '#c8a878'), rough=0.95)
+    tex.apply(box(w - 0.6, 0.005, d - 0.6, p.get('color', '#7a3030'), 0, 0.024, 0, parent=g, rough=0.95, bev=0), 'carpet', tint=p.get('color', '#7a3030'), rough=0.95)
     return g
 
 def prop_car(p):
@@ -658,7 +719,8 @@ PROPS = {name[5:]: fn for name, fn in globals().items() if name.startswith('prop
 
 def figure(fig):
     if FIGURES == 'makehuman':
-        g = group(f'fig_{fig["id"]}', fig['at'], fig.get('face', 0))
+        # `y` lifts a figure onto a podium or step.
+        g = group(f'fig_{fig["id"]}', fig['at'], fig.get('face', 0), y=fig.get('y', 0))
         fig = dict(fig, _seat=seat_height_at(fig['at']))
         anchor_h = mh.figure(fig, g, box, cyl, mat)
         empty(f'figure_{fig["id"]}', 0, anchor_h, 0, parent=g)
@@ -917,6 +979,7 @@ def build(pin, out_path):
     for a in list(bpy.data.actions):
         if a not in _actions.values():
             bpy.data.actions.remove(a)
+    report_overlaps(spec)
     shrink_images()
     bpy.ops.export_scene.gltf(
         filepath=str(out_path),
@@ -934,6 +997,45 @@ def build(pin, out_path):
     print(f'  wrote {out_path.relative_to(ROOT)} ({out_path.stat().st_size // 1024} KB)')
 
 
+def report_overlaps(spec):
+    """Say where a person runs into the furniture: for each figure, the
+    share of its body vertices inside the box of any prop it is not sitting
+    on. A few percent is a hand on a table; more is a leg through it."""
+    bpy.context.view_layer.update()
+    props = []
+    for o in bpy.data.objects:
+        if o.type == 'EMPTY' and o.parent is None and not o.name.startswith(('fig_', 'figure_', 'light_', 'window')):
+            meshes = [c for c in o.children_recursive if c.type == 'MESH']
+            if not meshes:
+                continue
+            lo, hi = bbox(meshes)
+            props.append((o.name, lo, hi))
+    for fig in spec.get('figures', []):
+        g = bpy.data.objects.get(f'fig_{fig["id"]}')
+        if g is None:
+            continue
+        meshes = [c for c in g.children_recursive if c.type == 'MESH' and ('Human' in c.name or 'suit' in c.name.lower())]
+        pts = [c.matrix_world @ v.co for c in meshes for v in c.data.vertices]
+        if not pts:
+            continue
+        seated = fig.get('pose') in ('sit', 'lounge')
+        hits = {}
+        for name, lo, hi in props:
+            # Legs under a table are fine; only the slab of a table or desk counts.
+            floor_z = hi.z - 0.14 if name.startswith(('table', 'desk', 'standingdesk', 'workbench')) else lo.z + 0.05
+            inside = sum(1 for p in pts if lo.x < p.x < hi.x and lo.y < p.y < hi.y and floor_z < p.z < hi.z)
+            if name.startswith('podium') and fig.get('y', 0) >= hi.z - 0.05:
+                inside = 0
+            if inside:
+                share = inside / len(pts)
+                if seated and name.startswith(('chair', 'armchair', 'couch', 'seats', 'bench', 'loungeChair', 'loungeSofa', 'chairCushion')) and share < 0.4:
+                    continue
+                if share > 0.01:
+                    hits[name] = share
+        if hits:
+            print(f'  overlap {fig["id"]}: ' + ', '.join(f'{n} {s:.0%}' for n, s in sorted(hits.items(), key=lambda x: -x[1])))
+
+
 def shrink_images():
     """Every figure loads its own copy of the skin and suit textures; keep
     one of each, and none larger than the page needs."""
@@ -948,7 +1050,8 @@ def shrink_images():
     for img in bpy.data.images:
         if not img.has_data:
             continue
-        limit = 1024 if 'skin' in (img.filepath or '').lower() or 'suit' in img.name.lower() else 512
+        name = (img.filepath or '').lower() + img.name.lower()
+        limit = 1024 if any(k in name for k in ('skin', 'suit', 'floor', 'plaster', 'marble', 'travertine')) else 512
         if img.size[0] > limit or img.size[1] > limit:
             img.scale(min(img.size[0], limit), min(img.size[1], limit))
 
