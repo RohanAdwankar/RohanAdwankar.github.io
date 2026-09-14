@@ -6,6 +6,14 @@ Local build:
 uv run python scripts/build.py
 ```
 
+Tests (they build the site and check that draft posts stay off the homepage while still being published):
+
+```bash
+uv run python -m unittest discover -s tests -v
+```
+
+They run in CI on every pull request and before every deploy.
+
 Deployment:
 
 ```bash
