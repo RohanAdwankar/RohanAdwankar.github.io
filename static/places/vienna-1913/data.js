@@ -6,6 +6,19 @@ export default {
   hint: 'Drag him onto a pin.',
   map: {
     width: 1000, height: 640,
+    // The real city, drawn from OpenStreetMap by scenes/build_map.py.
+    // South, west, north, east.
+    bbox: [48.172, 16.28, 48.242, 16.444],
+    image: 'map.webp',
+    labels: [
+      { text: 'Donaukanal', lat: 48.2225, lon: 16.386, kind: 'water' },
+      { text: 'Donau', lat: 48.2305, lon: 16.418, kind: 'water' },
+      { text: 'Wien', lat: 48.191, lon: 16.336, kind: 'water' },
+      { text: 'Ringstraße', lat: 48.2035, lon: 16.3615 },
+      { text: 'Schönbrunn', lat: 48.1845, lon: 16.312 },
+      { text: 'Prater', lat: 48.2135, lon: 16.412 },
+    ],
+    // The hand-drawn fallback, used when the image is missing.
     draw(m) {
       // The Danube Canal cuts the old city off to the north-east, the
       // Ringstraße loops it, and the Wien river slips in from the south-west.
@@ -82,7 +95,7 @@ export default {
 
   pins: [
     {
-      id: 'cafe-central', label: 'Café Central', x: 455, y: 268,
+      id: 'cafe-central', label: 'Café Central', lat: 48.2103, lon: 16.3655,
       scene: {
         title: 'Café Central', subtitle: 'Herrengasse 14, 1st district · a winter afternoon, 1913',
         glb: 'cafe-central.glb',
@@ -94,7 +107,7 @@ export default {
           { type: 'chandelier', at: [0, 0] },
           { type: 'table', at: [-2, 0] }, { type: 'chair', at: [-2, 0.8], rot: 180 }, { type: 'chair', at: [-2, -0.8] }, { type: 'chessboard', at: [-2, 0] },
           { type: 'table', at: [1.6, 1.2] }, { type: 'chair', at: [1.6, 2.0], rot: 180 }, { type: 'chair', at: [2.4, 1.2], rot: 270 },
-          { type: 'table', at: [3.5, -2.2] }, { type: 'chair', at: [4.3, -2.2], rot: 270 },
+          { type: 'table', at: [4.6, -2.8] }, { type: 'chair', at: [4.6, -2.0], rot: 180 },
           { type: 'table', at: [-4.5, -3.0] }, { type: 'chair', at: [-4.5, -2.2], rot: 180 }, { type: 'chair', at: [-5.3, -3.0], rot: 90 },
           { type: 'table', at: [0.5, -3.2] }, { type: 'chair', at: [0.5, -2.4], rot: 180 },
           { type: 'lamp', at: [-5.8, 3.2] }, { type: 'lamp', at: [5.8, 3.2] },
@@ -102,7 +115,7 @@ export default {
         figures: [
           { id: 'trotsky', age: 33, coat: '#2e2e34', hair: '#1a1a1a', name: 'Leon Trotsky', at: [-2, 0.8], face: 0, pose: 'sit', coat: '#2e2e34', hair: '#2a2016', glasses: true, moustache: true, beard: '#2a2016',
             note: 'Thirty-three, seven years into exile in Vienna as Lev Bronstein. Plays chess here most afternoons and edits the Vienna Pravda in between. Will meet Stalin for the first time this winter and remember only a "glint of animosity".' },
-          { id: 'altenberg', age: 54, beard: '#b8b0a0', name: 'Peter Altenberg', at: [3.5, -1.4], face: 180, pose: 'sit', coat: '#8a7a66', hair: 'none', bald: true, moustache: true, skin: '#e8c8a8',
+          { id: 'altenberg', age: 54, beard: '#b8b0a0', name: 'Peter Altenberg', at: [4.6, -2.0], face: 180, pose: 'sit', coat: '#8a7a66', hair: 'none', bald: true, moustache: true, skin: '#e8c8a8',
             note: 'The house poet. Gives the café as his postal address and is here every day. Alban Berg is setting five of his postcard poems to music; they will be sung in this city in March and stop the concert.' },
           { id: 'adler', age: 43, hair: '#2a2016', name: 'Alfred Adler', at: [-4.5, -2.2], face: 0, pose: 'sit', coat: '#3a3f4a', vest: '#6a6a5a', moustache: true, glasses: true,
             note: 'Freud\'s former deputy. Walked out of the Vienna Psychoanalytic Society two years ago and now runs his own school of "individual psychology" from tables like this one, a twenty-minute walk from Berggasse.' },
@@ -113,7 +126,7 @@ export default {
       },
     },
     {
-      id: 'berggasse', label: 'Berggasse 19', x: 255, y: 178, labelSide: 'left',
+      id: 'berggasse', label: 'Berggasse 19', lat: 48.2181, lon: 16.3628, labelSide: 'left',
       scene: {
         title: 'Berggasse 19', subtitle: 'Freud\'s consulting room, 9th district · 1913',
         glb: 'berggasse.glb',
@@ -128,7 +141,7 @@ export default {
           { type: 'lamp', at: [0.5, -2.2] },
         ],
         figures: [
-          { id: 'freud', age: 56, model: 'male-b', name: 'Sigmund Freud', at: [-2.6, -1.5], face: 90, pose: 'lounge', coat: '#3a3a3a', vest: '#5a5a5a', hair: '#8a8a8a', beard: '#8a8a8a', glasses: true, skin: '#ddb090',
+          { id: 'freud', age: 56, name: 'Sigmund Freud', at: [-2.6, -1.5], face: 90, pose: 'lounge', coat: '#3a3a3a', vest: '#5a5a5a', hair: '#8a8a8a', beard: '#8a8a8a', glasses: true, skin: '#ddb090',
             note: 'Fifty-six. Sits behind the patient, out of sight, because he "cannot put up with being stared at for eight hours a day". Smokes twenty cigars a day and is about to write The Moses of Michelangelo.' },
           { id: 'patient', age: 30, sex: 'female', dress: '#6a5a7a', hairstyle: 'bob01', name: 'A patient', at: [-0.3, -1.4], face: 60, pose: 'lounge', coat: '#6a5a7a', hair: '#3a2a1a',
             note: 'Six sessions a week, an hour each, about a year. The couch is the only piece of furniture in this room a reader would recognise, and it was a gift from a grateful patient.' },
@@ -139,7 +152,7 @@ export default {
       },
     },
     {
-      id: 'musikverein', label: 'Musikverein', x: 512, y: 466,
+      id: 'musikverein', label: 'Musikverein', lat: 48.2006, lon: 16.3727,
       scene: {
         title: 'The Skandalkonzert', subtitle: 'Musikverein, Großer Saal · 31 March 1913, about 9 pm',
         glb: 'musikverein.glb',
@@ -157,11 +170,11 @@ export default {
           { type: 'seats', at: [0, -0.5], rows: 5, cols: 12 },
         ],
         figures: [
-          { id: 'schoenberg', age: 38, pose: 'hold', name: 'Arnold Schoenberg', at: [0, -3.2], face: 180, coat: '#1a1a1a', vest: '#f4f0e6', hair: 'none', bald: true, held: 'baton',
+          { id: 'schoenberg', age: 38, pose: 'hold', name: 'Arnold Schoenberg', at: [0, -3.2], y: 0.3, face: 180, coat: '#1a1a1a', vest: '#f4f0e6', hair: 'none', bald: true, held: 'baton',
             note: 'Thirty-eight, conducting. Has stopped the orchestra to demand that the police remove anyone disturbing the peace. Will move his family out of Vienna within the year.' },
-          { id: 'berg', age: 28, model: 'male-d', name: 'Alban Berg', at: [-1.0, 4.9], face: 10, coat: '#2a2a30', hair: '#2a2016',
+          { id: 'berg', age: 28, name: 'Alban Berg', at: [-1.0, 4.9], face: 10, coat: '#2a2a30', hair: '#2a2016',
             note: 'Twenty-eight. Two of his five Altenberg Lieder are being played for the first time. The fight starts during them. He will not hear them performed complete in his lifetime.' },
-          { id: 'webern', age: 29, model: 'male-e', name: 'Anton Webern', at: [-4.6, 0.8], face: 60, pose: 'yes', coat: '#2a2a30', glasses: true, hair: '#4a3a2a',
+          { id: 'webern', age: 29, name: 'Anton Webern', at: [-4.6, 0.8], face: 60, pose: 'yes', coat: '#2a2a30', glasses: true, hair: '#4a3a2a',
             note: 'Twenty-nine. His Six Pieces for Orchestra opened the evening. Is reported to have stood up and shouted that the hecklers should be thrown out, which did not calm the hall.' },
           { id: 'buschbeck', age: 24, pose: 'akimbo', hair: '#2a2016', name: 'Erhard Buschbeck', at: [0, 3.6], face: 180, coat: '#3a3a44',
             note: 'The concert\'s organiser, twenty-four. Punches a heckler; the case goes to court. There, the operetta composer Oscar Straus testifies that the slap was the most harmonious sound of the evening.' },
@@ -172,7 +185,7 @@ export default {
       },
     },
     {
-      id: 'hofburg', label: 'Hofburg', x: 400, y: 318, labelSide: 'left',
+      id: 'hofburg', label: 'Hofburg', lat: 48.2073, lon: 16.365, labelSide: 'left',
       scene: {
         title: 'The Emperor\'s study', subtitle: 'Hofburg, Leopoldine Wing · half past four in the morning, 1913',
         glb: 'hofburg.glb',
@@ -197,7 +210,7 @@ export default {
       },
     },
     {
-      id: 'belvedere', label: 'Belvedere', x: 760, y: 468,
+      id: 'belvedere', label: 'Belvedere', lat: 48.1963, lon: 16.3808,
       scene: {
         title: 'The heir\'s residence', subtitle: 'Lower Belvedere, 3rd district · spring 1913',
         glb: 'belvedere.glb',
@@ -213,7 +226,7 @@ export default {
           { type: 'cabinet', at: [-5.0, 1.5], rot: 90 },
         ],
         figures: [
-          { id: 'franzferdinand', age: 49, model: 'male-f', name: 'Archduke Franz Ferdinand', at: [0, -1.7], face: 180, pose: 'sit', coat: '#2e4a2e', vest: '#c8a860', moustache: true, hair: '#4a3a2a', skin: '#e0b898',
+          { id: 'franzferdinand', age: 49, name: 'Archduke Franz Ferdinand', at: [0, -1.7], face: 180, pose: 'sit', coat: '#2e4a2e', vest: '#c8a860', moustache: true, hair: '#4a3a2a', skin: '#e0b898',
             note: 'Forty-nine. Has shot, by his own count, about 275,000 animals. Wants to turn the dual monarchy into a triple one with a Slav crown, which is exactly why some Serbs want him dead.' },
           { id: 'sophie', age: 44, sex: 'female', dress: '#7a4a6a', hairstyle: 'long01', name: 'Sophie, Duchess of Hohenberg', at: [3.0, 1.2], face: 40, pose: 'lounge', coat: '#7a4a6a', hair: '#3a2a1a', shawl: '#c8b8d8',
             note: 'A countess, not an archduchess, which at this court means she cannot sit beside her husband at dinner or ride in his carriage in Vienna. In Sarajevo, as an army inspector\'s wife, she can. That is one reason they go.' },
@@ -224,7 +237,7 @@ export default {
       },
     },
     {
-      id: 'stalin', label: 'Stalin\'s lodgings', x: 40, y: 600, labelSide: 'right', offmap: { arrow: '↙', distance: '4 km' },
+      id: 'stalin', label: 'Stalin\'s lodgings', lat: 48.1868, lon: 16.3245, labelSide: 'right',
       scene: {
         title: 'Schönbrunner Schloßstraße 30', subtitle: 'The Troyanovskys\' flat, 12th district · February 1913',
         glb: 'stalin.glb',
@@ -238,9 +251,9 @@ export default {
           { type: 'bunk', at: [-2.6, 1.4], rot: 270 },
         ],
         figures: [
-          { id: 'stalin', age: 34, model: 'male-f', name: 'Joseph Stalin', at: [-1.6, -1.2], face: 180, pose: 'sit', coat: '#3a3a3a', hair: '#1a1a1a', moustache: true, skin: '#d8a888',
+          { id: 'stalin', age: 34, name: 'Joseph Stalin', at: [-1.6, -1.2], face: 180, pose: 'sit', coat: '#3a3a3a', hair: '#1a1a1a', moustache: true, skin: '#d8a888',
             note: 'Thirty-four, travelling as Stavros Papadopoulos on a stolen passport. Signs this pamphlet "K. Stalin", the first time the name appears in print. Walks daily in the Schönbrunn park. Hitler walks there too; whether they passed each other is unknowable, which has not stopped anyone.' },
-          { id: 'bukharin', age: 24, model: 'male-e', name: 'Nikolai Bukharin', at: [1.0, -0.6], face: 250, pose: 'sit', coat: '#4a4a5a', hair: '#8a5a2a', beard: '#8a5a2a', glasses: true,
+          { id: 'bukharin', age: 24, name: 'Nikolai Bukharin', at: [1.0, -0.6], face: 250, pose: 'sit', coat: '#4a4a5a', hair: '#8a5a2a', beard: '#8a5a2a', glasses: true,
             note: 'Studying at the university under Böhm-Bawerk, the empire\'s finance minister, and spending afternoons in the Hofbibliothek translating the Austro-Marxists for a man who will have him shot in 1938.' },
           { id: 'troyanovsky', age: 30, hair: '#2a2016', name: 'Alexander Troyanovsky', at: [0.3, 1.5], face: 150, coat: '#5a5a6a', vest: '#8a8a7a', moustache: true,
             note: 'The host, a Bolshevik of good family, whose flat is the Vienna post office for the Russian underground. Will end up Soviet ambassador in Washington.' },
@@ -249,7 +262,7 @@ export default {
       },
     },
     {
-      id: 'hitler', label: 'Hitler\'s hostel', x: 240, y: 30, labelSide: 'right', offmap: { arrow: '↑', distance: '3 km' },
+      id: 'hitler', label: 'Hitler\'s hostel', lat: 48.2373, lon: 16.3819, labelSide: 'right',
       scene: {
         title: 'Männerheim Meldemannstraße', subtitle: 'The men\'s hostel, 20th district · spring 1913',
         glb: 'hitler.glb',
@@ -276,7 +289,7 @@ export default {
       },
     },
     {
-      id: 'tito', label: 'Tito, Wiener Neustadt', x: 560, y: 615, labelSide: 'right', offmap: { arrow: '↓', distance: '50 km' },
+      id: 'tito', label: 'Tito, Wiener Neustadt', lat: 47.81, lon: 16.24, labelSide: 'right', offmap: { arrow: '↓', distance: '50 km' },
       scene: {
         title: 'The Daimler works', subtitle: 'Wiener Neustadt, 50 km south · 1913',
         glb: 'tito.glb',

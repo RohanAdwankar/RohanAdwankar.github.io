@@ -101,7 +101,7 @@ POSES = {
     # On a chair at a table or desk: upright, legs down.
     'sit': ['callharvey3d_sittingdefault', 'callharvey3d_sittingnatural', 'anrico_sitting03', 'anrico_sitting07'],
     # In an armchair or on a sofa: settled in.
-    'lounge': ['callharvey3d_sittinglegscrossed', 'anrico_sitting10', 'anrico_sitting04'],
+    'lounge': ['callharvey3d_sittinglegscrossed'],
     'hold': ['mindfront_standing_holding_wine_glass'],
     'both': ['mindfront_standing_holding_wine_glass'],
     'interact': ['mindfront_standing_holding_wine_glass'],
@@ -217,6 +217,8 @@ def figure(fig, group, box, cyl, mat):
     head_top = bone_at('head')
     hand = bone_at('finger2-1.R') or bone_at('wrist.R')
     wrist = bone_at('wrist.R')
+    pl, pr = bone_at('pelvis.L'), bone_at('pelvis.R')
+    hip = (pl + pr) / 2 if pl is not None and pr is not None else bone_at('root')
     Export.bake_modifiers_remove_helpers(h, bake_masks=True, bake_subdiv=True, remove_helpers=True, also_proxy=True)
 
     meshes = [h] + [o for o in rig.children_recursive if o.type == 'MESH' and o is not h]
@@ -241,16 +243,17 @@ def figure(fig, group, box, cyl, mat):
     # it, whatever the pose did with the hips.
     seat_offset = 0.0
     shift = Vector((0, 0, 0))
-    if pose_key in ('sit', 'lounge'):
+    if pose_key in ('sit', 'lounge') and hip is not None:
+        # The seat of the trousers is the lowest point of any mesh under the
+        # hips (the body itself is cut away under the clothes).
         seat = fig.get('_seat', SEAT_HEIGHT)
-        names = {vg.index: vg.name for vg in h.vertex_groups}
-        pts = [h.matrix_world @ v.co for v in h.data.vertices
-               if sum(g.weight for g in v.groups if names[g.group].startswith(('pelvis', 'thigh', 'upperleg'))) > 0.6]
-        if pts:
-            cx = sum(p.x for p in pts) / len(pts)
-            cy = sum(p.y for p in pts) / len(pts)
-            seat_offset = seat - min(p.z for p in pts)
-            shift = Vector((-cx, -cy + 0.04, seat_offset))
+        cx, cy = hip.x, hip.y
+        pts = [o.matrix_world @ v.co for o in meshes for v in o.data.vertices]
+        under = [p.z for p in pts if abs(p.x - cx) < 0.16 and abs(p.y - cy) < 0.14]
+        bottom = min(under) if under else hip.z - 0.12
+        seat_offset = seat - bottom
+        shift = Vector((-cx, -cy + 0.04, seat_offset))
+        print(f'  seat {fig["id"]}: {pose_name}, seat {seat:.2f}, hips at {hip.z:.2f}, bottom {bottom:.2f}, lift {seat_offset:.2f}')
     for o in meshes:
         o.parent = group
         o.matrix_parent_inverse.identity()
