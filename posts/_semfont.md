@@ -23,6 +23,12 @@ The box below is live and every word in it is editable. It is running the same e
 .sf-themes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .sf-themes span { opacity: .7; margin-right: 4px; }
 .sf-timing { opacity: .7; font-variation-settings: 'MONO' 1; font-variant-numeric: tabular-nums; }
+.sf-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #3a3a3a; border: 1px solid #3a3a3a; border-radius: 8px; overflow: hidden; margin: 20px 0 8px; }
+.sf-compare > div { background: #1a1a1a; padding: 10px 14px; font-size: .98rem; line-height: 1.5; }
+.sf-compare > .h { font-family: 'Recursive', ui-sans-serif, system-ui, sans-serif; font-size: .78rem; opacity: .7; padding: 8px 14px; }
+body.light .sf-compare { background: #d0d0d0; border-color: #d0d0d0; }
+body.light .sf-compare > div { background: #fff; }
+@media (max-width: 480px) { .sf-compare > div { font-size: .88rem; padding: 8px 10px; } }
 body.light .sf-demo, body.light .sf-samples button, body.light .sf-themes label { border-color: #d0d0d0; }
 body.light .sf-samples button[aria-pressed="true"], body.light .sf-themes label:has(input:checked) { border-color: currentColor; }
 body.light .sf-demo:focus-within { border-color: #888; }
@@ -42,6 +48,11 @@ body.light .sf-demo:focus-within { border-color: #888; }
 <label><input type="radio" name="sf-theme" value="monochrome"> monochrome</label>
 <label><input type="radio" name="sf-theme" value="technical"> technical</label>
 </div>
+<div class="sf-themes" id="sf-depths">
+<span>engine</span>
+<label><input type="radio" name="sf-depth" value="fast" checked> fast</label>
+<label><input type="radio" name="sf-depth" value="deep"> deep</label>
+</div>
 <span class="sf-timing" id="sf-timing"></span>
 </div>
 
@@ -60,6 +71,30 @@ The scores come from small lexicons and a few local rules, not a model. Negation
 
 That is what makes it usable as a font rather than a feature. A page of prose scores in about a millisecond, synchronously, offline, with the same answer every time. It runs on every keystroke, during a server render, on a plane. A model would read sarcasm better and could never do that.
 
+## Two engines
+
+The fast engine is what you have been using. Each word gets its lexicon entry and a look at two or three neighbours. That is why it is a millisecond, and it is also why it reads `fixed the crash` as one good word and one bad word, or leaves `great` green six words after a `not`.
+
+The deep engine runs a second pass over clauses instead of windows. Still no model, about twice the cost. Five rules. A negator reaches to the end of its clause. A resolver like `fixed`, `recovered` or `avoided` flips the harm it names, and a bad thing that `is gone` is the good outcome. Less of a bad thing is an improvement. `too` turns praise into a complaint. A lone `Great,` before bad news is sarcasm, and a quoted word the writer then calls `wrong` is not the writer's word.
+
+The ten sentences that led to it, set by both. Left is fast, right is deep.
+
+<div class="sf-compare" id="sf-compare">
+<div class="h">fast</div><div class="h">deep</div>
+<div class="sf" data-depth="fast">Great, another outage. Just what I needed today.</div><div class="sf" data-depth="deep">Great, another outage. Just what I needed today.</div>
+<div class="sf" data-depth="fast">We fixed the crash and closed the security hole before anyone noticed.</div><div class="sf" data-depth="deep">We fixed the crash and closed the security hole before anyone noticed.</div>
+<div class="sf" data-depth="fast">Did it fail? No, it passed every test.</div><div class="sf" data-depth="deep">Did it fail? No, it passed every test.</div>
+<div class="sf" data-depth="fast">The cluster recovered from the crash in under a minute.</div><div class="sf" data-depth="deep">The cluster recovered from the crash in under a minute.</div>
+<div class="sf" data-depth="fast">We avoided a catastrophic outage by catching the bug in staging.</div><div class="sf" data-depth="deep">We avoided a catastrophic outage by catching the bug in staging.</div>
+<div class="sf" data-depth="fast">I would not go so far as to call the new editor great.</div><div class="sf" data-depth="deep">I would not go so far as to call the new editor great.</div>
+<div class="sf" data-depth="fast">Less broken than last week, and far fewer complaints.</div><div class="sf" data-depth="deep">Less broken than last week, and far fewer complaints.</div>
+<div class="sf" data-depth="fast">The memory leak is gone.</div><div class="sf" data-depth="deep">The memory leak is gone.</div>
+<div class="sf" data-depth="fast">The reviewer called it "terrible", which is wrong.</div><div class="sf" data-depth="deep">The reviewer called it "terrible", which is wrong.</div>
+<div class="sf" data-depth="fast">The API is too simple and the docs are too clever.</div><div class="sf" data-depth="deep">The API is too simple and the docs are too clever.</div>
+</div>
+
+The third row is the one case that was a plain bug rather than a missing rule. A one-word `No,` is an answer to the question before it, not a negation of what follows. That fix went into the fast engine too.
+
 ## Using it
 
 One React component, no build step, no dependency but React.
@@ -73,10 +108,11 @@ import { SemanticText } from 'semfont';
 </SemanticText>
 ```
 
-Pick a theme, or only the channels you want. Nothing but colour:
+Pick a theme, an engine, or only the channels you want:
 
 ```jsx
 <SemanticText text={incident} theme="monochrome" />
+<SemanticText text={incident} depth="deep" />
 <SemanticText text={incident} channels={['valence']} />
 ```
 
@@ -141,17 +177,20 @@ const specimens = [...document.querySelectorAll('.sf')].map((el) => ({ el, text:
 function theme() {
   return themes[document.querySelector('[name=sf-theme]:checked').value];
 }
+function depth() {
+  return document.querySelector('[name=sf-depth]:checked').value;
+}
 
 // The same three lines the React component runs: analyze, style, render.
-function paint(el, text, th) {
-  const result = analyze(text);
+function paint(el, text, th, d = 'fast') {
+  const result = analyze(text, { depth: d });
   const frag = document.createDocumentFragment();
   for (const token of result.tokens) {
     const styled = styleFor(token, th);
     if (!styled) { frag.append(token.text); continue; }
     const span = document.createElement('span');
     Object.assign(span.style, styled.style);
-    span.title = CHANNELS.map((c) => `${c} ${token[c].toFixed(2)}`).join(' · ');
+    span.title = [...(token.notes ?? []), ...CHANNELS.map((c) => `${c} ${token[c].toFixed(2)}`)].join(' · ');
     span.textContent = token.text;
     frag.append(span);
   }
@@ -198,7 +237,7 @@ function renderBox() {
   const caret = caretOffset();
   const scrollTop = out.scrollTop;
   const started = performance.now();
-  paint(out, text, theme());
+  paint(out, text, theme(), depth());
   const ms = performance.now() - started;
   timing.textContent = text ? `${text.length} characters scored and set in ${ms.toFixed(2)} ms` : '';
   out.scrollTop = scrollTop;
@@ -218,8 +257,7 @@ function select(button) {
 }
 
 function renderAll() {
-  const th = theme();
-  for (const { el, text } of specimens) paint(el, text, th);
+  for (const { el, text } of specimens) paint(el, text, themes.editorial, el.dataset.depth || 'fast');
   renderBox();
 }
 
@@ -265,5 +303,6 @@ out.addEventListener('paste', (e) => {
   document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
 });
 document.getElementById('sf-themes').addEventListener('change', renderAll);
+document.getElementById('sf-depths').addEventListener('change', renderBox);
 renderAll();
 </script>
