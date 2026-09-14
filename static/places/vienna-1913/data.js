@@ -243,11 +243,11 @@ export default {
         glb: 'stalin.glb',
         blurb: 'Stalin is in Vienna for five weeks, his only extended stay in the West, writing the pamphlet that will make him the Bolsheviks\' expert on nationalities. He does not read German, so a twenty-four-year-old named Bukharin reads it for him.',
         room: { w: 7, d: 6, h: 3.4, floor: '#6a5a4a', wall: '#b8b0a0', trim: '#5a4a3a', sky: '#c8c4bc', windows: [{ wall: 'back', at: 1.5 }] },
-        camera: { pos: [4.4, 3.0, 5.4], look: [-0.3, 0.9, -0.6] },
+        camera: { pos: [3.4, 2.7, 5.2], look: [-0.4, 0.9, -0.6] },
         props: [
           { type: 'desk', at: [-1.6, -2.0] }, { type: 'chair', at: [-1.6, -1.2], rot: 180 },
           { type: 'bookshelf', at: [2.4, -2.5], w: 1.4 }, { type: 'chair', at: [1.0, -0.6], rot: 250 },
-          { type: 'rug', at: [0, 0.4], w: 3.2, d: 2.6, color: '#5a4a5a' }, { type: 'lamp', at: [2.9, 1.6] },
+          { type: 'rug', at: [0, 0.4], w: 3.2, d: 2.6, color: '#5a4a5a' }, { type: 'lamp', at: [2.9, -2.4] },
           { type: 'bunk', at: [-2.6, 1.4], rot: 270 },
         ],
         figures: [

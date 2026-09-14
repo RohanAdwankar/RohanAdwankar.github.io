@@ -166,7 +166,7 @@ export function mountPlace(root, place) {
       if (!node || pin.baseX === undefined) continue;
       let x = pin.baseX;
       if (narrow && (x < x0 + 30 || x > x0 + w - 30)) x = Math.min(x0 + w - 30, Math.max(x0 + 30, x));
-      node.setAttribute('transform', `translate(${x} ${pin.baseY})`);
+      node.setAttribute('transform', `translate(${x} ${pin.baseY})${narrow ? ' scale(1.5)' : ''}`);
     }
     requestAnimationFrame(() => { for (const n of pinNodes.values()) n.sizeLabel?.(); });
   }

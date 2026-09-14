@@ -480,13 +480,20 @@ def window(win, w, d, h, sky):
         g.location = (w / 2 - 0.02, -win['at'], 2.1)
         g.rotation_euler = (0, 0, math.radians(90))
     # Frame, a glowing pane, and a cross bar. Recess suggested by a sill.
-    # A recessed frame, daylight through the glass, a cross of glazing bars.
-    box(ww + 0.3, wh + 0.3, 0.12, '#efe9dc', 0, 0, 0, parent=g, bev=0.01, name='frame')
-    box(ww, wh, 0.02, '#dfeaf3', 0, 0, 0.04, parent=g, emission='#cfe0ee', strength=1.6, bev=0, rough=0.2, name='pane')
-    box(0.05, wh, 0.08, '#efe9dc', 0, 0, 0.06, parent=g, bev=0.004)
-    box(ww, 0.05, 0.08, '#efe9dc', 0, 0.3, 0.06, parent=g, bev=0.004)
-    box(ww, 0.05, 0.08, '#efe9dc', 0, -0.5, 0.06, parent=g, bev=0.004)
-    box(ww + 0.5, 0.08, 0.3, '#efe9dc', 0, -wh / 2 - 0.19, 0.12, parent=g, bev=0.01, name='sill')
+    # A dark wooden case standing proud of the wall as four strips round an
+    # open middle, sky through the glass behind white glazing bars, a sill.
+    t = 0.16
+    for part in (box(ww + 2 * t, t, 0.12, '#5a4632', 0, wh / 2 + t / 2, 0.04, parent=g, bev=0.01),
+                 box(ww + 2 * t, t, 0.12, '#5a4632', 0, -wh / 2 - t / 2, 0.04, parent=g, bev=0.01),
+                 box(t, wh, 0.12, '#5a4632', -ww / 2 - t / 2, 0, 0.04, parent=g, bev=0.01),
+                 box(t, wh, 0.12, '#5a4632', ww / 2 + t / 2, 0, 0.04, parent=g, bev=0.01)):
+        tex.apply(part, 'darkwood', rough=0.5)
+    box(ww, wh, 0.02, '#b9cfe2', 0, 0, 0.025, parent=g, emission='#9fbdd8', strength=0.9, bev=0, rough=0.15, name='pane')
+    for x in (-ww / 3, 0, ww / 3):
+        box(0.04, wh, 0.04, '#f3efe6', x, 0, 0.05, parent=g, bev=0.004)
+    for yy in (-wh / 4, wh / 4):
+        box(ww, 0.04, 0.04, '#f3efe6', 0, yy, 0.05, parent=g, bev=0.004)
+    tex.apply(box(ww + 0.5, 0.07, 0.3, '#5a4632', 0, -wh / 2 - t - 0.03, 0.12, parent=g, bev=0.01, name='sill'), 'darkwood', rough=0.5)
 
 
 # ---------------------------------------------------------------------------
