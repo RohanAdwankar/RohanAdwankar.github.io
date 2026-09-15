@@ -136,11 +136,33 @@ tokens[4];   // { text: 'failed', valence: -0.7, salience: 0.23, surprise: 0.06,
 styleFor(tokens[4], themes.editorial).style;   // { color: 'color-mix(in oklab, currentColor, oklch(0.58 0.19 25) 53%)' }
 ```
 
+That last form is how this page works. There is no bundler here, so one import map tells the browser where `semfont/analyze` and `semfont/theme` live, pinned to a version on npm, and the demo box above is the same three lines as the React component: analyze, style, render.
+
+```html
+<script type="importmap">
+{ "imports": {
+  "semfont/analyze": "https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/analyze.js",
+  "semfont/theme":   "https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/theme.js"
+} }
+</script>
+<script type="module">
+  import { analyze } from 'semfont/analyze';
+  import { styleFor, themes } from 'semfont/theme';
+</script>
+```
+
 Code and demo at [github.com/RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont). MIT.
 
+<script type="importmap">
+{ "imports": {
+  "semfont/analyze": "https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/analyze.js",
+  "semfont/theme":   "https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/theme.js"
+} }
+</script>
+
 <script type="module">
-import { analyze } from '/js/semfont/analyze.js';
-import { styleFor, themes } from '/js/semfont/theme.js';
+import { analyze } from 'semfont/analyze';
+import { styleFor, themes } from 'semfont/theme';
 
 const CHANNELS = ['valence', 'salience', 'surprise', 'certainty', 'technicality'];
 
