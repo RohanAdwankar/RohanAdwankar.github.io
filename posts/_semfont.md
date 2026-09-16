@@ -56,11 +56,6 @@ body.light .sf-demo:focus-within { border-color: #888; }
 <label><input type="radio" name="sf-theme" value="monochrome"> monochrome</label>
 <label><input type="radio" name="sf-theme" value="technical"> technical</label>
 </div>
-<div class="sf-themes" id="sf-depths">
-<span>engine</span>
-<label><input type="radio" name="sf-depth" value="fast" checked> fast</label>
-<label><input type="radio" name="sf-depth" value="deep"> deep</label>
-</div>
 <span class="sf-timing" id="sf-timing"></span>
 </div>
 
@@ -77,31 +72,31 @@ Every word gets four scores. Each score drives a different typographic axis, so 
 
 The scores come from small lexicons and a few local rules, not a model. Negation flips a word and damps it, so `not great` reads as a complaint rather than a catastrophe. Rarity is measured against the passage, so the topic words of a paragraph float up on their own.
 
-That is what makes it usable as a font rather than a feature. A page of prose scores in about a millisecond, synchronously, offline, with the same answer every time. It runs on every keystroke, during a server render, on a plane. A model would read sarcasm better and could never do that.
+That is what makes it usable as a font rather than a feature. The engine runs in under a millisecond per hundred words, synchronously, offline, with the same answer every time, and that number is a budget rather than a measurement: a rule that would break it does not go in. It runs on every keystroke, during a server render, on a plane. A model would read sarcasm better and could never do that.
 
-## Two engines
+## Improving the model
 
-The fast engine is what you have been using. Each word gets its lexicon entry and a look at two or three neighbours. That is why it is a millisecond, and it is also why it reads `fixed the crash` as one good word and one bad word, or leaves `great` green six words after a `not`.
+The first version scored each word from its lexicon entry and a look at two or three neighbours. That reads `fixed the crash` as one good word and one bad word, and leaves `great` green six words after a `not`.
 
-The deep engine runs a second pass over clauses instead of windows. Still no model, about twice the cost. Five rules. A negator reaches to the end of its clause. A resolver like `fixed`, `recovered` or `avoided` flips the harm it names, and a bad thing that `is gone` is the good outcome. Less of a bad thing is an improvement. `too` turns praise into a complaint. A lone `Great,` before bad news is sarcasm, and a quoted word the writer then calls `wrong` is not the writer's word.
+The current one adds a second pass over clauses instead of windows. Still no model, still inside the budget, so there is no switch to flip. Five rules. A negator reaches to the end of its clause. A resolver like `fixed`, `recovered` or `avoided` flips the harm it names, and a bad thing that `is gone` is the good outcome. Less of a bad thing is an improvement. `too` turns praise into a complaint. A lone `Great,` before bad news is sarcasm, and a quoted word the writer then calls `wrong` is not the writer's word.
 
-The ten sentences that led to it, set by both. Left is fast, right is deep.
+The ten sentences that led to it. Left is the first version, right is now.
 
 <div class="sf-compare" id="sf-compare">
-<div class="h">fast</div><div class="h">deep</div>
-<div class="sf" data-depth="fast">Great, another outage. Just what I needed today.</div><div class="sf" data-depth="deep">Great, another outage. Just what I needed today.</div>
-<div class="sf" data-depth="fast">We fixed the crash and closed the security hole before anyone noticed.</div><div class="sf" data-depth="deep">We fixed the crash and closed the security hole before anyone noticed.</div>
-<div class="sf" data-depth="fast">Did it fail? No, it passed every test.</div><div class="sf" data-depth="deep">Did it fail? No, it passed every test.</div>
-<div class="sf" data-depth="fast">The cluster recovered from the crash in under a minute.</div><div class="sf" data-depth="deep">The cluster recovered from the crash in under a minute.</div>
-<div class="sf" data-depth="fast">We avoided a catastrophic outage by catching the bug in staging.</div><div class="sf" data-depth="deep">We avoided a catastrophic outage by catching the bug in staging.</div>
-<div class="sf" data-depth="fast">I would not go so far as to call the new editor great.</div><div class="sf" data-depth="deep">I would not go so far as to call the new editor great.</div>
-<div class="sf" data-depth="fast">Less broken than last week, and far fewer complaints.</div><div class="sf" data-depth="deep">Less broken than last week, and far fewer complaints.</div>
-<div class="sf" data-depth="fast">The memory leak is gone.</div><div class="sf" data-depth="deep">The memory leak is gone.</div>
-<div class="sf" data-depth="fast">The reviewer called it "terrible", which is wrong.</div><div class="sf" data-depth="deep">The reviewer called it "terrible", which is wrong.</div>
-<div class="sf" data-depth="fast">The API is too simple and the docs are too clever.</div><div class="sf" data-depth="deep">The API is too simple and the docs are too clever.</div>
+<div class="h">before</div><div class="h">now</div>
+<div class="sf" data-when="before">Great, another outage. Just what I needed today.</div><div class="sf" data-when="now">Great, another outage. Just what I needed today.</div>
+<div class="sf" data-when="before">We fixed the crash and closed the security hole before anyone noticed.</div><div class="sf" data-when="now">We fixed the crash and closed the security hole before anyone noticed.</div>
+<div class="sf" data-when="before">Did it fail? No, it passed every test.</div><div class="sf" data-when="now">Did it fail? No, it passed every test.</div>
+<div class="sf" data-when="before">The cluster recovered from the crash in under a minute.</div><div class="sf" data-when="now">The cluster recovered from the crash in under a minute.</div>
+<div class="sf" data-when="before">We avoided a catastrophic outage by catching the bug in staging.</div><div class="sf" data-when="now">We avoided a catastrophic outage by catching the bug in staging.</div>
+<div class="sf" data-when="before">I would not go so far as to call the new editor great.</div><div class="sf" data-when="now">I would not go so far as to call the new editor great.</div>
+<div class="sf" data-when="before">Less broken than last week, and far fewer complaints.</div><div class="sf" data-when="now">Less broken than last week, and far fewer complaints.</div>
+<div class="sf" data-when="before">The memory leak is gone.</div><div class="sf" data-when="now">The memory leak is gone.</div>
+<div class="sf" data-when="before">The reviewer called it "terrible", which is wrong.</div><div class="sf" data-when="now">The reviewer called it "terrible", which is wrong.</div>
+<div class="sf" data-when="before">The API is too simple and the docs are too clever.</div><div class="sf" data-when="now">The API is too simple and the docs are too clever.</div>
 </div>
 
-The third row is the one case that was a plain bug rather than a missing rule. A one-word `No,` is an answer to the question before it, not a negation of what follows. That fix went into the fast engine too.
+The third row is the one case that was a plain bug rather than a missing rule. A one-word `No,` is an answer to the question before it, not a negation of what follows. That fix went into the first pass.
 
 ## Using it
 
@@ -116,11 +111,10 @@ import { SemanticText } from 'semfont';
 </SemanticText>
 ```
 
-Pick a theme, an engine, or only the channels you want:
+Pick a theme, or only the channels you want:
 
 ```jsx
 <SemanticText text={incident} theme="monochrome" />
-<SemanticText text={incident} depth="deep" />
 <SemanticText text={incident} channels={['valence']} />
 ```
 
@@ -144,7 +138,7 @@ function Chat() {
   return messages.map((m) => {
     const text = m.parts.filter((p) => p.type === 'text').map((p) => p.text).join('');
     return m.role === 'assistant'
-      ? <SemanticText key={m.id} as="p" text={text} depth="deep" />
+      ? <SemanticText key={m.id} as="p" text={text} />
       : <p key={m.id}>{text}</p>;
   });
 }
@@ -202,18 +196,28 @@ That last form is how this page works. There is no bundler here, so one import m
 </script>
 ```
 
+## Future work
+
+The budget is the design. Every rule so far fits under a millisecond per hundred words and the next ones will too, or they will not go into the default engine. Some things will not fit: sarcasm that needs the whole paragraph, a pronoun resolved back to what it names, a small model for the cases no rule catches. If one of those proves worth having it ships as a second model with its own budget, chosen explicitly, so the engine you get by default never gets slower than the one on this page.
+
 Code and demo at [github.com/RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont). MIT.
 
 <script type="importmap">
 { "imports": {
   "semfont/analyze": "https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/analyze.js",
-  "semfont/theme":   "https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/theme.js"
+  "semfont/theme":   "https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/theme.js",
+  "semfont-first/analyze": "https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/analyze.js"
 } }
 </script>
 
 <script type="module">
 import { analyze } from 'semfont/analyze';
 import { styleFor, themes } from 'semfont/theme';
+import { analyze as analyzeFirst } from 'semfont-first/analyze';
+
+// The engine on the page, and the first version it is compared with below.
+const score = (text) => analyze(text, { depth: 'deep' });
+const scoreFirst = (text) => analyzeFirst(text);
 
 const CHANNELS = ['valence', 'salience', 'surprise', 'certainty', 'technicality'];
 
@@ -250,13 +254,10 @@ const specimens = [...document.querySelectorAll('.sf')].map((el) => ({ el, text:
 function theme() {
   return themes[document.querySelector('[name=sf-theme]:checked').value];
 }
-function depth() {
-  return document.querySelector('[name=sf-depth]:checked').value;
-}
 
 // The same three lines the React component runs: analyze, style, render.
-function paint(el, text, th, d = 'fast') {
-  const result = analyze(text, { depth: d });
+function paint(el, text, th, analyzeWith = score) {
+  const result = analyzeWith(text);
   const frag = document.createDocumentFragment();
   for (const token of result.tokens) {
     const styled = styleFor(token, th);
@@ -309,10 +310,14 @@ function placeCaret(offset) {
 function renderBox() {
   const caret = caretOffset();
   const scrollTop = out.scrollTop;
+  paint(out, text, theme());
+  // Browsers round performance.now() to as much as a millisecond, so one run
+  // reads 1.00 or 2.00. Twenty runs averaged give a number that means something.
+  const runs = 20;
   const started = performance.now();
-  paint(out, text, theme(), depth());
-  const ms = performance.now() - started;
-  timing.textContent = text ? `${text.length} characters scored and set in ${ms.toFixed(2)} ms` : '';
+  for (let i = 0; i < runs; i++) score(text);
+  const ms = (performance.now() - started) / runs;
+  timing.textContent = text ? `${text.length} characters scored in ${ms.toFixed(2)} ms` : '';
   out.scrollTop = scrollTop;
   placeCaret(caret);
   if (caret !== null) {
@@ -330,7 +335,7 @@ function select(button) {
 }
 
 function renderAll() {
-  for (const { el, text } of specimens) paint(el, text, themes.editorial, el.dataset.depth || 'fast');
+  for (const { el, text } of specimens) paint(el, text, themes.editorial, el.dataset.when === 'before' ? scoreFirst : score);
   renderBox();
 }
 
@@ -376,6 +381,5 @@ out.addEventListener('paste', (e) => {
   document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
 });
 document.getElementById('sf-themes').addEventListener('change', renderAll);
-document.getElementById('sf-depths').addEventListener('change', renderBox);
 renderAll();
 </script>
