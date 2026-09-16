@@ -150,7 +150,9 @@ function Chat() {
 }
 ```
 
-<img src="/img/semfont-stream.gif" alt="The same answer streaming in twice, as plain text on the left and through semfont on the right" width="1200" height="600" style="width:100%;height:auto;border-radius:8px">
+<img src="/img/semfont-stream.gif" alt="A chat page streaming the same answer twice, as plain text on the left and through semfont on the right" width="1200" height="709" style="width:100%;height:auto;border-radius:8px">
+
+That recording is the [example app](https://github.com/RohanAdwankar/semfont/tree/main/examples/chat) in the repo: the component above, `useChat`, and a model behind the OpenAI chat completions API. It was recorded against the mock model server the example ships, which speaks the same API, so the page cannot tell it from OpenRouter.
 
 Or skip React and take the scores. `analyze` is the engine alone, four numbers per word, no CSS, and these imports work with no React installed:
 
