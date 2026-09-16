@@ -1,9 +1,9 @@
-// Records the streaming GIF for the semfont post from this app.
+// Records a GIF of a reply streaming into this app.
 //
 //   MOCK_DELAY_MS=120 npm run mock                    # terminal 1
 //   LLM_BASE_URL=http://localhost:8787/v1 npm run dev # terminal 2
 //   npm run record                                    # writes record/frames/
-//   uv run --with pillow python record/gif.py         # writes static/img/semfont-stream.gif
+//   uv run --with pillow python record/gif.py         # writes record/semfont-stream.gif
 //
 // Chromium comes from `npx playwright install chromium`, or set CHROMIUM to a
 // binary. Text is rendered with greyscale antialiasing so the frames hold a

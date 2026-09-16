@@ -40,6 +40,21 @@ body.light .sf-compare > div { background: #fff; }
 body.light .sf-demo, body.light .sf-samples button, body.light .sf-themes label { border-color: #d0d0d0; }
 body.light .sf-samples button[aria-pressed="true"], body.light .sf-themes label:has(input:checked) { border-color: currentColor; }
 body.light .sf-demo:focus-within { border-color: #888; }
+.sf-chat { border: 1px solid #3a3a3a; border-radius: 8px; overflow: hidden; margin: 20px 0 8px; font-family: 'Recursive', ui-sans-serif, system-ui, sans-serif; font-variation-settings: 'MONO' 0, 'CASL' 0; -webkit-font-smoothing: antialiased; }
+.sf-ask { display: flex; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #3a3a3a; margin: 0; }
+.sf-ask input { flex: 1; min-width: 0; font: inherit; font-size: .9rem; color: inherit; background: transparent; border: 1px solid #3a3a3a; border-radius: 6px; padding: 6px 10px; opacity: .85; }
+.sf-ask button { font: inherit; font-size: .8rem; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: 2rem; padding: 4px 13px; cursor: pointer; }
+.sf-ask button:disabled { opacity: .4; cursor: default; }
+.sf-reply { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #3a3a3a; }
+.sf-reply section { background: #1a1a1a; padding: 10px 14px 14px; }
+.sf-reply h4 { margin: 0 0 6px; font-size: .78rem; font-weight: 400; opacity: .7; }
+.sf-reply p { margin: 0; font-size: .98rem; line-height: 1.5; height: 19.5em; overflow-y: auto; white-space: pre-wrap; }
+.sf-reply p span { line-height: 1; transition: color .22s ease, background .22s ease, opacity .22s ease; }
+.sf-reply p.streaming::after { content: ''; display: inline-block; width: .5em; height: 1em; background: currentColor; opacity: .5; vertical-align: -.15em; margin-left: 2px; }
+@media (max-width: 480px) { .sf-reply { grid-template-columns: 1fr; } .sf-reply p { font-size: .9rem; } }
+body.light .sf-chat, body.light .sf-ask, body.light .sf-ask input { border-color: #d0d0d0; }
+body.light .sf-reply { background: #d0d0d0; }
+body.light .sf-reply section { background: #fff; }
 </style>
 
 <div class="sf-samples" id="sf-samples"></div>
@@ -55,11 +70,6 @@ body.light .sf-demo:focus-within { border-color: #888; }
 <label><input type="radio" name="sf-theme" value="loud"> loud</label>
 <label><input type="radio" name="sf-theme" value="monochrome"> monochrome</label>
 <label><input type="radio" name="sf-theme" value="technical"> technical</label>
-</div>
-<div class="sf-themes" id="sf-depths">
-<span>engine</span>
-<label><input type="radio" name="sf-depth" value="fast" checked> fast</label>
-<label><input type="radio" name="sf-depth" value="deep"> deep</label>
 </div>
 <span class="sf-timing" id="sf-timing"></span>
 </div>
@@ -77,31 +87,31 @@ Every word gets four scores. Each score drives a different typographic axis, so 
 
 The scores come from small lexicons and a few local rules, not a model. Negation flips a word and damps it, so `not great` reads as a complaint rather than a catastrophe. Rarity is measured against the passage, so the topic words of a paragraph float up on their own.
 
-That is what makes it usable as a font rather than a feature. A page of prose scores in about a millisecond, synchronously, offline, with the same answer every time. It runs on every keystroke, during a server render, on a plane. A model would read sarcasm better and could never do that.
+That is what makes it usable as a font rather than a feature. The engine runs in under a millisecond per hundred words, synchronously, offline, with the same answer every time, and that number is a budget rather than a measurement: a rule that would break it does not go in. It runs on every keystroke, during a server render, on a plane. A model would read sarcasm better and could never do that.
 
-## Two engines
+## Improving the model
 
-The fast engine is what you have been using. Each word gets its lexicon entry and a look at two or three neighbours. That is why it is a millisecond, and it is also why it reads `fixed the crash` as one good word and one bad word, or leaves `great` green six words after a `not`.
+The first version scored each word from its lexicon entry and a look at two or three neighbours. That reads `fixed the crash` as one good word and one bad word, and leaves `great` green six words after a `not`.
 
-The deep engine runs a second pass over clauses instead of windows. Still no model, about twice the cost. Five rules. A negator reaches to the end of its clause. A resolver like `fixed`, `recovered` or `avoided` flips the harm it names, and a bad thing that `is gone` is the good outcome. Less of a bad thing is an improvement. `too` turns praise into a complaint. A lone `Great,` before bad news is sarcasm, and a quoted word the writer then calls `wrong` is not the writer's word.
+The current one adds a second pass over clauses instead of windows. Still no model, still inside the budget, so there is no switch to flip. Five rules. A negator reaches to the end of its clause. A resolver like `fixed`, `recovered` or `avoided` flips the harm it names, and a bad thing that `is gone` is the good outcome. Less of a bad thing is an improvement. `too` turns praise into a complaint. A lone `Great,` before bad news is sarcasm, and a quoted word the writer then calls `wrong` is not the writer's word.
 
-The ten sentences that led to it, set by both. Left is fast, right is deep.
+The ten sentences that led to it. Left is the first version, right is now.
 
 <div class="sf-compare" id="sf-compare">
-<div class="h">fast</div><div class="h">deep</div>
-<div class="sf" data-depth="fast">Great, another outage. Just what I needed today.</div><div class="sf" data-depth="deep">Great, another outage. Just what I needed today.</div>
-<div class="sf" data-depth="fast">We fixed the crash and closed the security hole before anyone noticed.</div><div class="sf" data-depth="deep">We fixed the crash and closed the security hole before anyone noticed.</div>
-<div class="sf" data-depth="fast">Did it fail? No, it passed every test.</div><div class="sf" data-depth="deep">Did it fail? No, it passed every test.</div>
-<div class="sf" data-depth="fast">The cluster recovered from the crash in under a minute.</div><div class="sf" data-depth="deep">The cluster recovered from the crash in under a minute.</div>
-<div class="sf" data-depth="fast">We avoided a catastrophic outage by catching the bug in staging.</div><div class="sf" data-depth="deep">We avoided a catastrophic outage by catching the bug in staging.</div>
-<div class="sf" data-depth="fast">I would not go so far as to call the new editor great.</div><div class="sf" data-depth="deep">I would not go so far as to call the new editor great.</div>
-<div class="sf" data-depth="fast">Less broken than last week, and far fewer complaints.</div><div class="sf" data-depth="deep">Less broken than last week, and far fewer complaints.</div>
-<div class="sf" data-depth="fast">The memory leak is gone.</div><div class="sf" data-depth="deep">The memory leak is gone.</div>
-<div class="sf" data-depth="fast">The reviewer called it "terrible", which is wrong.</div><div class="sf" data-depth="deep">The reviewer called it "terrible", which is wrong.</div>
-<div class="sf" data-depth="fast">The API is too simple and the docs are too clever.</div><div class="sf" data-depth="deep">The API is too simple and the docs are too clever.</div>
+<div class="h">before</div><div class="h">now</div>
+<div class="sf" data-when="before">Great, another outage. Just what I needed today.</div><div class="sf" data-when="now">Great, another outage. Just what I needed today.</div>
+<div class="sf" data-when="before">We fixed the crash and closed the security hole before anyone noticed.</div><div class="sf" data-when="now">We fixed the crash and closed the security hole before anyone noticed.</div>
+<div class="sf" data-when="before">Did it fail? No, it passed every test.</div><div class="sf" data-when="now">Did it fail? No, it passed every test.</div>
+<div class="sf" data-when="before">The cluster recovered from the crash in under a minute.</div><div class="sf" data-when="now">The cluster recovered from the crash in under a minute.</div>
+<div class="sf" data-when="before">We avoided a catastrophic outage by catching the bug in staging.</div><div class="sf" data-when="now">We avoided a catastrophic outage by catching the bug in staging.</div>
+<div class="sf" data-when="before">I would not go so far as to call the new editor great.</div><div class="sf" data-when="now">I would not go so far as to call the new editor great.</div>
+<div class="sf" data-when="before">Less broken than last week, and far fewer complaints.</div><div class="sf" data-when="now">Less broken than last week, and far fewer complaints.</div>
+<div class="sf" data-when="before">The memory leak is gone.</div><div class="sf" data-when="now">The memory leak is gone.</div>
+<div class="sf" data-when="before">The reviewer called it "terrible", which is wrong.</div><div class="sf" data-when="now">The reviewer called it "terrible", which is wrong.</div>
+<div class="sf" data-when="before">The API is too simple and the docs are too clever.</div><div class="sf" data-when="now">The API is too simple and the docs are too clever.</div>
 </div>
 
-The third row is the one case that was a plain bug rather than a missing rule. A one-word `No,` is an answer to the question before it, not a negation of what follows. That fix went into the fast engine too.
+The third row is the one case that was a plain bug rather than a missing rule. A one-word `No,` is an answer to the question before it, not a negation of what follows. That fix went into the first pass.
 
 ## Using it
 
@@ -116,11 +126,10 @@ import { SemanticText } from 'semfont';
 </SemanticText>
 ```
 
-Pick a theme, an engine, or only the channels you want:
+Pick a theme, or only the channels you want:
 
 ```jsx
 <SemanticText text={incident} theme="monochrome" />
-<SemanticText text={incident} depth="deep" />
 <SemanticText text={incident} channels={['valence']} />
 ```
 
@@ -144,13 +153,21 @@ function Chat() {
   return messages.map((m) => {
     const text = m.parts.filter((p) => p.type === 'text').map((p) => p.text).join('');
     return m.role === 'assistant'
-      ? <SemanticText key={m.id} as="p" text={text} depth="deep" />
+      ? <SemanticText key={m.id} as="p" text={text} />
       : <p key={m.id}>{text}</p>;
   });
 }
 ```
 
-<img src="/img/semfont-stream.gif" alt="A chat page streaming the same answer twice, as plain text on the left and through semfont on the right" width="1320" height="780" style="width:100%;height:auto;border-radius:8px">
+<div class="sf-chat">
+<form class="sf-ask" id="sf-ask"><input value="why did the deploy fail?" readonly aria-label="question"><button type="submit">send</button></form>
+<div class="sf-reply">
+<section><h4>plain text</h4><p id="sf-plain"></p></section>
+<section><h4>semfont</h4><p id="sf-set"></p></section>
+</div>
+</div>
+
+That is the component above with a stand-in model. The question is fixed and the reply is canned, but it arrives the way a model's does, in chunks through a stream, and the right pane is re-set on every chunk.
 
 The other half is one route. Any model behind the OpenAI chat completions API works, so this is OpenRouter by default and a local model or a mock by changing the base URL:
 
@@ -174,7 +191,7 @@ export async function POST(req) {
 }
 ```
 
-The recording above is that page and that route, driven against a small server that speaks the same chat completions format with a canned answer, so the app cannot tell it from a hosted model. The app, the mock and the recording script are in [this site's repo](https://github.com/RohanAdwankar/RohanAdwankar.github.io/tree/main/demos/semfont-chat).
+A runnable version of that page and that route, with a small server that speaks the chat completions format in place of a model, is in [this site's repo](https://github.com/RohanAdwankar/RohanAdwankar.github.io/tree/main/demos/semfont-chat).
 
 Or skip React and take the scores. `analyze` is the engine alone, four numbers per word, no CSS, and these imports work with no React installed:
 
@@ -202,18 +219,28 @@ That last form is how this page works. There is no bundler here, so one import m
 </script>
 ```
 
+## Future work
+
+The budget is the design. Every rule so far fits under a millisecond per hundred words and the next ones will too, or they will not go into the default engine. Some things will not fit: sarcasm that needs the whole paragraph, a pronoun resolved back to what it names, a small model for the cases no rule catches. If one of those proves worth having it ships as a second model with its own budget, chosen explicitly, so the engine you get by default never gets slower than the one on this page.
+
 Code and demo at [github.com/RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont). MIT.
 
 <script type="importmap">
 { "imports": {
   "semfont/analyze": "https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/analyze.js",
-  "semfont/theme":   "https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/theme.js"
+  "semfont/theme":   "https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/theme.js",
+  "semfont-first/analyze": "https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/analyze.js"
 } }
 </script>
 
 <script type="module">
 import { analyze } from 'semfont/analyze';
 import { styleFor, themes } from 'semfont/theme';
+import { analyze as analyzeFirst } from 'semfont-first/analyze';
+
+// The engine on the page, and the first version it is compared with below.
+const score = (text) => analyze(text, { depth: 'deep' });
+const scoreFirst = (text) => analyzeFirst(text);
 
 const CHANNELS = ['valence', 'salience', 'surprise', 'certainty', 'technicality'];
 
@@ -250,13 +277,10 @@ const specimens = [...document.querySelectorAll('.sf')].map((el) => ({ el, text:
 function theme() {
   return themes[document.querySelector('[name=sf-theme]:checked').value];
 }
-function depth() {
-  return document.querySelector('[name=sf-depth]:checked').value;
-}
 
 // The same three lines the React component runs: analyze, style, render.
-function paint(el, text, th, d = 'fast') {
-  const result = analyze(text, { depth: d });
+function paint(el, text, th, analyzeWith = score) {
+  const result = analyzeWith(text);
   const frag = document.createDocumentFragment();
   for (const token of result.tokens) {
     const styled = styleFor(token, th);
@@ -309,10 +333,14 @@ function placeCaret(offset) {
 function renderBox() {
   const caret = caretOffset();
   const scrollTop = out.scrollTop;
+  paint(out, text, theme());
+  // Browsers round performance.now() to as much as a millisecond, so one run
+  // reads 1.00 or 2.00. Twenty runs averaged give a number that means something.
+  const runs = 20;
   const started = performance.now();
-  paint(out, text, theme(), depth());
-  const ms = performance.now() - started;
-  timing.textContent = text ? `${text.length} characters scored and set in ${ms.toFixed(2)} ms` : '';
+  for (let i = 0; i < runs; i++) score(text);
+  const ms = (performance.now() - started) / runs;
+  timing.textContent = text ? `${text.length} characters scored in ${ms.toFixed(2)} ms` : '';
   out.scrollTop = scrollTop;
   placeCaret(caret);
   if (caret !== null) {
@@ -330,7 +358,7 @@ function select(button) {
 }
 
 function renderAll() {
-  for (const { el, text } of specimens) paint(el, text, themes.editorial, el.dataset.depth || 'fast');
+  for (const { el, text } of specimens) paint(el, text, themes.editorial, el.dataset.when === 'before' ? scoreFirst : score);
   renderBox();
 }
 
@@ -376,6 +404,58 @@ out.addEventListener('paste', (e) => {
   document.execCommand('insertText', false, e.clipboardData.getData('text/plain'));
 });
 document.getElementById('sf-themes').addEventListener('change', renderAll);
-document.getElementById('sf-depths').addEventListener('change', renderBox);
 renderAll();
+
+// The chat box. A stand-in model: the question is fixed and the reply is
+// canned, but it arrives the way fetch('/api/chat') would, chunk by chunk
+// through a ReadableStream, and the right pane is re-set on every chunk.
+const ANSWER = 'The deploy failed because the migration dropped the sessions index before the new one existed. '
+  + 'Traffic looked healthy for two minutes, then every login timed out and the error rate spiked. '
+  + 'The rollback made it worse, since it replayed the same migration. What fixed it was recreating '
+  + 'the index by hand. The staging run probably never exercised the login path, so the check passed '
+  + 'and caught nothing.';
+const ask = document.getElementById('sf-ask');
+const send = ask.querySelector('button');
+const plainOut = document.getElementById('sf-plain');
+const setOut = document.getElementById('sf-set');
+
+function fakeModel(text, ms = 100) {
+  const words = text.match(/\S+\s*/g);
+  let i = 0;
+  return new ReadableStream({
+    pull(controller) {
+      return new Promise((resolve) => setTimeout(() => {
+        if (i >= words.length) controller.close();
+        else controller.enqueue(words.slice(i, i += 2).join(''));
+        resolve();
+      }, ms));
+    },
+  });
+}
+
+function show(text) {
+  plainOut.textContent = text;
+  paint(setOut, text, themes.editorial);
+  for (const el of [plainOut, setOut]) el.scrollTop = el.scrollHeight;
+}
+
+async function reply() {
+  send.disabled = true;
+  plainOut.classList.add('streaming');
+  setOut.classList.add('streaming');
+  let text = '';
+  const reader = fakeModel(ANSWER).getReader();
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    text += value;
+    show(text);
+  }
+  plainOut.classList.remove('streaming');
+  setOut.classList.remove('streaming');
+  send.disabled = false;
+}
+
+ask.addEventListener('submit', (e) => { e.preventDefault(); reply(); });
+show(ANSWER);
 </script>
