@@ -452,6 +452,17 @@ def build_room(room):
                  box(t, h, d + t, wall, -w / 2 - t / 2, h / 2, 0, bev=0, name='wall_left'),
                  box(t, h, d + t, wall, w / 2 + t / 2, h / 2, 0, bev=0, name='wall_right')):
         tex.apply(wobj, 'plaster', tint=wall, rough=0.9)
+    # A ceiling, seen from inside only: its one face points down, so a
+    # camera above the room looks straight through it.
+    bpy.ops.mesh.primitive_plane_add(size=1)
+    ceiling = bpy.context.active_object
+    ceiling.name = 'ceiling'
+    ceiling.scale = (w + 2 * t, d + 2 * t, 1)
+    ceiling.location = (0, 0, h)
+    ceiling.rotation_euler = (math.pi, 0, 0)
+    cm = mat(room.get('ceiling', '#efe7d6'), 0.95)
+    cm.use_backface_culling = True
+    ceiling.data.materials.append(cm)
     # Skirting, dado rail, cornice: the three lines that make a wall a room.
     for yy, hh, dd in ((0.09, 0.18, 0.06), (1.05, 0.05, 0.04), (h - 0.12, 0.24, 0.08)):
         for tobj in (box(w, hh, dd, trim, 0, yy, -d / 2 + dd / 2, bev=0.008),
@@ -727,7 +738,7 @@ def figure(fig):
         # `y` lifts a figure onto a podium or step.
         g = group(f'fig_{fig["id"]}', fig['at'], fig.get('face', 0), y=fig.get('y', 0))
         fig = dict(fig, _seat=seat_height_at(fig['at']))
-        anchor_h = mh.figure(fig, g, box, cyl, mat)
+        anchor_h = mh.figure(fig, g, box, cyl, mat, sphere, torus)
         empty(f'figure_{fig["id"]}', 0, anchor_h, 0, parent=g)
         return g
     return kenney_figure(fig)

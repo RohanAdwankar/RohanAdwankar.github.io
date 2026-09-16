@@ -4,6 +4,7 @@ plain box reads as a plastered wall or a waxed floor.
 
 Textures are downloaded once into .cache/textures/ and shrunk on export.
 """
+import os
 from pathlib import Path
 import urllib.request
 import zipfile
@@ -12,6 +13,17 @@ import bpy
 
 ROOT = Path(__file__).resolve().parents[1]
 CACHE = ROOT / '.cache' / 'textures'
+
+# STYLE=toon draws every surface as one flat colour, the way an animated
+# history explainer does; STYLE=real uses the photographic maps below.
+FLAT = os.environ.get('STYLE', 'toon') == 'toon'
+
+# The flat colour of each surface when there is no tint.
+FLAT_COLOURS = {
+    'parquet': '#9a6a40', 'planks': '#a07a50', 'plaster': '#e2d4b8', 'marble': '#efe8d8',
+    'stone': '#e4dccb', 'carpet': '#8a3a3a', 'fabric': '#7a6a5a', 'leather': '#6a3a2a',
+    'darkwood': '#5a3a22', 'wood': '#9a7048', 'concrete': '#9a948a', 'tiles': '#d8d0c0',
+}
 
 # What each surface in a scene is made of, and how many metres one tile spans.
 SURFACES = {
@@ -62,6 +74,9 @@ def material(surface, tint=None, rough=None, tile=None, normal_strength=0.6):
     key = (surface, tint, rough, tile)
     if key in _materials:
         return _materials[key]
+    if FLAT:
+        _materials[key] = flat_material(surface, tint)
+        return _materials[key]
     asset, size = SURFACES[surface]
     size = tile or size
     colour_path, normal_path = fetch(asset)
@@ -106,6 +121,22 @@ def material(surface, tint=None, rough=None, tile=None, normal_strength=0.6):
     return m
 
 
+def flat_material(surface, tint=None):
+    """One colour, no maps. The page shades it in bands and draws an
+    outline, so the colour is all a surface needs to carry."""
+    m = bpy.data.materials.new(f'flat_{surface}_{tint or "plain"}')
+    m.use_nodes = True
+    bsdf = m.node_tree.nodes['Principled BSDF']
+    h = (tint or FLAT_COLOURS[surface]).lstrip('#')
+    if len(h) == 3:
+        h = ''.join(c * 2 for c in h)
+    rgb = tuple(int(h[i:i + 2], 16) / 255 for i in (0, 2, 4))
+    lin = tuple((v / 12.92) if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4 for v in rgb)
+    bsdf.inputs['Base Color'].default_value = (*lin, 1)
+    bsdf.inputs['Roughness'].default_value = 0.9
+    return m
+
+
 def box_uv(obj, size=1.0):
     """Project UVs onto the object from its six sides in world metres, so a
     tiling texture keeps its scale whatever the object's shape or size."""
@@ -134,4 +165,5 @@ def apply(obj, surface, tint=None, rough=None, tile=None):
     """Give a mesh one textured material, projected by world size."""
     obj.data.materials.clear()
     obj.data.materials.append(material(surface, tint, rough, tile))
-    box_uv(obj)
+    if not FLAT:
+        box_uv(obj)

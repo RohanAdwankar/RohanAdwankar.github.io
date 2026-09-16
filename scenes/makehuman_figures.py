@@ -35,6 +35,10 @@ PACKS = {
 S = {}  # MPFB services, filled by install()
 DATA = None  # MPFB's data directory
 
+# STYLE=toon: flat colours, dot eyes, hair as a cap, no lashes or teeth. The
+# proportions and the pose are MakeHuman's; everything else is drawn.
+TOON = os.environ.get('STYLE', 'toon') == 'toon'
+
 
 def install(cache):
     """Enable MPFB (cloning it into the extensions directory if needed), the
@@ -149,10 +153,11 @@ def srgb_to_linear(c):
 # Building one figure
 # ---------------------------------------------------------------------------
 
-def figure(fig, group, box, cyl, mat):
+def figure(fig, group, box, cyl, mat, sphere=None, torus=None):
     """Build the figure under `group` (an empty already placed and turned).
-    `box`, `cyl`, `mat` are the scene script's primitive helpers, for the
-    held things. Returns (anchor_height, seat_offset)."""
+    `box`, `cyl`, `mat`, `sphere`, `torus` are the scene script's primitive
+    helpers, for the held things and the drawn face. Returns the height of
+    the name chip above the floor."""
     Human, Target, Asset, Animation, Rig, Export, Props = (S[k] for k in ('Human', 'Target', 'Asset', 'Animation', 'Rig', 'Export', 'Props'))
     years = fig.get('age', 40)
     female = fig.get('sex') == 'female'
@@ -183,19 +188,22 @@ def figure(fig, group, box, cyl, mat):
 
     parts = {}
     parts['eyes'] = add('eyes', 'low-poly.mhclo', 'Eyes')
-    parts['eyebrows'] = add('eyebrows', 'eyebrow006.mhclo' if female else 'eyebrow001.mhclo', 'Eyebrows')
-    parts['eyelashes'] = add('eyelashes', 'eyelashes01.mhclo', 'Eyelashes')
-    parts['teeth'] = add('teeth', 'teeth_base.mhclo', 'Teeth')
     parts['tongue'] = add('tongue', 'tongue01.mhclo', 'Tongue')
-    if not fig.get('bald') and fig.get('hair') != 'none':
+    if not TOON:
+        parts['eyebrows'] = add('eyebrows', 'eyebrow006.mhclo' if female else 'eyebrow001.mhclo', 'Eyebrows')
+        parts['eyelashes'] = add('eyelashes', 'eyelashes01.mhclo', 'Eyelashes')
+        parts['teeth'] = add('teeth', 'teeth_base.mhclo', 'Teeth')
+    if not TOON and not fig.get('bald') and fig.get('hair') != 'none':
         style = fig.get('hairstyle') or ('long01' if female else pick(['short02', 'short03', 'short04'], fig['id']))
         parts['hair'] = add('hair', style, 'Hair')
-    suit = fig.get('suit') or ('female_elegantsuit01' if female else 'male_elegantsuit01')
+    # Drawn women wear a long-sleeved, floor-length dress: the robe asset
+    # in the dress colour reads as one, and the 1913 suit does not.
+    suit = fig.get('suit') or ('maciekg_wizard_robe' if female and TOON else 'female_elegantsuit01' if female else 'male_elegantsuit01')
     parts['suit'] = add('clothes', suit, 'Clothes')
     parts['shoes'] = add('clothes', 'shoes03' if female else 'shoes01', 'Clothes')
     if fig.get('hat') in HATS:
         parts['hat'] = add('clothes', HATS[fig['hat']], 'Clothes')
-    if fig.get('glasses'):
+    if fig.get('glasses') and not TOON:
         parts['glasses'] = add('clothes', 'frankyaye_glasses_library_male', 'Clothes')
 
     # Pose from the library, then freeze it into the meshes.
@@ -248,6 +256,17 @@ def figure(fig, group, box, cyl, mat):
         shell = facial_hair(h, fig, parts, mat)
         if shell is not None:
             meshes.append(shell)
+    if TOON:
+        # The eyes and tongue were only there to say where the face is.
+        eyes = eye_centres(parts['eyes'], h)
+        for key in ('eyes', 'tongue'):
+            if parts.get(key) is not None:
+                meshes.remove(parts[key])
+                bpy.data.objects.remove(parts[key])
+        flat_materials(meshes, fig, years, mat)
+        cap = hair_cap(h, fig, eyes, mat)
+        if cap is not None:
+            meshes.append(cap)
 
     # Sitting figures: the seat of the trousers goes on the chair, centred on
     # it, whatever the pose did with the hips.
@@ -278,6 +297,9 @@ def figure(fig, group, box, cyl, mat):
     for o in list(bpy.data.objects):
         if o.name.startswith('Human') and o.parent is None and o not in meshes and o.type != 'EMPTY':
             bpy.data.objects.remove(o)
+
+    if TOON:
+        draw_face(group, fig, [(c + shift, f) for c, f in eyes], box, sphere, torus)
 
     # Something in the right hand, in page coordinates relative to the group.
     held = fig.get('held')
@@ -411,6 +433,7 @@ def facial_hair(body, fig, parts, mat):
     bm.verts.ensure_lookup_table()
     doomed = [v for v in bm.verts if v.index not in keep]
     bmesh.ops.delete(bm, geom=doomed, context='VERTS')
+    soften_edge(bm)
     for v in bm.verts:
         v.co += v.normal * 0.012
     bm.to_mesh(shell.data)
@@ -422,3 +445,183 @@ def facial_hair(body, fig, parts, mat):
     shell.data.materials.append(mat(colour, 0.95))
     shell.vertex_groups.clear()
     return shell
+
+
+# ---------------------------------------------------------------------------
+# The drawn look: flat colours, a cap of hair, dot eyes, ring glasses
+# ---------------------------------------------------------------------------
+
+def skin_colour(fig, years):
+    if fig.get('skin'):
+        return fig['skin']
+    return '#e6bd9a' if years < 42 else '#dfb28c' if years < 65 else '#e4c3a6'
+
+
+def flat_materials(meshes, fig, years, mat):
+    """Every mesh of the figure gets one flat colour by what it is."""
+    coat = fig.get('dress') or fig.get('coat') or '#3a3a3a'
+    for o in meshes:
+        lname = o.name.lower()
+        if lname.endswith('facial_hair'):
+            continue
+        if 'suit' in lname or 'coveralls' in lname or 'robe' in lname:
+            if 'elegantsuit' in lname and posterize_suit(o, fig, coat, mat):
+                continue
+            colour = coat
+        elif 'shoes' in lname:
+            colour = '#2a2016'
+        elif any(k in lname for k in ('hat', 'bowler', 'cap', 'fedora')):
+            colour = fig.get('capColor', '#3a3a3a') if fig.get('hat') in ('cap', 'military') else '#1e1e1e'
+        else:
+            colour = skin_colour(fig, years)
+        o.data.materials.clear()
+        o.data.materials.append(mat(colour, 0.9))
+
+
+def posterize_suit(o, fig, coat, mat):
+    """The suit texture paints a shirt and a tie on the jacket. Read it
+    once per face and give the face the flat colour of what it shows, so
+    the drawn suit keeps its collar and tie. Returns False if the mesh has
+    no texture to read."""
+    img = None
+    for m in o.data.materials:
+        if m and m.node_tree:
+            for n in m.node_tree.nodes:
+                if n.type == 'TEX_IMAGE' and n.image is not None and n.image.filepath:
+                    img = n.image
+                    break
+        if img:
+            break
+    if img is None or not o.data.uv_layers:
+        return False
+    from PIL import Image, ImageFilter
+    try:
+        pic = Image.open(bpy.path.abspath(img.filepath)).convert('RGB')
+    except OSError:
+        return False
+    if pic.size[0] > 512:
+        pic = pic.resize((512, 512))
+    # A blur merges the stripes of a tie into one colour before it is read.
+    pic = pic.filter(ImageFilter.BoxBlur(3))
+    px = pic.load()
+    w, h = pic.size
+    uv = o.data.uv_layers.active.data
+    o.data.materials.clear()
+    for colour in (coat, fig.get('shirt', '#f4f0e6'), fig.get('tie', '#3a4a7a')):
+        o.data.materials.append(mat(colour, 0.9))
+    for poly in o.data.polygons:
+        u = sum(uv[li].uv.x for li in poly.loop_indices) / len(poly.loop_indices)
+        v = sum(uv[li].uv.y for li in poly.loop_indices) / len(poly.loop_indices)
+        r, g, b = px[int(u % 1 * (w - 1)), int((1 - v % 1) * (h - 1))]
+        lum = (r + g + b) / 3 / 255
+        if lum > 0.5:
+            poly.material_index = 1
+        elif b > r + 25 and lum > 0.12:
+            poly.material_index = 2
+        else:
+            poly.material_index = 0
+    return True
+
+
+def eye_centres(eyes, body):
+    """Each eyeball's centre and the way it looks, left then right: the
+    centre from the eye mesh, the direction from the skin round it, so a
+    bowed head keeps its glasses on."""
+    if eyes is None:
+        return []
+    pts = [eyes.matrix_world @ v.co for v in eyes.data.vertices]
+    rot = body.matrix_world.to_3x3()
+    skin = [(body.matrix_world @ v.co, rot @ v.normal) for v in body.data.vertices]
+    out = []
+    for side in (lambda p: p.x < 0, lambda p: p.x >= 0):
+        sel = [p for p in pts if side(p)]
+        if not sel:
+            continue
+        c = sum(sel, Vector()) / len(sel)
+        near = [n for q, n in skin if (q - c).length < 0.035]
+        fwd = sum(near, Vector()).normalized() if near else Vector((0, -1, 0))
+        out.append((c, fwd))
+    return out
+
+
+def hair_cap(body, fig, eyes, mat):
+    """Hair as a cap: the scalp pushed out along its normals, in the hair
+    colour. Under a hat only the sides show; long hair reaches the neck."""
+    if fig.get('bald') or fig.get('hair') == 'none' or not eyes:
+        return None
+    eye = sum((c for c, _ in eyes), Vector()) / len(eyes)
+    female = fig.get('sex') == 'female'
+    long = female and fig.get('hairstyle') not in ('bob01',)
+    names = {vg.index: vg.name for vg in body.vertex_groups}
+    groups = ('head', 'neck') if long else ('head',)
+    keep = set()
+    for v in body.data.vertices:
+        if sum(g.weight for g in v.groups if names[g.group].startswith(groups)) < 0.5:
+            continue
+        p = body.matrix_world @ v.co
+        top = p.z > eye.z + 0.075 and not fig.get('hat')
+        behind = p.y > eye.y + 0.035
+        side = behind and p.z > eye.z - (0.19 if long else 0.06) and p.z < eye.z + (0.06 if fig.get('hat') else 1)
+        if top or side:
+            keep.add(v.index)
+    if not keep:
+        return None
+    shell = body.copy()
+    shell.data = body.data.copy()
+    bpy.context.scene.collection.objects.link(shell)
+    shell.matrix_world = body.matrix_world.copy()
+    shell.name = f'{fig["id"]}_hair'
+    import bmesh
+    bm = bmesh.new()
+    bm.from_mesh(shell.data)
+    bm.verts.ensure_lookup_table()
+    bmesh.ops.delete(bm, geom=[v for v in bm.verts if v.index not in keep], context='VERTS')
+    soften_edge(bm)
+    for v in bm.verts:
+        v.co += v.normal * 0.011
+    bm.to_mesh(shell.data)
+    bm.free()
+    shell.data.materials.clear()
+    shell.data.materials.append(mat(fig.get('hair') or '#2a2016', 0.9))
+    shell.vertex_groups.clear()
+    return shell
+
+
+def soften_edge(bm):
+    """A shell cut out of the body by a threshold has a saw-tooth edge.
+    Relax the boundary vertices toward their neighbours, twice, so the
+    hairline and the beard line read as drawn curves."""
+    import bmesh
+    edge = [v for v in bm.verts if v.is_boundary]
+    for _ in range(2):
+        bmesh.ops.smooth_vert(bm, verts=edge, factor=0.7, use_axis_x=True, use_axis_y=True, use_axis_z=True)
+
+
+def draw_face(group, fig, eyes, box, sphere, torus):
+    """Dot eyes, a brow over each, and ring glasses where asked. Positions
+    are in the figure group's frame: page x, height, z toward the face."""
+    if not eyes or sphere is None:
+        return
+    # The meshes were parented to the group with no inverse, so their old
+    # world coordinates are now the group's own: the eyes are already local.
+    hair = fig.get('hair') if fig.get('hair') not in (None, 'none') else '#2a2016'
+    up = Vector((0, 0, 1))
+    def at(v):  # Blender local -> page (x, height, z)
+        return v.x, v.z, -v.y
+    # Each eye sits on its own bit of skin, but the brows and the spectacles
+    # share the way the face points, or one brow comes out raised.
+    face = sum((f for _, f in eyes), Vector()).normalized()
+    face_rot = Vector((0, -1, 0)).rotation_difference(face).to_euler()
+    for c, fwd in eyes:
+        sphere(0.0085, '#1a1a1a', *at(c + fwd * 0.010), parent=group, name='eye')
+        brow = box(0.028, 0.005, 0.004, hair, *at(c + face * 0.017 + up * 0.026), parent=group, bev=0, name='brow')
+        brow.rotation_euler = face_rot
+    if fig.get('glasses') and torus is not None and len(eyes) == 2:
+        for c, fwd in eyes:
+            ring = torus(0.018, 0.0022, '#222222', *at(c + face * 0.024), parent=group, name='glasses')
+            ring.rotation_euler = Vector((0, 0, 1)).rotation_difference(face).to_euler()
+        (a, fa), (b, fb) = eyes
+        fwd = face
+        mid = (a + b) / 2 + fwd * 0.024 + up * 0.004
+        bridge = box((a - b).length - 0.034, 0.003, 0.003, '#222222', *at(mid), parent=group, bev=0, name='glasses')
+        bridge.rotation_euler = Vector((0, -1, 0)).rotation_difference(fwd).to_euler()
