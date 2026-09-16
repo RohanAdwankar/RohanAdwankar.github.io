@@ -133,6 +133,25 @@ Teach it your own vocabulary:
 />
 ```
 
+This is where the library started. Model output arrives as a wall of text at one weight, and setting it as it streams makes the answer scannable before it has finished. With the [Vercel AI SDK](https://ai-sdk.dev) that is the component wrapped around the text of each assistant message. Every chunk re-runs the engine on the message so far.
+
+```jsx
+import { useChat } from '@ai-sdk/react';
+import { SemanticText } from 'semfont';
+
+function Chat() {
+  const { messages } = useChat();
+  return messages.map((m) => {
+    const text = m.parts.filter((p) => p.type === 'text').map((p) => p.text).join('');
+    return m.role === 'assistant'
+      ? <SemanticText key={m.id} as="p" text={text} depth="deep" />
+      : <p key={m.id}>{text}</p>;
+  });
+}
+```
+
+<img src="/img/semfont-stream.gif" alt="The same answer streaming in twice, as plain text on the left and through semfont on the right" width="1200" height="600" style="width:100%;height:auto;border-radius:8px">
+
 Or skip React and take the scores. `analyze` is the engine alone, four numbers per word, no CSS, and these imports work with no React installed:
 
 ```js
