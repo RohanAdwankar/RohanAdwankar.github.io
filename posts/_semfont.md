@@ -150,7 +150,7 @@ function Chat() {
 }
 ```
 
-<img src="/img/semfont-stream.gif" alt="A chat page streaming the same answer twice, as plain text on the left and through semfont on the right" width="1320" height="780" style="width:100%;height:auto;border-radius:8px">
+<img src="/img/semfont-stream.gif?v=2" alt="A chat page streaming the same answer twice, as plain text on the left and through semfont on the right" width="1320" height="780" style="width:100%;height:auto;border-radius:8px">
 
 The other half is one route. Any model behind the OpenAI chat completions API works, so this is OpenRouter by default and a local model or a mock by changing the base URL:
 
