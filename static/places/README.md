@@ -35,10 +35,27 @@ the MakeHuman asset packs it uses (system assets, poses, hats, glasses) into
 `.cache/`. `FIGURES=kenney` builds the people from the Kenney mini
 characters instead.
 
-Surfaces come from ambientCG (CC0): parquet, plaster, marble, travertine,
-carpet, cloth and leather, tiled by world size over the floors, walls, trim,
-columns, rugs and the kit furniture (`scenes/textures.py`). They download
-once into `.cache/textures/`.
+## The look
+
+The scenes are drawn, not rendered: the look of an animated history
+explainer. `STYLE=toon` is the default for the build script and the page.
+
+- Every surface is one flat colour (`scenes/textures.py` gives each
+  material a colour instead of a map).
+- Each person keeps MakeHuman's proportions and pose, and gets flat skin
+  and clothes, hair as a cap of the scalp in the hair colour, dot eyes, a
+  brow over each, ring spectacles, and a beard or moustache as a shell of
+  the lower face. The suit's own texture is read once per face and
+  posterised into coat, shirt and tie.
+- The page shades everything in three bands of light (`MeshToonMaterial`)
+  and draws an ink line round each shape (`OutlineEffect`), over a paper
+  background with a little grain and a soft vignette.
+
+`STYLE=real` builds the photographic version instead: surfaces from ambientCG
+(CC0), parquet, plaster, marble, travertine, carpet, cloth and leather, tiled
+by world size, downloaded once into `.cache/textures/`, with MakeHuman's own
+skin, hair and clothes textures. A place can set `style: 'real'` in its
+`data.js` to have the page light that version as it is.
 
 The page loads the glb a scene names in its `glb` field. If the file is
 missing it falls back to a rough procedural set built in the browser from the

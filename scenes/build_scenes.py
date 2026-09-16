@@ -452,6 +452,17 @@ def build_room(room):
                  box(t, h, d + t, wall, -w / 2 - t / 2, h / 2, 0, bev=0, name='wall_left'),
                  box(t, h, d + t, wall, w / 2 + t / 2, h / 2, 0, bev=0, name='wall_right')):
         tex.apply(wobj, 'plaster', tint=wall, rough=0.9)
+    # A ceiling, seen from inside only: its one face points down, so a
+    # camera above the room looks straight through it.
+    bpy.ops.mesh.primitive_plane_add(size=1)
+    ceiling = bpy.context.active_object
+    ceiling.name = 'ceiling'
+    ceiling.scale = (w + 2 * t, d + 2 * t, 1)
+    ceiling.location = (0, 0, h)
+    ceiling.rotation_euler = (math.pi, 0, 0)
+    cm = mat(room.get('ceiling', '#efe7d6'), 0.95)
+    cm.use_backface_culling = True
+    ceiling.data.materials.append(cm)
     # Skirting, dado rail, cornice: the three lines that make a wall a room.
     for yy, hh, dd in ((0.09, 0.18, 0.06), (1.05, 0.05, 0.04), (h - 0.12, 0.24, 0.08)):
         for tobj in (box(w, hh, dd, trim, 0, yy, -d / 2 + dd / 2, bev=0.008),
@@ -546,11 +557,16 @@ def prop_bookshelf(p):
     w = p.get('w', 1.6)
     g = group('bookshelf', p['at'], p.get('rot', 0))
     n = max(1, round(w / (0.4 * KIT_SCALE)))
+    # The kit bookcase's shelf boards sit at these heights once scaled;
+    # two bundles of books stand on each, and one on the top.
+    shelves = [z * KIT_SCALE for z in (0.13, 0.37, 0.61)]
     for i in range(n):
         x = (i - (n - 1) / 2) * 0.4 * KIT_SCALE
         furniture('bookcaseOpen', [x, 0], 0, p.get('color'), parent=g)
-        for level in (0.5, 1.0, 1.5):
-            furniture('books', [x, 0.02], 0, parent=g, y=level, name='books')
+        for level in shelves:
+            for dx in (-0.21, 0.19):
+                furniture('books', [x + dx, 0.0], 0, parent=g, y=level, name='books')
+        furniture('books', [x - 0.1, 0.0], 0, parent=g, y=0.85 * KIT_SCALE, name='books')
     return g
 
 def prop_cabinet(p):
@@ -722,7 +738,7 @@ def figure(fig):
         # `y` lifts a figure onto a podium or step.
         g = group(f'fig_{fig["id"]}', fig['at'], fig.get('face', 0), y=fig.get('y', 0))
         fig = dict(fig, _seat=seat_height_at(fig['at']))
-        anchor_h = mh.figure(fig, g, box, cyl, mat)
+        anchor_h = mh.figure(fig, g, box, cyl, mat, sphere, torus)
         empty(f'figure_{fig["id"]}', 0, anchor_h, 0, parent=g)
         return g
     return kenney_figure(fig)
