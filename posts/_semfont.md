@@ -150,9 +150,31 @@ function Chat() {
 }
 ```
 
-<img src="/img/semfont-stream.gif" alt="A chat page streaming the same answer twice, as plain text on the left and through semfont on the right" width="1200" height="709" style="width:100%;height:auto;border-radius:8px">
+<img src="/img/semfont-stream.gif" alt="A chat page streaming the same answer twice, as plain text on the left and through semfont on the right" width="1320" height="780" style="width:100%;height:auto;border-radius:8px">
 
-That recording is the [example app](https://github.com/RohanAdwankar/semfont/tree/main/examples/chat) in the repo: the component above, `useChat`, and a model behind the OpenAI chat completions API. It was recorded against the mock model server the example ships, which speaks the same API, so the page cannot tell it from OpenRouter.
+The other half is one route. Any model behind the OpenAI chat completions API works, so this is OpenRouter by default and a local model or a mock by changing the base URL:
+
+```js
+import { streamText, convertToModelMessages } from 'ai';
+import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
+
+const provider = createOpenAICompatible({
+  name: 'openrouter',
+  baseURL: process.env.LLM_BASE_URL ?? 'https://openrouter.ai/api/v1',
+  apiKey: process.env.OPENROUTER_API_KEY,
+});
+
+export async function POST(req) {
+  const { messages } = await req.json();
+  const result = streamText({
+    model: provider('openai/gpt-oss-120b'),
+    messages: await convertToModelMessages(messages),
+  });
+  return result.toUIMessageStreamResponse();
+}
+```
+
+The recording above is that page and that route, driven against a small server that speaks the same chat completions format with a canned answer, so the app cannot tell it from a hosted model. The app, the mock and the recording script are in [this site's repo](https://github.com/RohanAdwankar/RohanAdwankar.github.io/tree/main/demos/semfont-chat).
 
 Or skip React and take the scores. `analyze` is the engine alone, four numbers per word, no CSS, and these imports work with no React installed:
 
