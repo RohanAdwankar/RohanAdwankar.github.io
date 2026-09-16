@@ -4,6 +4,14 @@
 
 The box below is live and every word in it is editable. It is running the same engine the library ships.
 
+<div>
+<link rel="preconnect" href="https://cdn.jsdelivr.net">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/analyze.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/theme.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/lexicon.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/deep.js">
+</div>
+
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Recursive:CASL,MONO,slnt,wght@0..1,0..1,-15..0,300..1000&display=swap');
 .sf, .sf-demo { font-family: 'Recursive', ui-sans-serif, system-ui, sans-serif; font-variation-settings: 'MONO' 0, 'CASL' 0; -webkit-font-smoothing: antialiased; }
