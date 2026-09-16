@@ -1,8 +1,10 @@
 # semfont chat
 
-The app the streaming GIF in the semfont post was recorded from. It is not
-published anywhere. It lives here so the recording can be redone and so the
-snippets in the post have a working program behind them.
+The chat page behind the streaming example in the semfont post. It is not
+published anywhere. The post's own box streams a canned reply in the browser;
+this is the same page as a real app, with a route and a stand-in model, so the
+snippets in the post have a working program behind them and a GIF of it can be
+recorded for places where nothing runs.
 
 Vite, React, the [AI SDK](https://ai-sdk.dev) for the stream, `SemanticText`
 around each reply, and any model behind the OpenAI chat completions API.
@@ -20,7 +22,7 @@ points the provider somewhere else, including the mock below.
 
 `mock/server.mjs` is a model stand-in that speaks the same API, streaming
 included, so the app runs through the same provider code and cannot tell the
-difference. The GIF was recorded against it.
+difference.
 
 ```bash
 npm run mock                                   # :8787
@@ -37,7 +39,7 @@ LLM_BASE_URL=http://localhost:8787/v1 npm run dev
   only thing on screen. A real app renders the right-hand column alone.
 - `mock/server.mjs` is the stand-in model. `MOCK_DELAY_MS` sets its cadence.
 - `record/record.mjs` drives the page in Chromium and captures frames;
-  `record/gif.py` assembles them into `static/img/semfont-stream.gif`.
+  `record/gif.py` assembles them into `record/semfont-stream.gif`.
 
 ## Re-recording
 

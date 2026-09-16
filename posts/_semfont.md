@@ -40,6 +40,21 @@ body.light .sf-compare > div { background: #fff; }
 body.light .sf-demo, body.light .sf-samples button, body.light .sf-themes label { border-color: #d0d0d0; }
 body.light .sf-samples button[aria-pressed="true"], body.light .sf-themes label:has(input:checked) { border-color: currentColor; }
 body.light .sf-demo:focus-within { border-color: #888; }
+.sf-chat { border: 1px solid #3a3a3a; border-radius: 8px; overflow: hidden; margin: 20px 0 8px; font-family: 'Recursive', ui-sans-serif, system-ui, sans-serif; font-variation-settings: 'MONO' 0, 'CASL' 0; -webkit-font-smoothing: antialiased; }
+.sf-ask { display: flex; gap: 8px; padding: 10px 12px; border-bottom: 1px solid #3a3a3a; margin: 0; }
+.sf-ask input { flex: 1; min-width: 0; font: inherit; font-size: .9rem; color: inherit; background: transparent; border: 1px solid #3a3a3a; border-radius: 6px; padding: 6px 10px; opacity: .85; }
+.sf-ask button { font: inherit; font-size: .8rem; color: inherit; background: transparent; border: 1px solid currentColor; border-radius: 2rem; padding: 4px 13px; cursor: pointer; }
+.sf-ask button:disabled { opacity: .4; cursor: default; }
+.sf-reply { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #3a3a3a; }
+.sf-reply section { background: #1a1a1a; padding: 10px 14px 14px; }
+.sf-reply h4 { margin: 0 0 6px; font-size: .78rem; font-weight: 400; opacity: .7; }
+.sf-reply p { margin: 0; font-size: .98rem; line-height: 1.5; height: 19.5em; overflow-y: auto; white-space: pre-wrap; }
+.sf-reply p span { line-height: 1; transition: color .22s ease, background .22s ease, opacity .22s ease; }
+.sf-reply p.streaming::after { content: ''; display: inline-block; width: .5em; height: 1em; background: currentColor; opacity: .5; vertical-align: -.15em; margin-left: 2px; }
+@media (max-width: 480px) { .sf-reply { grid-template-columns: 1fr; } .sf-reply p { font-size: .9rem; } }
+body.light .sf-chat, body.light .sf-ask, body.light .sf-ask input { border-color: #d0d0d0; }
+body.light .sf-reply { background: #d0d0d0; }
+body.light .sf-reply section { background: #fff; }
 </style>
 
 <div class="sf-samples" id="sf-samples"></div>
@@ -144,7 +159,15 @@ function Chat() {
 }
 ```
 
-<img src="/img/semfont-stream.gif" alt="A chat page streaming the same answer twice, as plain text on the left and through semfont on the right" width="1320" height="780" style="width:100%;height:auto;border-radius:8px">
+<div class="sf-chat">
+<form class="sf-ask" id="sf-ask"><input value="why did the deploy fail?" readonly aria-label="question"><button type="submit">send</button></form>
+<div class="sf-reply">
+<section><h4>plain text</h4><p id="sf-plain"></p></section>
+<section><h4>semfont</h4><p id="sf-set"></p></section>
+</div>
+</div>
+
+That is the component above with a stand-in model. The question is fixed and the reply is canned, but it arrives the way a model's does, in chunks through a stream, and the right pane is re-set on every chunk.
 
 The other half is one route. Any model behind the OpenAI chat completions API works, so this is OpenRouter by default and a local model or a mock by changing the base URL:
 
@@ -168,7 +191,7 @@ export async function POST(req) {
 }
 ```
 
-The recording above is that page and that route, driven against a small server that speaks the same chat completions format with a canned answer, so the app cannot tell it from a hosted model. The app, the mock and the recording script are in [this site's repo](https://github.com/RohanAdwankar/RohanAdwankar.github.io/tree/main/demos/semfont-chat).
+A runnable version of that page and that route, with a small server that speaks the chat completions format in place of a model, is in [this site's repo](https://github.com/RohanAdwankar/RohanAdwankar.github.io/tree/main/demos/semfont-chat).
 
 Or skip React and take the scores. `analyze` is the engine alone, four numbers per word, no CSS, and these imports work with no React installed:
 
@@ -382,4 +405,57 @@ out.addEventListener('paste', (e) => {
 });
 document.getElementById('sf-themes').addEventListener('change', renderAll);
 renderAll();
+
+// The chat box. A stand-in model: the question is fixed and the reply is
+// canned, but it arrives the way fetch('/api/chat') would, chunk by chunk
+// through a ReadableStream, and the right pane is re-set on every chunk.
+const ANSWER = 'The deploy failed because the migration dropped the sessions index before the new one existed. '
+  + 'Traffic looked healthy for two minutes, then every login timed out and the error rate spiked. '
+  + 'The rollback made it worse, since it replayed the same migration. What fixed it was recreating '
+  + 'the index by hand. The staging run probably never exercised the login path, so the check passed '
+  + 'and caught nothing.';
+const ask = document.getElementById('sf-ask');
+const send = ask.querySelector('button');
+const plainOut = document.getElementById('sf-plain');
+const setOut = document.getElementById('sf-set');
+
+function fakeModel(text, ms = 100) {
+  const words = text.match(/\S+\s*/g);
+  let i = 0;
+  return new ReadableStream({
+    pull(controller) {
+      return new Promise((resolve) => setTimeout(() => {
+        if (i >= words.length) controller.close();
+        else controller.enqueue(words.slice(i, i += 2).join(''));
+        resolve();
+      }, ms));
+    },
+  });
+}
+
+function show(text) {
+  plainOut.textContent = text;
+  paint(setOut, text, themes.editorial);
+  for (const el of [plainOut, setOut]) el.scrollTop = el.scrollHeight;
+}
+
+async function reply() {
+  send.disabled = true;
+  plainOut.classList.add('streaming');
+  setOut.classList.add('streaming');
+  let text = '';
+  const reader = fakeModel(ANSWER).getReader();
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    text += value;
+    show(text);
+  }
+  plainOut.classList.remove('streaming');
+  setOut.classList.remove('streaming');
+  send.disabled = false;
+}
+
+ask.addEventListener('submit', (e) => { e.preventDefault(); reply(); });
+show(ANSWER);
 </script>

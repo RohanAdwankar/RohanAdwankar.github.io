@@ -1,4 +1,4 @@
-"""Assemble record/frames/*.png into the post's GIF.
+"""Assemble record/frames/*.png into a GIF of the reply streaming in.
 
     uv run --with pillow python record/gif.py [out.gif]
 
@@ -15,7 +15,7 @@ from PIL import Image
 
 HERE = Path(__file__).parent
 FRAMES = HERE / 'frames'
-OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else HERE.parent.parent.parent / 'static' / 'img' / 'semfont-stream.gif'
+OUT = Path(sys.argv[1]) if len(sys.argv) > 1 else HERE / 'semfont-stream.gif'
 MIN_WORDS = 16
 
 words = dict(tuple(map(int, line.split())) for line in (FRAMES / 'words.txt').read_text().split('\n') if line)
