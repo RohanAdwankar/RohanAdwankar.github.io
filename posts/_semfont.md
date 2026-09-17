@@ -221,7 +221,7 @@ That last form is how this page works. There is no bundler here, so one import m
 
 ## Future work
 
-The budget is the design. Every rule so far fits under a millisecond per hundred words and the next ones will too, or they will not go into the default engine. Some things will not fit: sarcasm that needs the whole paragraph, a pronoun resolved back to what it names, a small model for the cases no rule catches. If one of those proves worth having it ships as a second model with its own budget, chosen explicitly, so the engine you get by default never gets slower than the one on this page.
+Every rule so far fits under a millisecond per hundred words and the next ones will too, or they will not go into the default engine. Some things will not fit: sarcasm that needs the whole paragraph, a pronoun resolved back to what it names, a small model for the cases no rule catches. If one of those proves worth having it ships as a second model with its own budget, chosen explicitly, so the engine you get by default never gets slower than the one on this page.
 
 Code and demo at [github.com/RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont). MIT.
 
@@ -294,7 +294,7 @@ function paint(el, text, th, analyzeWith = score) {
   el.replaceChildren(frag);
 }
 
-// The box is the editor. Re-setting it replaces every node under the
+// The reader types into the styled output itself. Re-setting it replaces every node under the
 // caret, so the caret's position is saved as a character offset first and
 // put back afterwards.
 function caretOffset() {
