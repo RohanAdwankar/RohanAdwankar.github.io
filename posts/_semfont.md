@@ -410,10 +410,10 @@ renderAll();
 // canned, but it arrives the way fetch('/api/chat') would, chunk by chunk
 // through a ReadableStream, and the right pane is re-set on every chunk.
 const ANSWER = 'The deploy failed because the migration dropped the sessions index before the new one existed. '
-  + 'Traffic looked healthy for two minutes, then every login timed out and the error rate spiked. '
-  + 'The rollback made it worse, since it replayed the same migration. What fixed it was recreating '
-  + 'the index by hand. The staging run probably never exercised the login path, so the check passed '
-  + 'and caught nothing.';
+  + 'Traffic looked healthy for two minutes, then every login suddenly timed out. The rollback should '
+  + 'have helped, but instead it made things worse by replaying the same migration. Recreating the '
+  + 'index by hand fixed it. Staging probably never exercised the login path, so the check definitely '
+  + 'passed and caught nothing. I suspect the retry loop is broken too.';
 const ask = document.getElementById('sf-ask');
 const send = ask.querySelector('button');
 const plainOut = document.getElementById('sf-plain');
