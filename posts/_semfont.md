@@ -51,7 +51,7 @@ body.light .sf-demo:focus-within { border-color: #888; }
 .sf-reply p { margin: 0; font-size: .98rem; line-height: 1.5; height: 19.5em; overflow-y: auto; white-space: pre-wrap; }
 .sf-reply p span { line-height: 1; transition: color .22s ease, background .22s ease, opacity .22s ease; }
 .sf-reply p.streaming::after { content: ''; display: inline-block; width: .5em; height: 1em; background: currentColor; opacity: .5; vertical-align: -.15em; margin-left: 2px; }
-@media (max-width: 480px) { .sf-reply { grid-template-columns: 1fr; } .sf-reply p { font-size: .9rem; } }
+@media (max-width: 480px) { .sf-reply { grid-template-columns: 1fr; } .sf-reply p { font-size: .9rem; height: 16.5em; } }
 body.light .sf-chat, body.light .sf-ask, body.light .sf-ask input { border-color: #d0d0d0; }
 body.light .sf-reply { background: #d0d0d0; }
 body.light .sf-reply section { background: #fff; }
@@ -457,5 +457,4 @@ async function reply() {
 }
 
 ask.addEventListener('submit', (e) => { e.preventDefault(); reply(); });
-show(ANSWER);
 </script>
