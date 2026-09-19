@@ -11,6 +11,13 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { CSS2DRenderer, CSS2DObject } from 'three/addons/renderers/CSS2DRenderer.js';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { OutlineEffect } from 'three/addons/effects/OutlineEffect.js';
+
+// How a scene is drawn. 'toon' is the look of an animated history
+// explainer: flat colours in a few bands of light, a dark outline round
+// every shape, and a paper-coloured room. 'real' lights the materials as
+// they are. A place can set `style`; toon is the default.
+let STYLE = 'toon';
 
 const SVG_NS = 'http://www.w3.org/2000/svg';
 
@@ -293,14 +300,19 @@ class SceneViewer {
     this.renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
     this.renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.shadowMap.type = STYLE === 'toon' ? THREE.PCFShadowMap : THREE.PCFSoftShadowMap;
+    this.renderer.toneMapping = STYLE === 'toon' ? THREE.NoToneMapping : THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.0;
-    // A neutral room environment gives cloth, skin and wood something to
-    // reflect, which is most of what separates a render from a diagram.
-    const pmrem = new THREE.PMREMGenerator(this.renderer);
-    this.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    pmrem.dispose();
+    if (STYLE === 'toon') {
+      // The ink line: back faces pushed out a little and drawn dark.
+      this.outline = new OutlineEffect(this.renderer, { defaultThickness: 0.0045, defaultColor: [0.13, 0.09, 0.06], defaultAlpha: 1, defaultKeepAlive: true });
+    } else {
+      // A neutral room environment gives cloth, skin and wood something to
+      // reflect, which is most of what separates a render from a diagram.
+      const pmrem = new THREE.PMREMGenerator(this.renderer);
+      this.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+      pmrem.dispose();
+    }
     this.labels = new CSS2DRenderer();
     this.labels.domElement.className = 'pl-labels';
     this.gl.append(this.renderer.domElement, this.labels.domElement);
@@ -343,6 +355,7 @@ class SceneViewer {
   }
 
   async show(pin) {
+    STYLE = this.place.style || 'toon';
     this.ensureRenderer();
     this.root.hidden = false;
     this.loading.hidden = false;
@@ -356,8 +369,10 @@ class SceneViewer {
     this.resize();
     if (this.scene) this.disposeScene();
     this.scene = new THREE.Scene();
-    this.scene.environment = this.environment;
-    this.scene.environmentIntensity = 0.55;
+    if (this.environment) {
+      this.scene.environment = this.environment;
+      this.scene.environmentIntensity = 0.55;
+    }
     this.figureObjects = new Map();
     await buildScene(this.scene, pin.scene, this.place, this.figureObjects);
     this.placeCamera(pin.scene);
@@ -429,7 +444,8 @@ class SceneViewer {
     if (this.controls.target.y < 0.3) { this.controls.target.y = 0.3; }
     if (this.camera.position.y < 0.4) { this.camera.position.y = 0.4; }
     for (const obj of this.figureObjects.values()) obj.tick?.(performance.now() / 1000);
-    this.renderer.render(this.scene, this.camera);
+    if (this.outline) this.outline.render(this.scene, this.camera);
+    else this.renderer.render(this.scene, this.camera);
     this.labels.render(this.scene, this.camera);
   }
 
@@ -459,17 +475,21 @@ class SceneViewer {
 
 async function buildScene(scene, spec, place, figureObjects) {
   const room = spec.room || {};
+  const toon = STYLE === 'toon';
   scene.background = new THREE.Color(room.sky || '#e9dcc3');
-  scene.fog = new THREE.Fog(scene.background, 18, 60);
+  scene.fog = new THREE.Fog(scene.background, toon ? 26 : 18, toon ? 80 : 60);
 
-  scene.add(new THREE.HemisphereLight(0xfff2dc, 0x6b5a45, 0.5));
-  const sun = new THREE.DirectionalLight(0xffe7c4, 1.8);
+  // Toon shading wants one strong key and a soft fill, so each shape
+  // splits into a lit side and a shaded side and no more.
+  scene.add(new THREE.HemisphereLight(0xfff4e2, 0x8a7a66, toon ? 0.9 : 0.5));
+  const sun = new THREE.DirectionalLight(0xfff0d8, toon ? 1.35 : 1.8);
   sun.position.set(...(room.light || [6, 9, 4]));
   sun.castShadow = true;
   sun.shadow.mapSize.set(2048, 2048);
   sun.shadow.camera.left = -14; sun.shadow.camera.right = 14;
   sun.shadow.camera.top = 14; sun.shadow.camera.bottom = -14;
   sun.shadow.bias = -0.0005;
+  sun.shadow.radius = toon ? 1 : 4;
   scene.add(sun);
 
   let gltf = null;
@@ -478,10 +498,18 @@ async function buildScene(scene, spec, place, figureObjects) {
     try {
       gltf = await new GLTFLoader().loadAsync(`${place.assets}/${spec.glb}`);
       gltf.scene.traverse((o) => {
-        if (o.isMesh) { o.castShadow = true; o.receiveShadow = true; }
+        if (o.isMesh) {
+          // The ceiling is there to be looked at, not to shade the room,
+          // and nothing lights it from below, so it is drawn in its own
+          // colour rather than in shadow.
+          o.castShadow = o.name !== 'ceiling'; o.receiveShadow = true;
+          if (toon) o.material = Array.isArray(o.material) ? o.material.map(toonify) : toonify(o.material);
+          if (toon && o.name === 'ceiling') { o.material.emissive.copy(o.material.color); o.material.color.set(0); }
+        }
         // The Blender file marks where lamps hang with empties named light_*.
         if (o.name.startsWith('light_')) {
-          const l = new THREE.PointLight('#ffd9a0', o.name.includes('chandelier') ? 18 : 6, o.name.includes('chandelier') ? 14 : 6, 2);
+          const big = o.name.includes('chandelier');
+          const l = new THREE.PointLight('#ffd9a0', (big ? 18 : 6) * (toon ? 0.5 : 1), big ? 14 : 6, 2);
           o.add(l);
         }
       });
@@ -532,10 +560,43 @@ async function buildScene(scene, spec, place, figureObjects) {
   }
 }
 
+// Three bands of light: shadow, mid, lit. Nearest filtering keeps the
+// steps hard, which is the whole point.
+let gradient = null;
+function gradientMap() {
+  if (!gradient) {
+    gradient = new THREE.DataTexture(new Uint8Array([150, 215, 255]), 3, 1, THREE.RedFormat);
+    gradient.minFilter = gradient.magFilter = THREE.NearestFilter;
+    gradient.needsUpdate = true;
+  }
+  return gradient;
+}
+
+// A Blender material, as loaded, turned into the drawn kind: the same
+// colour and map, lit in bands. Lamps and window panes keep their glow.
+const toonCache = new Map();
+function toonify(m) {
+  if (!m || m.isMeshToonMaterial) return m;
+  if (toonCache.has(m)) return toonCache.get(m);
+  const t = new THREE.MeshToonMaterial({
+    color: m.color, map: m.map || null, gradientMap: gradientMap(),
+    emissive: m.emissive || new THREE.Color(0), emissiveIntensity: m.emissiveIntensity ?? 1,
+    transparent: m.transparent, opacity: m.opacity, alphaTest: m.alphaTest, side: m.side,
+    vertexColors: m.vertexColors,
+  });
+  t.name = m.name;
+  toonCache.set(m, t);
+  return t;
+}
+
 const mats = {};
 function mat(color, opts = {}) {
-  const key = color + JSON.stringify(opts);
-  if (!mats[key]) mats[key] = new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.02, ...opts });
+  const key = STYLE + color + JSON.stringify(opts);
+  if (!mats[key]) {
+    mats[key] = STYLE === 'toon'
+      ? new THREE.MeshToonMaterial({ color, gradientMap: gradientMap(), ...opts })
+      : new THREE.MeshStandardMaterial({ color, roughness: 0.85, metalness: 0.02, ...opts });
+  }
   return mats[key];
 }
 function box(w, h, d, color, x = 0, y = 0, z = 0) {
