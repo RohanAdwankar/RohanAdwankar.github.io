@@ -31,6 +31,12 @@ As you can see below it automatically highlights, colors, bolds, and italicizes 
 .sf-themes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .sf-themes span { opacity: .7; margin-right: 4px; }
 .sf-timing { opacity: .7; font-variation-settings: 'MONO' 1; font-variant-numeric: tabular-nums; }
+.sf-cases { border: 1px solid #3a3a3a; border-radius: 8px; overflow: hidden; margin: 20px 0; }
+.sf-cases > div { background: #1a1a1a; padding: 10px 14px; font-size: .98rem; line-height: 1.5; }
+.sf-cases > div + div { border-top: 1px solid #3a3a3a; }
+body.light .sf-cases { border-color: #d0d0d0; }
+body.light .sf-cases > div { background: #fff; }
+body.light .sf-cases > div + div { border-top-color: #d0d0d0; }
 .sf-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #3a3a3a; border: 1px solid #3a3a3a; border-radius: 8px; overflow: hidden; margin: 20px 0 8px; }
 .sf-compare > div { background: #1a1a1a; padding: 10px 14px; font-size: .98rem; line-height: 1.5; }
 .sf-compare > .h { font-family: 'Recursive', ui-sans-serif, system-ui, sans-serif; font-size: .78rem; opacity: .7; padding: 8px 14px; }
@@ -129,10 +135,10 @@ That is four lookups and a dozen lines of arithmetic per word, which is why it r
 
 Those rules only look a few words either side, and that window has a blind spot. Take these two sentences:
 
-```
-I would not go so far as to call the new editor great.
-We fixed the crash.
-```
+<div class="sf-cases">
+<div class="sf" data-when="before">I would not go so far as to call the new editor great.</div>
+<div class="sf" data-when="before">We fixed the crash.</div>
+</div>
 
 The first left `great` green, because the `not` that cancels it sits nine words back, well outside the window. The second painted one word green and one word red, because nothing connected `fixed` to the thing it fixed.
 
