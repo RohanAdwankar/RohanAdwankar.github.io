@@ -169,29 +169,7 @@ function Chat() {
 
 That is the component above with a stand-in model. The question is fixed and the reply is canned, but it arrives the way a model's does, in chunks through a stream, and the right pane is re-set on every chunk.
 
-The other half is one route. Any model behind the OpenAI chat completions API works, so this is OpenRouter by default and a local model or a mock by changing the base URL:
-
-```js
-import { streamText, convertToModelMessages } from 'ai';
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
-
-const provider = createOpenAICompatible({
-  name: 'openrouter',
-  baseURL: process.env.LLM_BASE_URL ?? 'https://openrouter.ai/api/v1',
-  apiKey: process.env.OPENROUTER_API_KEY,
-});
-
-export async function POST(req) {
-  const { messages } = await req.json();
-  const result = streamText({
-    model: provider('openai/gpt-oss-120b'),
-    messages: await convertToModelMessages(messages),
-  });
-  return result.toUIMessageStreamResponse();
-}
-```
-
-A runnable version of that page and that route, with a small server that speaks the chat completions format in place of a model, is in [this site's repo](https://github.com/RohanAdwankar/RohanAdwankar.github.io/tree/main/demos/semfont-chat).
+A runnable version of that page, with a route and a small server that speaks the chat completions format in place of a model, is in [this site's repo](https://github.com/RohanAdwankar/RohanAdwankar.github.io/tree/main/demos/semfont-chat).
 
 Or skip React and take the scores. `analyze` is the engine alone, four numbers per word, no CSS, and these imports work with no React installed:
 
