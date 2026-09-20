@@ -76,56 +76,54 @@ body.light .sf-reply section { background: #fff; }
 
 ## How it works
 
-Four steps, no model. Here is one sentence going through all of them.
+Every word gets four scores. Each one starts as a dictionary lookup and is then adjusted by a couple of rules over the words around it. That is the whole algorithm; there is no model anywhere in it.
 
-```
-The migration probably broke checkout.
-```
-
-**Split it.** A regex cuts the string into words, spaces and punctuation, keeping every character, so the pieces put back together into exactly what you typed.
+**Valence** is how good or bad the word is, from -1 to 1. A negator up to three words back flips the sign and damps it, because `not great` is a mild complaint rather than the mirror image of praise. An intensifier up to two words back scales it instead.
 
 ```js
-['The', ' ', 'migration', ' ', 'probably', ' ',
- 'broke', ' ', 'checkout', '.']
+let v = VALENCE[word] ?? 0;          // great -> 0.75
+if (negatorWithin(3)) v = -v * 0.74; // not great -> -0.55
+v *= gain;                           // really great -> 0.98
 ```
 
-**Look each word up.** There are separate tables for each thing the engine tracks. Most words are in none of them. `broke` is in the valence table at -0.6, `probably` is in the certainty table at -0.4, and a frequency list says how common each word is, from 0 for `the` to 1 for a word it has never seen.
+**Salience** is how much the word is worth looking at, 0 to 1. A frequency list gives each word a rarity, 0 for one of the hundred most common English words and 1 for one it has never seen. Rarity alone is not enough, so the score also rises with how often the word repeats in this particular text: an uncommon word you keep saying is what the text is about.
 
 ```js
-lookup(VALENCE, 'broke');        // -0.6
-lookup(CERTAINTY, 'probably');   // -0.4
-lookup(VALENCE, 'checkout');     //  undefined
-rarity('the');                   //  0.00
-rarity('checkout');              //  0.93
+const seen = Math.min(1, (repeats - 1) / 2);
+const repetition = 0.45 + 0.55 * seen;
+let s = SALIENCE[word] ?? 0;
+s = Math.max(s, 0.55 * rarity * repetition);
+
+// rarity('the') 0.00, rarity('kubelet') 0.93
+// kubelet said once   -> 0.23
+// kubelet said 3 times -> 0.51
 ```
 
-**Let the neighbours adjust it.** A word's score is not just its own entry. A negator within three words flips the sign, an intensifier scales it, a contrast word like `but` raises surprise on what follows, and a hedge leans the whole sentence, which is why `probably` drags every other word to -0.22 certainty. Rare words get weight, and a rare word repeated gets more. Every word ends up with four numbers:
+**Surprise** is where the sentence turns, 0 to 1. Some words announce it on their own, like `suddenly` or `ironically`. Otherwise it comes from position: everything for six words after a contrast word gets it, decaying with distance, and so does any word much rarer than the rest of the passage.
 
 ```js
-const text = 'The migration probably broke checkout.';
-const { tokens } = analyze(text);
+let s = SURPRISE[word] ?? 0;         // suddenly -> 0.85
+if (afterContrast) {
+  s = Math.max(s, 0.45 * 0.82 ** (distance - 1));
+}
+s += 0.3 * Math.max(0, rarity - passageMeanRarity - 0.25);
 
-//              valence  salience  surprise  certainty
-// The             0.00      0.00      0.00      -0.22
-// migration       0.00      0.23      0.00      -0.22
-// probably        0.00      0.23      0.00      -0.40
-// broke          -0.60      0.23      0.00      -0.22
-// checkout        0.00      0.23      0.00      -0.22
+// 'The tests failed'            -> failed 0.16
+// 'It compiled, but the tests failed' -> failed 0.44
 ```
 
-**Turn the numbers into CSS.** A theme owns one typographic axis per channel, so scores stack on a word instead of fighting: valence is colour, salience is weight and size, surprise is a highlight, certainty is slant and opacity. Each axis has a threshold, so a small score styles nothing. Here that leaves ten of the twelve tokens alone:
+**Certainty** is how sure the writer sounds, -1 hedged to 1 asserted. A hedge scores itself, and it also leans the rest of its sentence, because hedging one clause hedges the claim.
 
 ```js
-styleFor(tokens[6], themes.editorial).style;   // broke
-// { color: 'color-mix(in oklab, currentColor,
-//            oklch(0.58 0.19 25) 42%)' }
+c = CERTAINTY[word] ?? sentenceCertainty * 0.55;
 
-styleFor(tokens[4], themes.editorial).style;   // probably
-// { fontStyle: 'italic', opacity: '0.978',
-//   fontVariationSettings: '"slnt" -0.7' }
+// 'The build probably failed.'
+// probably -0.40, every other word -0.22
 ```
 
-Split, look up, adjust, map to CSS. That is why it runs in under a millisecond per hundred words, on every keystroke, offline, with the same answer every time. A model would read sarcasm better and could never do that.
+Then a theme maps each score to one typographic axis, so they stack instead of fighting: valence to colour, salience to weight, surprise to a highlight, certainty to slant. Each axis has a threshold, so most words come out untouched.
+
+That is four lookups and a dozen lines of arithmetic per word, which is why it runs in under a millisecond per hundred words, on every keystroke, offline, with the same answer every time. A model would read sarcasm better and could never do that.
 
 ## Improving the algorithm
 
