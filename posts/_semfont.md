@@ -76,7 +76,7 @@ body.light .sf-reply section { background: #fff; }
 
 ## How it works
 
-Every word gets four scores. Each one starts as a dictionary lookup and is then adjusted by a couple of rules over the words around it. That is the whole algorithm; there is no model anywhere in it.
+Every word gets four scores. Each one starts as a dictionary lookup and is then adjusted by a couple of rules over the words around it. 
 
 **Valence** is how good or bad the word is, from -1 to 1. A negator up to three words back flips the sign and damps it, because `not great` is a mild complaint rather than the mirror image of praise. An intensifier up to two words back scales it instead.
 
@@ -121,9 +121,7 @@ c = CERTAINTY[word] ?? sentenceCertainty * 0.55;
 // probably -0.40, every other word -0.22
 ```
 
-Then a theme maps each score to one typographic axis, so they stack instead of fighting: valence to colour, salience to weight, surprise to a highlight, certainty to slant. Each axis has a threshold, so most words come out untouched.
-
-That is four lookups and a dozen lines of arithmetic per word, which is why it runs in under a millisecond per hundred words, on every keystroke, offline, with the same answer every time. A model would read sarcasm better and could never do that.
+Then a theme maps each score to one typographic axis: valence to colour, salience to weight, surprise to a highlight, certainty to slant. Each axis has a threshold, so most words come out untouched.
 
 ## Improving the algorithm
 
