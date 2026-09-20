@@ -127,7 +127,7 @@ That is four lookups and a dozen lines of arithmetic per word, which is why it r
 
 ## Improving the algorithm
 
-Step three above only looks a few words either side, and that window has a blind spot. Take these two sentences:
+Those rules only look a few words either side, and that window has a blind spot. Take these two sentences:
 
 ```
 I would not go so far as to call the new editor great.
