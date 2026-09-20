@@ -155,7 +155,7 @@ It costs about as much as the first pass and stays inside the budget, so there i
 <div class="sf" data-when="before">The API is too simple and the docs are too clever.</div><div class="sf" data-when="now">The API is too simple and the docs are too clever.</div>
 </div>
 
-The third row is the one case that was a plain bug rather than a missing rule. A one-word `No,` is an answer to the question before it, not a negation of what follows. That fix went into the first pass.
+The third row is the odd one out, and the only one where both columns look the same. It was not a missing rule, it was a bug: a one-word `No,` answers the question before it, so it should never have negated what comes after. That got fixed in the window rules rather than in the new pass, and it shipped in the version the left column runs.
 
 ## Using it
 
