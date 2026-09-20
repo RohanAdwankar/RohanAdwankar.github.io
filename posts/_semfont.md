@@ -74,11 +74,7 @@ body.light .sf-reply section { background: #fff; }
 <span class="sf-timing" id="sf-timing"></span>
 </div>
 
-## How it works
-
-To keep it rendering in under a millisecond per hundred words the scores come from small lexicons and a few local rules rather than a model. Negation flips a word and damps it, so `not great` reads as a complaint. Rarity is measured against the passage, so the topic words of a paragraph float up on their own.
-
-## Improving the algorithm 
+## the algorithm 
 
 The first version scored each word from its lexicon entry and a look at two or three neighbours. That reads `fixed the crash` as one good word and one bad word, and leaves `great` green six words after a `not`.
 
