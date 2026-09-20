@@ -168,10 +168,6 @@ function Chat() {
 </div>
 </div>
 
-That is the component above with a stand-in model. The question is fixed and the reply is canned, but it arrives the way a model's does, in chunks through a stream, and the right pane is re-set on every chunk.
-
-A runnable version of that page, with a route and a small server that speaks the chat completions format in place of a model, is in [this site's repo](https://github.com/RohanAdwankar/RohanAdwankar.github.io/tree/main/demos/semfont-chat).
-
 Or skip React and take the scores. `analyze` is the engine alone, four numbers per word, no CSS, and these imports work with no React installed:
 
 ```js
