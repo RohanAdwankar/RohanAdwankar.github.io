@@ -31,6 +31,12 @@ As you can see below it automatically highlights, colors, bolds, and italicizes 
 .sf-themes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .sf-themes span { opacity: .7; margin-right: 4px; }
 .sf-timing { opacity: .7; font-variation-settings: 'MONO' 1; font-variant-numeric: tabular-nums; }
+.sf-cases { border: 1px solid #3a3a3a; border-radius: 8px; overflow: hidden; margin: 20px 0; }
+.sf-cases > div { background: #1a1a1a; padding: 10px 14px; font-size: .98rem; line-height: 1.5; }
+.sf-cases > div + div { border-top: 1px solid #3a3a3a; }
+body.light .sf-cases { border-color: #d0d0d0; }
+body.light .sf-cases > div { background: #fff; }
+body.light .sf-cases > div + div { border-top-color: #d0d0d0; }
 .sf-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #3a3a3a; border: 1px solid #3a3a3a; border-radius: 8px; overflow: hidden; margin: 20px 0 8px; }
 .sf-compare > div { background: #1a1a1a; padding: 10px 14px; font-size: .98rem; line-height: 1.5; }
 .sf-compare > .h { font-family: 'Recursive', ui-sans-serif, system-ui, sans-serif; font-size: .78rem; opacity: .7; padding: 8px 14px; }
@@ -74,13 +80,79 @@ body.light .sf-reply section { background: #fff; }
 <span class="sf-timing" id="sf-timing"></span>
 </div>
 
-## the algorithm 
+## How it works
 
-The first version scored each word from its lexicon entry and a look at two or three neighbours. That reads `fixed the crash` as one good word and one bad word, and leaves `great` green six words after a `not`.
+Every word gets four scores. Each one starts as a dictionary lookup and is then adjusted by a couple of rules over the words around it. That is the whole algorithm; there is no model anywhere in it.
 
-The current one adds a second pass over clauses instead of windows. Still no model, still inside the budget, so there is no switch to flip. Five rules. A negator reaches to the end of its clause. A resolver like `fixed`, `recovered` or `avoided` flips the harm it names, and a bad thing that `is gone` is the good outcome. Less of a bad thing is an improvement. `too` turns praise into a complaint. A lone `Great,` before bad news is sarcasm, and a quoted word the writer then calls `wrong` is not the writer's word.
+**Valence** is how good or bad the word is, from -1 to 1. A negator up to three words back flips the sign and damps it, because `not great` is a mild complaint rather than the mirror image of praise. An intensifier up to two words back scales it instead.
 
-The ten sentences that led to it. Left is the first version, right is now.
+```js
+let v = VALENCE[word] ?? 0;          // great -> 0.75
+if (negatorWithin(3)) v = -v * 0.74; // not great -> -0.55
+v *= gain;                           // really great -> 0.98
+```
+
+**Salience** is how much the word is worth looking at, 0 to 1. A frequency list gives each word a rarity, 0 for one of the hundred most common English words and 1 for one it has never seen. Rarity alone is not enough, so the score also rises with how often the word repeats in this particular text: an uncommon word you keep saying is what the text is about.
+
+```js
+const seen = Math.min(1, (repeats - 1) / 2);
+const repetition = 0.45 + 0.55 * seen;
+let s = SALIENCE[word] ?? 0;
+s = Math.max(s, 0.55 * rarity * repetition);
+
+// rarity('the') 0.00, rarity('kubelet') 0.93
+// kubelet said once   -> 0.23
+// kubelet said 3 times -> 0.51
+```
+
+**Surprise** is where the sentence turns, 0 to 1. Some words announce it on their own, like `suddenly` or `ironically`. Otherwise it comes from position: everything for six words after a contrast word gets it, decaying with distance, and so does any word much rarer than the rest of the passage.
+
+```js
+let s = SURPRISE[word] ?? 0;         // suddenly -> 0.85
+if (afterContrast) {
+  s = Math.max(s, 0.45 * 0.82 ** (distance - 1));
+}
+s += 0.3 * Math.max(0, rarity - passageMeanRarity - 0.25);
+
+// 'The tests failed'            -> failed 0.16
+// 'It compiled, but the tests failed' -> failed 0.44
+```
+
+**Certainty** is how sure the writer sounds, -1 hedged to 1 asserted. Words like `probably` and `definitely` are in a table. But if you write `The build probably failed`, you are not unsure about the word `probably`, you are unsure about whether it failed. So the hedge keeps its own score and every other word in the sentence gets 55% of it, and the whole line leans a little instead of one word in the middle of it.
+
+```js
+c = CERTAINTY[word] ?? sentenceCertainty * 0.55;
+
+// 'The build probably failed.'
+// probably -0.40, every other word -0.22
+```
+
+Then a theme maps each score to one typographic axis, so they stack instead of fighting: valence to colour, salience to weight, surprise to a highlight, certainty to slant. Each axis has a threshold, so most words come out untouched.
+
+That is four lookups and a dozen lines of arithmetic per word, which is why it runs in under a millisecond per hundred words, on every keystroke, offline, with the same answer every time. A model would read sarcasm better and could never do that.
+
+## Improving the algorithm
+
+Those rules only look a few words either side, and that window has a blind spot. Take these two sentences:
+
+<div class="sf-cases">
+<div class="sf" data-when="before">I would not go so far as to call the new editor great.</div>
+<div class="sf" data-when="before">We fixed the crash.</div>
+</div>
+
+The first left `great` green, because the `not` that cancels it sits nine words back, well outside the window. The second painted one word green and one word red, because nothing connected `fixed` to the thing it fixed.
+
+So a second pass now runs after the window rules and reads each clause as a whole. A negator reaches to the end of its clause and fades with distance, which turns `great` red. A verb like `fixed`, `recovered` or `avoided` marks whatever follows it as the thing that got better, which turns `crash` green. The same pass reads `less broken` and `fewer complaints` as improvements, `too simple` as a complaint, and a lone `Great,` in front of bad news as sarcasm.
+
+Every change it makes is recorded on the word, so you can ask why a word came out the colour it did:
+
+```js
+analyze('We fixed the crash.').tokens[6];
+// { text: 'crash', valence: 0.44,
+//   notes: ['resolved by "fixed"'] }
+```
+
+It costs about as much as the first pass and stays inside the budget, so there is no switch to flip. These are the ten sentences that led to it. Left is the first version, right is now.
 
 <div class="sf-compare" id="sf-compare">
 <div class="h">before</div><div class="h">now</div>
