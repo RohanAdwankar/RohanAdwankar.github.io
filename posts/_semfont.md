@@ -76,15 +76,79 @@ body.light .sf-reply section { background: #fff; }
 
 ## How it works
 
-To keep it rendering in under a millisecond per hundred words the scores come from small lexicons and a few local rules rather than a model. Negation flips a word and damps it, so `not great` reads as a complaint. Rarity is measured against the passage, so the topic words of a paragraph float up on their own.
+Four steps, no model. Here is one sentence going through all of them.
 
-## Improving the algorithm 
+```
+The migration probably broke checkout.
+```
 
-The first version scored each word from its lexicon entry and a look at two or three neighbours. That reads `fixed the crash` as one good word and one bad word, and leaves `great` green six words after a `not`.
+**Split it.** A regex cuts the string into words, spaces and punctuation, keeping every character, so the pieces put back together into exactly what you typed.
 
-The current one adds a second pass over clauses instead of windows. Still no model, still inside the budget, so there is no switch to flip. Five rules. A negator reaches to the end of its clause. A resolver like `fixed`, `recovered` or `avoided` flips the harm it names, and a bad thing that `is gone` is the good outcome. Less of a bad thing is an improvement. `too` turns praise into a complaint. A lone `Great,` before bad news is sarcasm, and a quoted word the writer then calls `wrong` is not the writer's word.
+```js
+['The', ' ', 'migration', ' ', 'probably', ' ',
+ 'broke', ' ', 'checkout', '.']
+```
 
-The ten sentences that led to it. Left is the first version, right is now.
+**Look each word up.** There are separate tables for each thing the engine tracks. Most words are in none of them. `broke` is in the valence table at -0.6, `probably` is in the certainty table at -0.4, and a frequency list says how common each word is, from 0 for `the` to 1 for a word it has never seen.
+
+```js
+lookup(VALENCE, 'broke');        // -0.6
+lookup(CERTAINTY, 'probably');   // -0.4
+lookup(VALENCE, 'checkout');     //  undefined
+rarity('the');                   //  0.00
+rarity('checkout');              //  0.93
+```
+
+**Let the neighbours adjust it.** A word's score is not just its own entry. A negator within three words flips the sign, an intensifier scales it, a contrast word like `but` raises surprise on what follows, and a hedge leans the whole sentence, which is why `probably` drags every other word to -0.22 certainty. Rare words get weight, and a rare word repeated gets more. Every word ends up with four numbers:
+
+```js
+const text = 'The migration probably broke checkout.';
+const { tokens } = analyze(text);
+
+//              valence  salience  surprise  certainty
+// The             0.00      0.00      0.00      -0.22
+// migration       0.00      0.23      0.00      -0.22
+// probably        0.00      0.23      0.00      -0.40
+// broke          -0.60      0.23      0.00      -0.22
+// checkout        0.00      0.23      0.00      -0.22
+```
+
+**Turn the numbers into CSS.** A theme owns one typographic axis per channel, so scores stack on a word instead of fighting: valence is colour, salience is weight and size, surprise is a highlight, certainty is slant and opacity. Each axis has a threshold, so a small score styles nothing. Here that leaves ten of the twelve tokens alone:
+
+```js
+styleFor(tokens[6], themes.editorial).style;   // broke
+// { color: 'color-mix(in oklab, currentColor,
+//            oklch(0.58 0.19 25) 42%)' }
+
+styleFor(tokens[4], themes.editorial).style;   // probably
+// { fontStyle: 'italic', opacity: '0.978',
+//   fontVariationSettings: '"slnt" -0.7' }
+```
+
+Split, look up, adjust, map to CSS. That is why it runs in under a millisecond per hundred words, on every keystroke, offline, with the same answer every time. A model would read sarcasm better and could never do that.
+
+## Improving the algorithm
+
+Step three above only looks a few words either side, and that window has a blind spot. Take these two sentences:
+
+```
+I would not go so far as to call the new editor great.
+We fixed the crash.
+```
+
+The first left `great` green, because the `not` that cancels it sits nine words back, well outside the window. The second painted one word green and one word red, because nothing connected `fixed` to the thing it fixed.
+
+So a second pass now runs after the window rules and reads each clause as a whole. A negator reaches to the end of its clause and fades with distance, which turns `great` red. A verb like `fixed`, `recovered` or `avoided` marks whatever follows it as the thing that got better, which turns `crash` green. The same pass reads `less broken` and `fewer complaints` as improvements, `too simple` as a complaint, and a lone `Great,` in front of bad news as sarcasm.
+
+Every change it makes is recorded on the word, so you can ask why a word came out the colour it did:
+
+```js
+analyze('We fixed the crash.').tokens[6];
+// { text: 'crash', valence: 0.44,
+//   notes: ['resolved by "fixed"'] }
+```
+
+It costs about as much as the first pass and stays inside the budget, so there is no switch to flip. These are the ten sentences that led to it. Left is the first version, right is now.
 
 <div class="sf-compare" id="sf-compare">
 <div class="h">before</div><div class="h">now</div>
