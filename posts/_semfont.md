@@ -76,15 +76,9 @@ body.light .sf-reply section { background: #fff; }
 
 ## How it works
 
-To keep it low latency the scores come from small lexicons and a few local rules rather than a model. 
+To keep it rendering in under a millisecond per hundred words the scores come from small lexicons and a few local rules rather than a model. Negation flips a word and damps it, so `not great` reads as a complaint. Rarity is measured against the passage, so the topic words of a paragraph float up on their own.
 
-Negation flips a word and damps it, so `not great` reads as a complaint. 
-
-Rarity is measured against the passage, so the topic words of a paragraph float up on their own.
-
-That is what makes it usable as a font rather than a feature. The engine runs in under a millisecond per hundred words, synchronously, offline, with the same answer every time, and that number is a budget rather than a measurement: a rule that would break it does not go in. It runs on every keystroke, during a server render, on a plane. A model would read sarcasm better and could never do that.
-
-## Improving the model
+## Improving the algorithm 
 
 The first version scored each word from its lexicon entry and a look at two or three neighbours. That reads `fixed the crash` as one good word and one bad word, and leaves `great` green six words after a `not`.
 
