@@ -6,10 +6,11 @@ The box below is live and every word in it is editable. It is running the same e
 
 <div>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/analyze.js">
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/theme.js">
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/lexicon.js">
-<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/deep.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/semfont@0.2.0/src/analyze.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/semfont@0.2.0/src/theme.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/semfont@0.2.0/src/lexicon.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/semfont@0.2.0/src/deep.js">
+<link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/semfont@0.2.0/src/vader.js">
 </div>
 
 <style>
@@ -187,8 +188,8 @@ That last form is how this page works. There is no bundler here, so one import m
 ```html
 <script type="importmap">
 { "imports": {
-  "semfont/analyze": "https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/analyze.js",
-  "semfont/theme":   "https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/theme.js"
+  "semfont/analyze": "https://cdn.jsdelivr.net/npm/semfont@0.2.0/src/analyze.js",
+  "semfont/theme":   "https://cdn.jsdelivr.net/npm/semfont@0.2.0/src/theme.js"
 } }
 </script>
 <script type="module">
@@ -205,8 +206,8 @@ Code and demo at [github.com/RohanAdwankar/semfont](https://github.com/RohanAdwa
 
 <script type="importmap">
 { "imports": {
-  "semfont/analyze": "https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/analyze.js",
-  "semfont/theme":   "https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/theme.js",
+  "semfont/analyze": "https://cdn.jsdelivr.net/npm/semfont@0.2.0/src/analyze.js",
+  "semfont/theme":   "https://cdn.jsdelivr.net/npm/semfont@0.2.0/src/theme.js",
   "semfont-first/analyze": "https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/analyze.js"
 } }
 </script>
@@ -217,7 +218,7 @@ import { styleFor, themes } from 'semfont/theme';
 import { analyze as analyzeFirst } from 'semfont-first/analyze';
 
 // The engine on the page, and the first version it is compared with below.
-const score = (text) => analyze(text, { depth: 'deep' });
+const score = (text) => analyze(text);
 const scoreFirst = (text) => analyzeFirst(text);
 
 const CHANNELS = ['valence', 'salience', 'surprise', 'certainty', 'technicality'];
