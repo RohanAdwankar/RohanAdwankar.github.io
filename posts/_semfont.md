@@ -1,8 +1,7 @@
 # A font that reads what you wrote
 
-[semfont](https://github.com/RohanAdwankar/semfont) is a small library that sets typography from what the text means instead of from markup. Negative things go red. Important things get heavier. Surprising things get highlighted. Hedged things lean. Nothing in the pipeline is a model.
-
-The box below is live and every word in it is editable. It is running the same engine the library ships.
+[semfont](https://github.com/RohanAdwankar/semfont) is a small library that sets typography automatically. 
+As you can see below it automatically highlights, colors, bolds, and italicizes text which aims to make it easier to read.
 
 <div>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
@@ -77,16 +76,11 @@ body.light .sf-reply section { background: #fff; }
 
 ## How it works
 
-Every word gets four scores. Each score drives a different typographic axis, so they compose instead of collide.
+To keep it low latency the scores come from small lexicons and a few local rules rather than a model. 
 
-| channel | detects | moves |
-|---|---|---|
-| valence | how the text feels | colour |
-| salience | what it points at | weight, size |
-| surprise | where it turns | highlight |
-| certainty | how sure it is | slant, opacity |
+Negation flips a word and damps it, so `not great` reads as a complaint. 
 
-The scores come from small lexicons and a few local rules, not a model. Negation flips a word and damps it, so `not great` reads as a complaint rather than a catastrophe. Rarity is measured against the passage, so the topic words of a paragraph float up on their own.
+Rarity is measured against the passage, so the topic words of a paragraph float up on their own.
 
 That is what makes it usable as a font rather than a feature. The engine runs in under a millisecond per hundred words, synchronously, offline, with the same answer every time, and that number is a budget rather than a measurement: a rule that would break it does not go in. It runs on every keystroke, during a server render, on a plane. A model would read sarcasm better and could never do that.
 
