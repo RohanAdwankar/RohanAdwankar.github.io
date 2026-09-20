@@ -118,7 +118,7 @@ s += 0.3 * Math.max(0, rarity - passageMeanRarity - 0.25);
 // 'It compiled, but the tests failed' -> failed 0.44
 ```
 
-**Certainty** is how sure the writer sounds, -1 hedged to 1 asserted. Words like `probably` and `definitely` sit in a table, but the doubt they carry belongs to the sentence rather than to the word: in `The build probably failed` it is the failing that is uncertain. So the hedge takes its own score and every other word in the sentence takes 55% of it, which slants the whole line instead of one odd word in the middle of it.
+**Certainty** is how sure the writer sounds, -1 hedged to 1 asserted. Words like `probably` and `definitely` are in a table. But if you write `The build probably failed`, you are not unsure about the word `probably`, you are unsure about whether it failed. So the hedge keeps its own score and every other word in the sentence gets 55% of it, and the whole line leans a little instead of one word in the middle of it.
 
 ```js
 c = CERTAINTY[word] ?? sentenceCertainty * 0.55;
