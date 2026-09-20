@@ -76,7 +76,7 @@ body.light .sf-reply section { background: #fff; }
 
 ## How it works
 
-Every word gets four scores. Each one starts as a dictionary lookup and is then adjusted by a couple of rules over the words around it. That is the whole algorithm; there is no model anywhere in it.
+Every word gets four scores. Each one starts as a dictionary lookup and is then adjusted by a couple of rules over the words around it. 
 
 **Valence** is how good or bad the word is, from -1 to 1. A negator up to three words back flips the sign and damps it, because `not great` is a mild complaint rather than the mirror image of praise. An intensifier up to two words back scales it instead.
 
@@ -121,9 +121,7 @@ c = CERTAINTY[word] ?? sentenceCertainty * 0.55;
 // probably -0.40, every other word -0.22
 ```
 
-Then a theme maps each score to one typographic axis, so they stack instead of fighting: valence to colour, salience to weight, surprise to a highlight, certainty to slant. Each axis has a threshold, so most words come out untouched.
-
-That is four lookups and a dozen lines of arithmetic per word, which is why it runs in under a millisecond per hundred words, on every keystroke, offline, with the same answer every time. A model would read sarcasm better and could never do that.
+Then a theme maps each score to one typographic axis: valence to colour, salience to weight, surprise to a highlight, certainty to slant. Each axis has a threshold, so most words come out untouched.
 
 ## Improving the algorithm
 
@@ -145,7 +143,6 @@ It costs about as much as the first pass and stays inside the budget, so there i
 <div class="h">before</div><div class="h">now</div>
 <div class="sf" data-when="before">Great, another outage. Just what I needed today.</div><div class="sf" data-when="now">Great, another outage. Just what I needed today.</div>
 <div class="sf" data-when="before">We fixed the crash and closed the security hole before anyone noticed.</div><div class="sf" data-when="now">We fixed the crash and closed the security hole before anyone noticed.</div>
-<div class="sf" data-when="before">Did it fail? No, it passed every test.</div><div class="sf" data-when="now">Did it fail? No, it passed every test.</div>
 <div class="sf" data-when="before">The cluster recovered from the crash in under a minute.</div><div class="sf" data-when="now">The cluster recovered from the crash in under a minute.</div>
 <div class="sf" data-when="before">We avoided a catastrophic outage by catching the bug in staging.</div><div class="sf" data-when="now">We avoided a catastrophic outage by catching the bug in staging.</div>
 <div class="sf" data-when="before">I would not go so far as to call the new editor great.</div><div class="sf" data-when="now">I would not go so far as to call the new editor great.</div>
@@ -155,11 +152,7 @@ It costs about as much as the first pass and stays inside the budget, so there i
 <div class="sf" data-when="before">The API is too simple and the docs are too clever.</div><div class="sf" data-when="now">The API is too simple and the docs are too clever.</div>
 </div>
 
-The third row is the one case that was a plain bug rather than a missing rule. A one-word `No,` is an answer to the question before it, not a negation of what follows. That fix went into the first pass.
-
 ## Using it
-
-One React component, no build step, no dependency but React.
 
 ```jsx
 import { SemanticText } from 'semfont';
@@ -186,7 +179,7 @@ Teach it your own vocabulary:
 />
 ```
 
-This is where the library started. Model output arrives as a wall of text at one weight, and setting it as it streams makes the answer scannable before it has finished. With the [Vercel AI SDK](https://ai-sdk.dev) that is the component wrapped around the text of each assistant message. Every chunk re-runs the engine on the message so far.
+Now for the case I started this for. AI system stream in a large amount of text and its hard to read all of it so the intention of this is a library that can easily be tossed into most streaming components to make the text easier to read: 
 
 ```jsx
 import { useChat } from '@ai-sdk/react';
@@ -237,11 +230,11 @@ That last form is how this page works. There is no bundler here, so one import m
 </script>
 ```
 
-## Future work
+## Next Steps 
 
-Every rule so far fits under a millisecond per hundred words and the next ones will too, or they will not go into the default engine. Some things will not fit: sarcasm that needs the whole paragraph, a pronoun resolved back to what it names, a small model for the cases no rule catches. If one of those proves worth having it ships as a second model with its own budget, chosen explicitly, so the engine you get by default never gets slower than the one on this page.
+As you can probably guess based on the implementation it will be essentially impossible to get perfect classification while also being fast enough to not slow down the streaming. However for the purpose of making text easier to read it doesn't have to be perfect and some simple heuristics may end up taking us far enough away. That being said there are some case like sarcasm which would be interesting to try to tackle with heuristics and some cases like negation with embedded clauses which may be possible to parse out. Furthermore, for streaming coding agents there are technical words which could be worth including in the vocabulary. 
 
-Code and demo at [github.com/RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont). MIT.
+Code and demo at [github.com/RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont). 
 
 <script type="importmap">
 { "imports": {
