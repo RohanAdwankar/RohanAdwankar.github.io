@@ -31,12 +31,6 @@ As you can see below it automatically highlights, colors, bolds, and italicizes 
 .sf-themes { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
 .sf-themes span { opacity: .7; margin-right: 4px; }
 .sf-timing { opacity: .7; font-variation-settings: 'MONO' 1; font-variant-numeric: tabular-nums; }
-.sf-cases { border: 1px solid #3a3a3a; border-radius: 8px; overflow: hidden; margin: 20px 0; }
-.sf-cases > div { background: #1a1a1a; padding: 10px 14px; font-size: .98rem; line-height: 1.5; }
-.sf-cases > div + div { border-top: 1px solid #3a3a3a; }
-body.light .sf-cases { border-color: #d0d0d0; }
-body.light .sf-cases > div { background: #fff; }
-body.light .sf-cases > div + div { border-top-color: #d0d0d0; }
 .sf-compare { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #3a3a3a; border: 1px solid #3a3a3a; border-radius: 8px; overflow: hidden; margin: 20px 0 8px; }
 .sf-compare > div { background: #1a1a1a; padding: 10px 14px; font-size: .98rem; line-height: 1.5; }
 .sf-compare > .h { font-family: 'Recursive', ui-sans-serif, system-ui, sans-serif; font-size: .78rem; opacity: .7; padding: 8px 14px; }
@@ -133,14 +127,7 @@ That is four lookups and a dozen lines of arithmetic per word, which is why it r
 
 ## Improving the algorithm
 
-Those rules only look a few words either side, and that window has a blind spot. Take these two sentences:
-
-<div class="sf-cases">
-<div class="sf" data-when="before">I would not go so far as to call the new editor great.</div>
-<div class="sf" data-when="before">We fixed the crash.</div>
-</div>
-
-The first left `great` green, because the `not` that cancels it sits nine words back, well outside the window. The second painted one word green and one word red, because nothing connected `fixed` to the thing it fixed.
+Those rules only look a few words either side, and that window has a blind spot. Write `I would not go so far as to call the new editor great` and `great` stays green, because the `not` that cancels it sits nine words back. Write `We fixed the crash` and you get one green word and one red one, because nothing connects `fixed` to the thing it fixed.
 
 So a second pass now runs after the window rules and reads each clause as a whole. A negator reaches to the end of its clause and fades with distance, which turns `great` red. A verb like `fixed`, `recovered` or `avoided` marks whatever follows it as the thing that got better, which turns `crash` green. The same pass reads `less broken` and `fewer complaints` as improvements, `too simple` as a complaint, and a lone `Great,` in front of bad news as sarcasm.
 
@@ -152,7 +139,7 @@ analyze('We fixed the crash.').tokens[6];
 //   notes: ['resolved by "fixed"'] }
 ```
 
-It costs about as much as the first pass and stays inside the budget, so there is no switch to flip. These are the ten sentences that led to it. Left is the first version, right is now.
+It costs about as much as the first pass and stays inside the budget, so there is no switch to flip. These are the ten sentences that led to it, including those two. Left is the first version, right is now.
 
 <div class="sf-compare" id="sf-compare">
 <div class="h">before</div><div class="h">now</div>
