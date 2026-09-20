@@ -221,7 +221,7 @@ That last form is how this page works. There is no bundler here, so one import m
 
 ## Future work
 
-The budget is the design. Every rule so far fits under a millisecond per hundred words and the next ones will too, or they will not go into the default engine. Some things will not fit: sarcasm that needs the whole paragraph, a pronoun resolved back to what it names, a small model for the cases no rule catches. If one of those proves worth having it ships as a second model with its own budget, chosen explicitly, so the engine you get by default never gets slower than the one on this page.
+Every rule so far fits under a millisecond per hundred words and the next ones will too, or they will not go into the default engine. Some things will not fit: sarcasm that needs the whole paragraph, a pronoun resolved back to what it names, a small model for the cases no rule catches. If one of those proves worth having it ships as a second model with its own budget, chosen explicitly, so the engine you get by default never gets slower than the one on this page.
 
 Code and demo at [github.com/RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont). MIT.
 
@@ -294,7 +294,7 @@ function paint(el, text, th, analyzeWith = score) {
   el.replaceChildren(frag);
 }
 
-// The box is the editor. Re-setting it replaces every node under the
+// The reader types into the styled output itself. Re-setting it replaces every node under the
 // caret, so the caret's position is saved as a character offset first and
 // put back afterwards.
 function caretOffset() {
@@ -410,10 +410,10 @@ renderAll();
 // canned, but it arrives the way fetch('/api/chat') would, chunk by chunk
 // through a ReadableStream, and the right pane is re-set on every chunk.
 const ANSWER = 'The deploy failed because the migration dropped the sessions index before the new one existed. '
-  + 'Traffic looked healthy for two minutes, then every login timed out and the error rate spiked. '
-  + 'The rollback made it worse, since it replayed the same migration. What fixed it was recreating '
-  + 'the index by hand. The staging run probably never exercised the login path, so the check passed '
-  + 'and caught nothing.';
+  + 'Traffic looked healthy for two minutes, then every login suddenly timed out. The rollback should '
+  + 'have helped, but instead it made things worse by replaying the same migration. Recreating the '
+  + 'index by hand fixed it. Staging probably never exercised the login path, so the check definitely '
+  + 'passed and caught nothing. I suspect the retry loop is broken too.';
 const ask = document.getElementById('sf-ask');
 const send = ask.querySelector('button');
 const plainOut = document.getElementById('sf-plain');

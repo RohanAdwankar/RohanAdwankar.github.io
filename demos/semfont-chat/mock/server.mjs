@@ -12,7 +12,7 @@ const DELAY_MS = Number(process.env.MOCK_DELAY_MS ?? 45);
 
 const ANSWERS = [
   [/deploy|outage|fail/i,
-   'The deploy failed because the migration dropped the sessions index before the new one existed. Traffic looked healthy for two minutes, then every login timed out and the error rate spiked. The rollback made it worse, since it replayed the same migration. What fixed it was recreating the index by hand. The staging run probably never exercised the login path, so the check passed and caught nothing.'],
+   'The deploy failed because the migration dropped the sessions index before the new one existed. Traffic looked healthy for two minutes, then every login suddenly timed out. The rollback should have helped, but instead it made things worse by replaying the same migration. Recreating the index by hand fixed it. Staging probably never exercised the login path, so the check definitely passed and caught nothing. I suspect the retry loop is broken too.'],
   [/review|feedback/i,
    'The draft is clear and the argument holds. Two things are wrong: the benchmark table quotes the median where the text says mean, and the second figure has no axis labels. The conclusion is probably too strong for the sample size, but the core result is solid and worth publishing.'],
   [/.*/,
