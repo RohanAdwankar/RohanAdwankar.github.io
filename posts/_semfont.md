@@ -1,8 +1,7 @@
 # A font that reads what you wrote
 
-[semfont](https://github.com/RohanAdwankar/semfont) is a small library that sets typography from what the text means instead of from markup. Negative things go red. Important things get heavier. Surprising things get highlighted. Hedged things lean. Nothing in the pipeline is a model.
-
-The box below is live and every word in it is editable. It is running the same engine the library ships.
+[semfont](https://github.com/RohanAdwankar/semfont) is a small library that sets typography automatically. 
+As you can see below it automatically highlights, colors, bolds, and italicizes text which aims to make it easier to read.
 
 <div>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
@@ -77,26 +76,77 @@ body.light .sf-reply section { background: #fff; }
 
 ## How it works
 
-Every word gets four scores. Each score drives a different typographic axis, so they compose instead of collide.
+Every word gets four scores. Each one starts as a dictionary lookup and is then adjusted by a couple of rules over the words around it. That is the whole algorithm; there is no model anywhere in it.
 
-| channel | detects | moves |
-|---|---|---|
-| valence | how the text feels | colour |
-| salience | what it points at | weight, size |
-| surprise | where it turns | highlight |
-| certainty | how sure it is | slant, opacity |
+**Valence** is how good or bad the word is, from -1 to 1. A negator up to three words back flips the sign and damps it, because `not great` is a mild complaint rather than the mirror image of praise. An intensifier up to two words back scales it instead.
 
-The scores come from small lexicons and a few local rules, not a model. Negation flips a word and damps it, so `not great` reads as a complaint rather than a catastrophe. Rarity is measured against the passage, so the topic words of a paragraph float up on their own.
+```js
+let v = VALENCE[word] ?? 0;          // great -> 0.75
+if (negatorWithin(3)) v = -v * 0.74; // not great -> -0.55
+v *= gain;                           // really great -> 0.98
+```
 
-That is what makes it usable as a font rather than a feature. The engine runs in under a millisecond per hundred words, synchronously, offline, with the same answer every time, and that number is a budget rather than a measurement: a rule that would break it does not go in. It runs on every keystroke, during a server render, on a plane. A model would read sarcasm better and could never do that.
+**Salience** is how much the word is worth looking at, 0 to 1. A frequency list gives each word a rarity, 0 for one of the hundred most common English words and 1 for one it has never seen. Rarity alone is not enough, so the score also rises with how often the word repeats in this particular text: an uncommon word you keep saying is what the text is about.
 
-## Improving the model
+```js
+const seen = Math.min(1, (repeats - 1) / 2);
+const repetition = 0.45 + 0.55 * seen;
+let s = SALIENCE[word] ?? 0;
+s = Math.max(s, 0.55 * rarity * repetition);
 
-The first version scored each word from its lexicon entry and a look at two or three neighbours. That reads `fixed the crash` as one good word and one bad word, and leaves `great` green six words after a `not`.
+// rarity('the') 0.00, rarity('kubelet') 0.93
+// kubelet said once   -> 0.23
+// kubelet said 3 times -> 0.51
+```
 
-The current one adds a second pass over clauses instead of windows. Still no model, still inside the budget, so there is no switch to flip. Five rules. A negator reaches to the end of its clause. A resolver like `fixed`, `recovered` or `avoided` flips the harm it names, and a bad thing that `is gone` is the good outcome. Less of a bad thing is an improvement. `too` turns praise into a complaint. A lone `Great,` before bad news is sarcasm, and a quoted word the writer then calls `wrong` is not the writer's word.
+**Surprise** is where the sentence turns, 0 to 1. Some words announce it on their own, like `suddenly` or `ironically`. Otherwise it comes from position: everything for six words after a contrast word gets it, decaying with distance, and so does any word much rarer than the rest of the passage.
 
-The ten sentences that led to it. Left is the first version, right is now.
+```js
+let s = SURPRISE[word] ?? 0;         // suddenly -> 0.85
+if (afterContrast) {
+  s = Math.max(s, 0.45 * 0.82 ** (distance - 1));
+}
+s += 0.3 * Math.max(0, rarity - passageMeanRarity - 0.25);
+
+// 'The tests failed'            -> failed 0.16
+// 'It compiled, but the tests failed' -> failed 0.44
+```
+
+**Certainty** is how sure the writer sounds, -1 hedged to 1 asserted. A hedge scores itself, and it also leans the rest of its sentence, because hedging one clause hedges the claim.
+
+```js
+c = CERTAINTY[word] ?? sentenceCertainty * 0.55;
+
+// 'The build probably failed.'
+// probably -0.40, every other word -0.22
+```
+
+Then a theme maps each score to one typographic axis, so they stack instead of fighting: valence to colour, salience to weight, surprise to a highlight, certainty to slant. Each axis has a threshold, so most words come out untouched.
+
+That is four lookups and a dozen lines of arithmetic per word, which is why it runs in under a millisecond per hundred words, on every keystroke, offline, with the same answer every time. A model would read sarcasm better and could never do that.
+
+## Improving the algorithm
+
+Those rules only look a few words either side, and that window has a blind spot. Take these two sentences:
+
+```
+I would not go so far as to call the new editor great.
+We fixed the crash.
+```
+
+The first left `great` green, because the `not` that cancels it sits nine words back, well outside the window. The second painted one word green and one word red, because nothing connected `fixed` to the thing it fixed.
+
+So a second pass now runs after the window rules and reads each clause as a whole. A negator reaches to the end of its clause and fades with distance, which turns `great` red. A verb like `fixed`, `recovered` or `avoided` marks whatever follows it as the thing that got better, which turns `crash` green. The same pass reads `less broken` and `fewer complaints` as improvements, `too simple` as a complaint, and a lone `Great,` in front of bad news as sarcasm.
+
+Every change it makes is recorded on the word, so you can ask why a word came out the colour it did:
+
+```js
+analyze('We fixed the crash.').tokens[6];
+// { text: 'crash', valence: 0.44,
+//   notes: ['resolved by "fixed"'] }
+```
+
+It costs about as much as the first pass and stays inside the budget, so there is no switch to flip. These are the ten sentences that led to it. Left is the first version, right is now.
 
 <div class="sf-compare" id="sf-compare">
 <div class="h">before</div><div class="h">now</div>
@@ -167,10 +217,6 @@ function Chat() {
 <section><h4>semfont</h4><p id="sf-set"></p></section>
 </div>
 </div>
-
-That is the component above with a stand-in model. The question is fixed and the reply is canned, but it arrives the way a model's does, in chunks through a stream, and the right pane is re-set on every chunk.
-
-A runnable version of that page, with a route and a small server that speaks the chat completions format in place of a model, is in [this site's repo](https://github.com/RohanAdwankar/RohanAdwankar.github.io/tree/main/demos/semfont-chat).
 
 Or skip React and take the scores. `analyze` is the engine alone, four numbers per word, no CSS, and these imports work with no React installed:
 
