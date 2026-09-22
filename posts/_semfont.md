@@ -3,6 +3,18 @@
 [semfont](https://github.com/RohanAdwankar/semfont) is a small library that sets typography automatically. 
 As you can see below it automatically highlights, colors, bolds, and italicizes text which aims to make it easier to read.
 
+<!-- Firefox rejects an import map that appears after any module load has
+     started, and the modulepreload links below count as a module load, so
+     this map must come before them. Chromium is laxer, which is why the
+     ordering bug only showed up in Firefox. -->
+<script type="importmap">
+{ "imports": {
+  "semfont/analyze": "https://cdn.jsdelivr.net/npm/semfont@0.2.0/src/analyze.js",
+  "semfont/theme":   "https://cdn.jsdelivr.net/npm/semfont@0.2.0/src/theme.js",
+  "semfont-first/analyze": "https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/analyze.js"
+} }
+</script>
+
 <div>
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/semfont@0.2.0/src/analyze.js">
@@ -235,14 +247,6 @@ That last form is how this page works. There is no bundler here, so one import m
 As you can probably guess based on the implementation it will be essentially impossible to get perfect classification while also being fast enough to not slow down the streaming. However for the purpose of making text easier to read it doesn't have to be perfect and some simple heuristics may end up taking us far enough away. That being said there are some case like sarcasm which would be interesting to try to tackle with heuristics and some cases like negation with embedded clauses which may be possible to parse out. Furthermore, for streaming coding agents there are technical words which could be worth including in the vocabulary. 
 
 Code and demo at [github.com/RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont). 
-
-<script type="importmap">
-{ "imports": {
-  "semfont/analyze": "https://cdn.jsdelivr.net/npm/semfont@0.2.0/src/analyze.js",
-  "semfont/theme":   "https://cdn.jsdelivr.net/npm/semfont@0.2.0/src/theme.js",
-  "semfont-first/analyze": "https://cdn.jsdelivr.net/npm/semfont@0.1.0/src/analyze.js"
-} }
-</script>
 
 <script type="module">
 import { analyze } from 'semfont/analyze';
