@@ -21,6 +21,10 @@ jobs:
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
+        with:
+          # build.py reads each post's first commit for its date; the default
+          # shallow checkout has no history to read it from
+          fetch-depth: 0
 
       - name: Set up uv
         uses: astral-sh/setup-uv@v6
