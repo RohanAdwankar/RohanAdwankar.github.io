@@ -61,6 +61,16 @@ class BuildTest(unittest.TestCase):
     def test_robots_points_at_the_sitemap(self):
         robots = (DIST / 'robots.txt').read_text(encoding='utf-8')
         self.assertIn(f'Sitemap: {SITE_URL}sitemap.xml', robots)
+    def test_posts_index_exists_and_lists_the_same_posts(self):
+        page = DIST / 'posts' / 'index.html'
+        self.assertTrue(page.exists(), '/posts/ was not built, so trimming a post URL 404s')
+        linked = set(re.findall(r'<li><a href="([^"]+)\.html">', page.read_text(encoding='utf-8')))
+        self.assertEqual(linked, self.linked)
+
+    def test_posts_index_leaves_out_drafts(self):
+        text = (DIST / 'posts' / 'index.html').read_text(encoding='utf-8')
+        for md in self.drafts:
+            self.assertNotIn(f'"{slug(md)}.html"', text, f'{md.name} is a draft but is listed on /posts/')
 
 
 if __name__ == '__main__':
