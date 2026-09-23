@@ -21,7 +21,7 @@ OUT_POSTS_INDEX = OUT_POSTS_DIR / 'index.html'
 OUT_SITEMAP = DIST_DIR / 'sitemap.xml'
 OUT_FEED = DIST_DIR / 'feed.xml'
 
-Post = namedtuple('Post', 'slug title date')
+Post = namedtuple('Post', 'slug title date updated')
 
 SITE_TITLE = 'Rohan Adwankar'
 SITE_DESCRIPTION = 'Notes on the things I am working on.'
@@ -119,24 +119,37 @@ def is_draft(md_path: Path):
     off the homepage list. Rename the file without the underscore to list it."""
     return md_path.stem.startswith('_')
 
-def post_date(md_path: Path):
-    """When the post was written: the date of the commit that added the file.
-
-    `--follow` is what makes this survive publishing, since listing a draft
-    renames `_name.md` to `name.md` and a rename would otherwise reset the date
-    to the day it came off the drafts list. The workflows check out full history
-    for this; without it git has nothing to answer with and the file's mtime,
-    which in CI is the checkout, stands in.
-    """
+def git_date(md_path: Path, *args):
+    """A date out of git, or None when there is no history to read."""
     try:
         out = subprocess.run(
-            ['git', 'log', '--follow', '--diff-filter=A', '--format=%aI', '-1', '--', str(md_path)],
+            ['git', 'log', '--format=%aI', '-1', *args, '--', str(md_path)],
             cwd=ROOT, capture_output=True, text=True, timeout=15,
         ).stdout.strip()
-        if out:
-            return datetime.fromisoformat(out)
+        return datetime.fromisoformat(out) if out else None
     except (OSError, ValueError, subprocess.SubprocessError):
-        pass
+        return None
+
+def post_date(md_path: Path):
+    """When the post was published: the commit that gave it its listed name.
+
+    A draft lives at `_name.md` and is published by renaming it to `name.md`,
+    so the commit that added the current path is the commit that published it.
+    Deliberately no `--follow`: following the rename back would date a post to
+    the day it was first drafted, which for a post drafted in July and listed
+    in September buries it at the bottom of every subscriber's reader. `-1`
+    takes the most recent add, so a post that was listed, pulled back to a
+    draft and listed again carries the date it went out for good.
+    """
+    return git_date(md_path, '--diff-filter=A') or file_date(md_path)
+
+def post_updated(md_path: Path):
+    """When the post last changed. This is what a sitemap's lastmod means, and
+    it is not the publish date: semfont was published once and edited after."""
+    return git_date(md_path) or file_date(md_path)
+
+def file_date(md_path: Path):
+    """Fallback when git has no history, as in a shallow CI checkout."""
     return datetime.fromtimestamp(md_path.stat().st_mtime, tz=timezone.utc)
 
 def summary_from_markdown(text: str, limit: int = 280):
@@ -239,7 +252,8 @@ def build_post(md_path: Path):
         out_path.write_text(page, encoding='utf-8')
         note = ' (draft, not listed on the homepage)' if is_draft(md_path) else ''
         print(f'Wrote {out_path.relative_to(ROOT)}{note}')
-        return Post(slug, title, post_date(md_path)), summary_from_markdown(text)
+        post = Post(slug, title, post_date(md_path), post_updated(md_path))
+        return post, summary_from_markdown(text)
 
 def build_feed(posts, summaries):
     """An RSS feed of the listed posts, newest first.
@@ -283,11 +297,11 @@ def build_sitemap(posts):
     on the site links to them, and putting an unlisted page in the sitemap is
     the one thing that would undo that.
     """
-    newest = max((p.date for p in posts), default=None)
+    newest = max((p.updated for p in posts), default=None)
     entries = [('', newest)]
     if OUT_POSTS_INDEX.exists():
         entries.append(('posts/', newest))
-    entries += [(f'posts/{p.slug}.html', p.date) for p in posts]
+    entries += [(f'posts/{p.slug}.html', p.updated) for p in posts]
     urls = '\n'.join(
         f'  <url><loc>{SITE_URL}{path}</loc>'
         + (f'<lastmod>{date.date().isoformat()}</lastmod>' if date else '')

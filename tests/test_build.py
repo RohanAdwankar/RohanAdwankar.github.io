@@ -8,6 +8,8 @@ from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'scripts'))
+import build  # noqa: E402
 POSTS = ROOT / 'posts'
 DIST = ROOT / 'dist'
 SITE_URL = 'https://rohanadwankar.github.io/'
@@ -71,6 +73,20 @@ class BuildTest(unittest.TestCase):
         for item in channel.findall('item'):
             for field in ('title', 'link', 'guid', 'pubDate', 'description'):
                 self.assertTrue((item.findtext(field) or '').strip(), f'{field} is empty')
+
+    def test_publish_date_is_the_rename_not_the_first_draft(self):
+        """A draft is published by renaming `_name.md` to `name.md`, so the date
+        is that rename. Following the rename back would date a post to the day
+        it was first drafted and bury it in every subscriber's reader."""
+        for md in self.listed:
+            drafted = build.git_date(md, '--follow', '--diff-filter=A')
+            if drafted is None or drafted == build.post_date(md):
+                continue  # never was a draft
+            self.assertGreater(build.post_date(md), drafted, f'{md.name} is dated to its draft')
+
+    def test_sitemap_lastmod_tracks_edits_not_publication(self):
+        for md in self.listed:
+            self.assertGreaterEqual(build.post_updated(md), build.post_date(md), md.name)
 
     def test_feed_is_newest_first(self):
         channel = ET.parse(DIST / 'feed.xml').getroot().find('channel')
