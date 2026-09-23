@@ -3,9 +3,13 @@ import re
 import subprocess
 import sys
 import unittest
+import xml.etree.ElementTree as ET
+from email.utils import parsedate_to_datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / 'scripts'))
+import build  # noqa: E402
 POSTS = ROOT / 'posts'
 DIST = ROOT / 'dist'
 SITE_URL = 'https://rohanadwankar.github.io/'
@@ -23,6 +27,8 @@ class BuildTest(unittest.TestCase):
         cls.linked = set(re.findall(r'href="posts/([^"]+)\.html"', cls.index))
         cls.drafts = sorted(p for p in POSTS.glob('*.md') if p.stem.startswith('_'))
         cls.listed = sorted(p for p in POSTS.glob('*.md') if not p.stem.startswith('_'))
+        cls.all_pages = [DIST / 'index.html', DIST / 'posts' / 'index.html']
+        cls.all_pages += [DIST / 'posts' / f'{slug(md)}.html' for md in cls.listed + cls.drafts]
 
     def test_drafts_are_not_on_the_homepage(self):
         for md in self.drafts:
@@ -61,6 +67,66 @@ class BuildTest(unittest.TestCase):
     def test_robots_points_at_the_sitemap(self):
         robots = (DIST / 'robots.txt').read_text(encoding='utf-8')
         self.assertIn(f'Sitemap: {SITE_URL}sitemap.xml', robots)
+
+    def test_feed_is_valid_xml_and_has_every_listed_post(self):
+        channel = ET.parse(DIST / 'feed.xml').getroot().find('channel')
+        links = {i.findtext('link') for i in channel.findall('item')}
+        self.assertEqual(links, {f'{SITE_URL}posts/{slug(md)}.html' for md in self.listed})
+        for item in channel.findall('item'):
+            for field in ('title', 'link', 'guid', 'pubDate', 'description'):
+                self.assertTrue((item.findtext(field) or '').strip(), f'{field} is empty')
+
+    def test_publish_date_is_the_rename_not_the_first_draft(self):
+        """A draft is published by renaming `_name.md` to `name.md`, so the date
+        is that rename. Following the rename back would date a post to the day
+        it was first drafted and bury it in every subscriber's reader."""
+        for md in self.listed:
+            drafted = build.git_date(md, '--follow', '--diff-filter=A')
+            if drafted is None or drafted == build.post_date(md):
+                continue  # never was a draft
+            self.assertGreater(build.post_date(md), drafted, f'{md.name} is dated to its draft')
+
+    def test_sitemap_lastmod_tracks_edits_not_publication(self):
+        for md in self.listed:
+            self.assertGreaterEqual(build.post_updated(md), build.post_date(md), md.name)
+
+    def test_feed_is_newest_first(self):
+        channel = ET.parse(DIST / 'feed.xml').getroot().find('channel')
+        dates = [parsedate_to_datetime(i.findtext('pubDate')) for i in channel.findall('item')]
+        self.assertEqual(dates, sorted(dates, reverse=True))
+
+    def test_every_page_links_the_feed(self):
+        for page in self.all_pages:
+            text = page.read_text(encoding='utf-8')
+            self.assertIn('type="application/rss+xml"', text,
+                          f'{page.relative_to(DIST)} has no feed autodiscovery')
+
+    def test_the_footer_is_on_every_page_but_the_homepage(self):
+        """The homepage already says where to find me in its own prose. The
+        footer is for the pages a reader lands on from somewhere else."""
+        for page in self.all_pages:
+            text = page.read_text(encoding='utf-8')
+            rel = page.relative_to(DIST)
+            if page == DIST / 'index.html':
+                self.assertNotIn('class="site-footer"', text, 'the homepage carries the footer')
+                continue
+            self.assertIn('class="site-footer"', text, f'{rel} has no footer')
+            self.assertIn('href="/feed.xml"', text, f'{rel} does not link the feed')
+
+    def test_listings_match_the_feed_order(self):
+        """The feed is already asserted to be newest first, so this pins the two
+        listings to that same order without re-deriving any dates."""
+        channel = ET.parse(DIST / 'feed.xml').getroot().find('channel')
+        expected = [i.findtext('link').rsplit('/', 1)[1].removesuffix('.html')
+                    for i in channel.findall('item')]
+        for page, pattern in (
+            (DIST / 'index.html', r'<li><a href="posts/([^"]+)\.html">'),
+            (DIST / 'posts' / 'index.html', r'<li><a href="([^"]+)\.html">'),
+        ):
+            text = page.read_text(encoding='utf-8')
+            order = re.findall(pattern, text)
+            self.assertEqual(order, expected, f'{page.relative_to(DIST)} is not newest first')
+
     def test_posts_index_exists_and_lists_the_same_posts(self):
         page = DIST / 'posts' / 'index.html'
         self.assertTrue(page.exists(), '/posts/ was not built, so trimming a post URL 404s')
