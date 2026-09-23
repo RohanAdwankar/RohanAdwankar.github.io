@@ -27,6 +27,8 @@ class BuildTest(unittest.TestCase):
         cls.linked = set(re.findall(r'href="posts/([^"]+)\.html"', cls.index))
         cls.drafts = sorted(p for p in POSTS.glob('*.md') if p.stem.startswith('_'))
         cls.listed = sorted(p for p in POSTS.glob('*.md') if not p.stem.startswith('_'))
+        cls.all_pages = [DIST / 'index.html', DIST / 'posts' / 'index.html']
+        cls.all_pages += [DIST / 'posts' / f'{slug(md)}.html' for md in cls.listed + cls.drafts]
 
     def test_drafts_are_not_on_the_homepage(self):
         for md in self.drafts:
@@ -93,13 +95,21 @@ class BuildTest(unittest.TestCase):
         dates = [parsedate_to_datetime(i.findtext('pubDate')) for i in channel.findall('item')]
         self.assertEqual(dates, sorted(dates, reverse=True))
 
-    def test_every_page_links_the_feed_and_carries_the_footer(self):
-        pages = [DIST / 'index.html', DIST / 'posts' / 'index.html']
-        pages += [DIST / 'posts' / f'{slug(md)}.html' for md in self.listed + self.drafts]
-        for page in pages:
+    def test_every_page_links_the_feed(self):
+        for page in self.all_pages:
+            text = page.read_text(encoding='utf-8')
+            self.assertIn('type="application/rss+xml"', text,
+                          f'{page.relative_to(DIST)} has no feed autodiscovery')
+
+    def test_the_footer_is_on_every_page_but_the_homepage(self):
+        """The homepage already says where to find me in its own prose. The
+        footer is for the pages a reader lands on from somewhere else."""
+        for page in self.all_pages:
             text = page.read_text(encoding='utf-8')
             rel = page.relative_to(DIST)
-            self.assertIn('type="application/rss+xml"', text, f'{rel} has no feed autodiscovery')
+            if page == DIST / 'index.html':
+                self.assertNotIn('class="site-footer"', text, 'the homepage carries the footer')
+                continue
             self.assertIn('class="site-footer"', text, f'{rel} has no footer')
             self.assertIn('href="/feed.xml"', text, f'{rel} does not link the feed')
 

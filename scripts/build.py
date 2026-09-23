@@ -97,7 +97,7 @@ PAGE_CSS = '''
 FEED_LINK = '<link rel="alternate" type="application/rss+xml" title="Rohan Adwankar" href="/feed.xml">'
 
 SITE_FOOTER = """<footer class="site-footer">
-        <span>Follow:</span>
+        <span>Elsewhere:</span>
         <a href="https://github.com/RohanAdwankar">GitHub</a>
         <a href="https://x.com/Rohanadwankar">X</a>
         <a href="/feed.xml">RSS</a>
@@ -399,9 +399,8 @@ def build_index(posts):
     <p>To stay updated on what I'm doing feel free to connect with me on <a href="https://github.com/RohanAdwankar">Github</a>, <a href="https://x.com/Rohanadwankar">X</a>, or <a href="https://linkedin.com/in/rohanadwankar">LinkedIn</a>.</p>
     <p>Injected below is my Github profile card which will stay updated even when this site isn't, and below that are my longer form notes.</p>
     <div id="injected-readme">Loading...</div>
-    <h3><a href="posts/">Notes</a></h3>
+    <h3>Notes</h3>
     {posts_html}
-    {SITE_FOOTER}
 </main>
 <script>
     const toggle = document.getElementById('theme-toggle');
