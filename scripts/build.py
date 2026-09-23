@@ -12,6 +12,7 @@ STATIC_DIR = ROOT / 'static'
 DIST_DIR = ROOT / 'dist'
 OUT_POSTS_DIR = DIST_DIR / 'posts'
 OUT_INDEX = DIST_DIR / 'index.html'
+OUT_POSTS_INDEX = OUT_POSTS_DIR / 'index.html'
 
 PAGE_CSS = '''
     <style>
@@ -176,6 +177,50 @@ def build_post(md_path: Path):
         print(f'Wrote {out_path.relative_to(ROOT)}{note}')
         return slug, title
 
+def build_posts_index(posts):
+    """/posts is the same list as the homepage, on its own page.
+
+    Anyone who reaches a post by a shared link and then trims the URL lands
+    here, so it has to exist. Drafts stay off it for the same reason they stay
+    off the homepage.
+    """
+    items = '\n'.join(f'<li><a href="{slug}.html">{title}</a></li>' for slug, title in posts)
+    page = f"""<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Notes — Rohan Adwankar</title>
+{PAGE_CSS}
+</head>
+<body>
+<header>
+    <h1>Notes</h1>
+    <div class="header-controls">
+        <label class="theme-switch">
+            <input type="checkbox" id="theme-toggle">
+            <span class="slider"></span>
+        </label>
+    </div>
+</header>
+<main>
+    <!-- .back-link shows at every width here, so no .mobile-back in the header:
+         a post page hides its copy inside the TOC aside below 720px, this page
+         has no aside and would show two. -->
+    <a class="back-link" href="/">← Home</a>
+    <ul>
+{items}
+    </ul>
+</main>
+<script>
+    const toggle = document.getElementById('theme-toggle');
+    if (toggle) toggle.addEventListener('change', () => document.body.classList.toggle('light'));
+</script>
+</body>
+</html>"""
+    OUT_POSTS_INDEX.write_text(page, encoding='utf-8')
+    print(f'Wrote {OUT_POSTS_INDEX.relative_to(ROOT)}')
+
 def build_index(posts):
     items = []
     for slug, title in posts:
@@ -205,7 +250,7 @@ def build_index(posts):
     <p>To stay updated on what I'm doing feel free to connect with me on <a href="https://github.com/RohanAdwankar">Github</a>, <a href="https://x.com/Rohanadwankar">X</a>, or <a href="https://linkedin.com/in/rohanadwankar">LinkedIn</a>.</p>
     <p>Injected below is my Github profile card which will stay updated even when this site isn't, and below that are my longer form notes.</p>
     <div id="injected-readme">Loading...</div>
-    <h3>Notes</h3>
+    <h3><a href="posts/">Notes</a></h3>
     {posts_html}
 </main>
 <script>
@@ -255,6 +300,7 @@ def main():
         if not is_draft(md):
             listed.append((slug, title))
     build_index(listed)
+    build_posts_index(listed)
     copy_static()
 
 
