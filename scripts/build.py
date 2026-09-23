@@ -12,6 +12,11 @@ STATIC_DIR = ROOT / 'static'
 DIST_DIR = ROOT / 'dist'
 OUT_POSTS_DIR = DIST_DIR / 'posts'
 OUT_INDEX = DIST_DIR / 'index.html'
+OUT_SITEMAP = DIST_DIR / 'sitemap.xml'
+
+# Where the built site is served from. robots.txt in static/ points at the
+# sitemap by this same absolute URL, so the two have to agree.
+SITE_URL = 'https://rohanadwankar.github.io/'
 
 PAGE_CSS = '''
     <style>
@@ -176,6 +181,27 @@ def build_post(md_path: Path):
         print(f'Wrote {out_path.relative_to(ROOT)}{note}')
         return slug, title
 
+def build_sitemap(posts):
+    """List every page a search engine should index.
+
+    Drafts are left out. They are published and reachable by URL, but nothing
+    on the site links to them, and putting an unlisted page in the sitemap is
+    the one thing that would undo that.
+    """
+    paths = ['']
+    if (OUT_POSTS_DIR / 'index.html').exists():
+        paths.append('posts/')
+    paths += [f'posts/{slug}.html' for slug, _ in posts]
+    urls = '\n'.join(f'  <url><loc>{SITE_URL}{p}</loc></url>' for p in paths)
+    OUT_SITEMAP.write_text(
+        '<?xml version="1.0" encoding="UTF-8"?>\n'
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n'
+        f'{urls}\n'
+        '</urlset>\n',
+        encoding='utf-8',
+    )
+    print(f'Wrote {OUT_SITEMAP.relative_to(ROOT)} ({len(paths)} urls)')
+
 def build_index(posts):
     items = []
     for slug, title in posts:
@@ -255,6 +281,7 @@ def main():
         if not is_draft(md):
             listed.append((slug, title))
     build_index(listed)
+    build_sitemap(listed)
     copy_static()
 
 
