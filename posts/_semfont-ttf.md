@@ -1,7 +1,5 @@
 # Two fonts that do the parsing
 
-<a class="hn-badge" href="https://news.ycombinator.com/item?id=49774161"><svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect width="24" height="24" rx="4" fill="#ff6600"/><text x="12" y="17.5" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-weight="bold" font-size="15" fill="#fff">Y</text></svg>Hacker News Discussion</a>
-
 The loudest complaint about [semfont](https://github.com/RohanAdwankar/semfont) was that it is a
 JavaScript library and not a font. Fair. So I moved the work into the font file, the way
 [fontemon](https://www.coderelay.io/fontemon.html) runs a whole game in there.
