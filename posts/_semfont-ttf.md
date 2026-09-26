@@ -17,7 +17,7 @@ body.light .fontbox { border-color: #d8d8d8; }
    difference across the pair is the font feature. */
 .raw { font-family: "Liberation Sans", Arial, sans-serif; }
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
-.pair .fontbox { margin-top: 0; }
+.pair .fontbox { margin-top: 0; height: 8.4em; }
 @media (max-width: 640px) { .pair { grid-template-columns: 1fr; gap: 0; } }
 .fontnote { display: flex; justify-content: space-between; align-items: baseline;
             font-size: 13px; opacity: 0.6; margin: 6px 0 26px; }
@@ -28,9 +28,9 @@ body.light .fontbox { border-color: #d8d8d8; }
 
 <div class="pair">
   <div>
-    <div class="fontbox raw" id="md-src" contenteditable="true" spellcheck="false"># A heading
-Plain text, then **bold**, then *italic*.
-You can ~~strike~~, _underline_, or `escapeHtml(v)`.</div>
+    <div class="fontbox raw" id="md-src" contenteditable="true" spellcheck="false">## A heading
+**bold**, *italic*, ~~struck~~, _under_, `code`.
+Not a # heading. get_user_name is safe.</div>
     <div class="fontnote"><span>what you type</span><span>type in it</span></div>
   </div>
   <div>
@@ -58,17 +58,19 @@ Spans work by propagation: one rule styles the glyph after a marker, a second st
 follows a styled glyph. A lookup sees its own output as backtrack, so the style carries to the
 closing marker. Underlines are drawn into each glyph and join up because glyphs sit flush.
 
-Markdown is harder because its markers are symmetric. A closing `**` is indistinguishable from an
-opening one, so bold ran to the end of the line until I checked for styled glyphs behind it.
+Markdown's markers are symmetric, so a closing `**` reopened the span and bold ran to the end of
+the line. Worse, prose got eaten: `C#` became a heading, `get_user_name` lost its underscores.
+Four guards fix it. A closing marker has styled glyphs behind it. A heading has nothing to
+backtrack over, which is the only line-start test OpenType offers. An underscore between
+alphanumerics is literal, and a delimiter followed by a space opens nothing.
 
 ## What they get wrong
 
 No dark mode. A `CPAL` palette is fixed colours, so the file cannot see what it is drawn on.
 
-semfont's other three channels are gone. Salience counts repeats across a passage, certainty
-spreads across a sentence, and substitution rules have neither memory nor unbounded context.
-
-The heading is scaled outlines, so the metrics never learn it grew.
+semfont's other three channels need passage context, and rules have neither memory nor unbounded
+context. Headings are scaled outlines, so the metrics never learn they grew. Links, lists and
+tables want indentation and click targets, which glyphs cannot make.
 
 Prototypes. The library is still the thing that works:
 [RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont).
