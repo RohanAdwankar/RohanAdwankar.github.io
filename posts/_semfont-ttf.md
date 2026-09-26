@@ -12,7 +12,13 @@ JavaScript library and not a font. Fair. So I moved the work into the font file,
            background: #fff; color: #111; white-space: pre-wrap; }
 body.light .fontbox { border-color: #d8d8d8; }
 .sf { font-family: "semfont ttf", Georgia, serif; }
-.mf { font-family: "markfont", Georgia, serif; }
+.mf { font-family: "markfont", "Liberation Sans", Arial, sans-serif; }
+/* The left pane is the same typeface markfont is built from, so the only
+   difference across the pair is the font feature. */
+.raw { font-family: "Liberation Sans", Arial, sans-serif; }
+.pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.pair .fontbox { margin-top: 0; }
+@media (max-width: 640px) { .pair { grid-template-columns: 1fr; gap: 0; } }
 .fontnote { display: flex; justify-content: space-between; align-items: baseline;
             font-size: 13px; opacity: 0.6; margin: 6px 0 26px; }
 </style>
@@ -20,12 +26,33 @@ body.light .fontbox { border-color: #d8d8d8; }
 <div class="fontbox sf" contenteditable="true" spellcheck="false">The rollback should have helped, but instead it made things worse. We fixed the crash that was corrupting user data, and the team is genuinely proud of how quickly it shipped.</div>
 <div class="fontnote"><span>semfont, 47 KB</span><span>type in it</span></div>
 
-<div class="fontbox mf" contenteditable="true" spellcheck="false"># A heading
+<div class="pair">
+  <div>
+    <div class="fontbox raw" id="md-src" contenteditable="true" spellcheck="false"># A heading
 Plain text, then **bold**, then *italic*.
-You can ~~strike~~, _underline_, or call `escapeHtml(v)`.</div>
-<div class="fontnote"><span>markdown, 26 KB</span><span>type in it</span></div>
+You can ~~strike~~, _underline_, or `escapeHtml(v)`.</div>
+    <div class="fontnote"><span>what you type</span><span>type in it</span></div>
+  </div>
+  <div>
+    <div class="fontbox mf" id="md-out"></div>
+    <div class="fontnote"><span>markfont, 26 KB</span></div>
+  </div>
+</div>
 
-Both boxes hold plain text. Every colour, weight and rule is a substitution rule in the font.
+<script>
+// The only job of this script is to copy the characters across. Nothing here
+// styles anything; the right pane differs from the left by one font feature.
+(function () {
+  var src = document.getElementById('md-src'), out = document.getElementById('md-out');
+  var mirror = function () { out.textContent = src.innerText; };
+  src.addEventListener('input', mirror);
+  mirror();
+})();
+</script>
+
+All three boxes hold plain text, and the two above share one typeface. No stylesheet or script
+sets any of that formatting; every colour, weight and rule is a substitution rule inside the font.
+The one script on this page copies characters from the left pane to the right.
 
 Spans work by propagation: one rule styles the glyph after a marker, a second styles whatever
 follows a styled glyph. A lookup sees its own output as backtrack, so the style carries to the
