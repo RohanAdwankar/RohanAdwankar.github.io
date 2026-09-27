@@ -12,7 +12,7 @@ Tests (they build the site and check that draft posts stay off the homepage whil
 uv run python -m unittest discover -s tests -v
 ```
 
-They run in CI on every pull request and before every deploy.
+They run in CI on pull requests that touch posts, the build script, the tests or the dependencies, and before every deploy.
 
 Deployment:
 

@@ -1,10 +1,28 @@
 name: Test
 
+# Run only when something the tests read has changed. The tests build the
+# site from posts/ with scripts/build.py and check the output, so a change to
+# README.md or to assets under static/ cannot move them. robots.txt is the one
+# static file they check.
+#
+# pull_request covers every commit on a branch with a PR open. The push
+# trigger used to run on every branch too, so each PR commit ran twice.
 on:
   pull_request:
-  push:
-    branches-ignore:
-      - main
+    paths:
+      - posts/**
+      - scripts/**
+      - tests/**
+      - static/robots.txt
+      - pyproject.toml
+      - uv.lock
+      - .github/workflows/test.yml
+  workflow_dispatch:
+
+# A newer commit on the same PR makes the older run moot.
+concurrency:
+  group: test-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
