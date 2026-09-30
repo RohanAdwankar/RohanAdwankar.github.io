@@ -30,7 +30,19 @@ article :not(pre) > code { white-space: nowrap; }
 <script>document.body.classList.add('light');</script>
 
 <div class="fontbox sf" contenteditable="true" spellcheck="false">The rollback should have helped, but instead it made things worse. We fixed the crash that was corrupting user data, and the team is genuinely proud of how quickly it shipped.</div>
-<div class="fontnote"><span>semfont, 47 KB</span><span>type in it</span></div>
+<div class="fontnote"><span>semfont, 148 KB</span><span>type in it</span></div>
+
+<script>
+// Chrome does not reshape typed text with a font's rules until something makes it.
+// Swapping between two equivalent font stacks on each keystroke does, and moves nothing.
+(function () {
+  var box = document.querySelector('.fontbox.sf'), flip = false;
+  box.addEventListener('input', function () {
+    flip = !flip;
+    box.style.fontFamily = flip ? '"semfont ttf", serif' : '"semfont ttf", Georgia, serif';
+  });
+})();
+</script>
 
 <div class="pair">
   <div>
@@ -62,8 +74,14 @@ The one script on this page copies characters from the left pane to the right.
 
 ## How it works
 
-Every letter has a copy per state, and there are thirty-two states. Only eight sets of those are
-real outlines, one per Liberation face; the rest are components pointing at one of the eight,
+The colour font is one rule per word, plus every real inflection of it. Two bits of state ride
+along in the glyph stream, one for "negated" and one for "resolved", and a clause break clears
+them. So `not great` reads as bad, and `fixed the crash that was corrupting` reads as good. On
+my test sentences the library colours 60 words, and the font agrees on the sign of 59. A plain
+word list agrees on 41.
+
+The Markdown font gives every letter a copy per state, and there are thirty-two states. Only
+eight sets of those are real outlines, one per Liberation face; the rest are components pointing at one of the eight,
 plus a one-em bar scaled to the letter's width for underline and strikethrough. Colour is a
 `COLR` record and a `CPAL` entry, so it costs no drawing at all.
 
@@ -87,5 +105,10 @@ The guards are the rest. An opener needs a non-space after it and a closer needs
 before it, so `2 * 3 * 4` survives. An underscore after a word character opens nothing, so
 `get_user_name` survives. A heading only fires with nothing to backtrack over, which is the
 only line-start test OpenType offers, so `C#` survives.
+
+Two limits apply to both fonts, and I only tested Chrome. A soft line wrap resets the shaper, so
+a span, a `not` or a `**` that crosses a wrap loses its effect on the next line. And text typed
+into an editable box skips the font's rules until something forces a reshape, which is what the
+script under the first box does on each keystroke.
 
 [RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont).
