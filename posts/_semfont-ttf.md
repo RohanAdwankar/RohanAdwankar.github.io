@@ -14,6 +14,8 @@ body.light .fontbox { border-color: #d8d8d8; }
 /* The fonts bake absolute colours into CPAL, so they can only be read on a
    light background. This page has no theme to switch. */
 .theme-switch { display: none; }
+/* "2 * 3" broke across a line and read as two fragments */
+article :not(pre) > code { white-space: nowrap; }
 .sf { font-family: "semfont ttf", Georgia, serif; }
 .mf { font-family: "markfont", "Liberation Sans", Arial, sans-serif; }
 /* The left pane is the same typeface markfont is built from, so the only
@@ -59,24 +61,32 @@ All three boxes hold plain text, and the two above share one typeface. No styles
 sets any of that formatting; every colour, weight and rule is a substitution rule inside the font.
 The one script on this page copies characters from the left pane to the right.
 
-Spans work by propagation: one rule styles the glyph after a marker, a second styles whatever
-follows a styled glyph. A lookup sees its own output as backtrack, so the style carries to the
-closing marker. Underlines are drawn into each glyph and join up because glyphs sit flush.
+## How it works
 
-Markdown's markers are symmetric, so a closing `**` reopened the span and bold ran to the end of
-the line. Worse, prose got eaten: `C#` became a heading, `get_user_name` lost its underscores.
-Four guards fix it. A closing marker has styled glyphs behind it. A heading has nothing to
-backtrack over, which is the only line-start test OpenType offers. An underscore between
-alphanumerics is literal, and a delimiter followed by a space opens nothing.
+Every letter has a copy per style. A `COLR` record points the copy back at the original outline
+and paints it from a `CPAL` palette entry, so colour costs no new drawing. Bold and italic are
+real Liberation Sans outlines. Underline and strikethrough are a bar drawn into each glyph, which
+joins up into one rule because glyphs sit flush.
 
-## What they get wrong
+Then one rule seeds a span and a second carries it:
 
-No dark mode. A `CPAL` palette is fixed colours, so the file cannot see what it is drawn on,
-which is why this page has no theme switch.
+```
+lookup CLRb { sub a by a.b; sub b by b.b; ... } CLRb;
 
-semfont's other three channels need passage context, and rules have neither memory nor unbounded
-context. Headings are scaled outlines, so the metrics never learn they grew. Links, lists and
-tables want indentation and click targets, which glyphs cannot make.
+sub asterisk asterisk a' lookup CLRb;   # after **, embolden the next glyph
+sub @Anyb @Any' lookup CLRb;            # and the one after that, and so on
+```
+
+A lookup walks left to right and sees its own output as backtrack, so the second rule keeps
+firing until the class stops matching. The closing marker is where it stops.
+
+Four `ignore` rules keep it off ordinary prose. A closing marker is one with styled glyphs behind
+it. A heading has nothing to backtrack over, which is the only line-start test OpenType offers,
+so `C#` survives. An underscore between alphanumerics is literal, so `get_user_name` survives. A
+delimiter followed by a space opens nothing, so `2 * 3` survives.
+
+A marker is then hidden only once a styled glyph ends up beside it. One that styled nothing stays
+on the page.
 
 Prototypes. The library is still the thing that works:
 [RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont).
