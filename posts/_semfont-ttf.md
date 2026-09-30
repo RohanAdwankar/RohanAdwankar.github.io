@@ -11,6 +11,9 @@ JavaScript library and not a font. Fair. So I moved the work into the font file,
            font-size: 18px; line-height: 1.65; height: 6.2em; overflow-y: auto;
            background: #fff; color: #111; white-space: pre-wrap; }
 body.light .fontbox { border-color: #d8d8d8; }
+/* The fonts bake absolute colours into CPAL, so they can only be read on a
+   light background. This page has no theme to switch. */
+.theme-switch { display: none; }
 .sf { font-family: "semfont ttf", Georgia, serif; }
 .mf { font-family: "markfont", "Liberation Sans", Arial, sans-serif; }
 /* The left pane is the same typeface markfont is built from, so the only
@@ -22,6 +25,8 @@ body.light .fontbox { border-color: #d8d8d8; }
 .fontnote { display: flex; justify-content: space-between; align-items: baseline;
             font-size: 13px; opacity: 0.6; margin: 6px 0 26px; }
 </style>
+
+<script>document.body.classList.add('light');</script>
 
 <div class="fontbox sf" contenteditable="true" spellcheck="false">The rollback should have helped, but instead it made things worse. We fixed the crash that was corrupting user data, and the team is genuinely proud of how quickly it shipped.</div>
 <div class="fontnote"><span>semfont, 47 KB</span><span>type in it</span></div>
@@ -66,7 +71,8 @@ alphanumerics is literal, and a delimiter followed by a space opens nothing.
 
 ## What they get wrong
 
-No dark mode. A `CPAL` palette is fixed colours, so the file cannot see what it is drawn on.
+No dark mode. A `CPAL` palette is fixed colours, so the file cannot see what it is drawn on,
+which is why this page has no theme switch.
 
 semfont's other three channels need passage context, and rules have neither memory nor unbounded
 context. Headings are scaled outlines, so the metrics never learn they grew. Links, lists and
