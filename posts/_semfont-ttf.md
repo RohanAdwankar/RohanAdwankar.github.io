@@ -35,13 +35,13 @@ article :not(pre) > code { white-space: nowrap; }
 <div class="pair">
   <div>
     <div class="fontbox raw" id="md-src" contenteditable="true" spellcheck="false">## A heading
-**bold**, *italic*, ~~struck~~, _under_, `code`.
+**bold with *italic* inside**, ~~struck~~, _under_, `code`.
 Not a # heading. get_user_name is safe.</div>
     <div class="fontnote"><span>what you type</span><span>type in it</span></div>
   </div>
   <div>
     <div class="fontbox mf" id="md-out"></div>
-    <div class="fontnote"><span>markfont, 26 KB</span></div>
+    <div class="fontnote"><span>markfont, 39 KB</span></div>
   </div>
 </div>
 
@@ -86,5 +86,9 @@ delimiter followed by a space opens nothing, so `2 * 3` survives.
 
 A marker is then hidden only once a styled glyph ends up beside it. One that styled nothing stays
 on the page.
+
+Nesting is the limit. A lookup has no stack, so it cannot know how deep it is, and the depth has
+to be fixed when the font is built rather than found while reading. One level is written out
+above. Arbitrary nesting is not a missing feature.
 
 [RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont).
