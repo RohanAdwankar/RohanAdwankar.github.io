@@ -1,8 +1,7 @@
 # Two fonts that do the parsing
 
 The loudest complaint about [semfont](https://github.com/RohanAdwankar/semfont) was that it is a
-JavaScript library and not a font. Fair. So I moved the work into the font file, the way
-[fontemon](https://www.coderelay.io/fontemon.html) runs a whole game in there.
+JavaScript library and not a font. Fair. So I moved the work into the font file.
 
 <style>
 @font-face { font-family: "semfont ttf"; src: url("/fonts/semfont-proto.woff2") format("woff2"); font-display: swap; }
@@ -88,5 +87,4 @@ delimiter followed by a space opens nothing, so `2 * 3` survives.
 A marker is then hidden only once a styled glyph ends up beside it. One that styled nothing stays
 on the page.
 
-Prototypes. The library is still the thing that works:
 [RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont).
