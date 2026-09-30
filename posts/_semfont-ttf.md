@@ -35,13 +35,13 @@ article :not(pre) > code { white-space: nowrap; }
 <div class="pair">
   <div>
     <div class="fontbox raw" id="md-src" contenteditable="true" spellcheck="false">## A heading
-**bold with *italic* inside**, ~~struck~~, _under_, `code`.
+*italic holding **bold ~~struck~~** inside*, _under_, `code`.
 Not a # heading. get_user_name is safe.</div>
     <div class="fontnote"><span>what you type</span><span>type in it</span></div>
   </div>
   <div>
     <div class="fontbox mf" id="md-out"></div>
-    <div class="fontnote"><span>markfont, 39 KB</span></div>
+    <div class="fontnote"><span>markfont, 60 KB</span></div>
   </div>
 </div>
 
@@ -62,33 +62,30 @@ The one script on this page copies characters from the left pane to the right.
 
 ## How it works
 
-Every letter has a copy per style. A `COLR` record points the copy back at the original outline
-and paints it from a `CPAL` palette entry, so colour costs no new drawing. Bold and italic are
-real Liberation Sans outlines. Underline and strikethrough are a bar drawn into each glyph, which
-joins up into one rule because glyphs sit flush.
+Every letter has a copy per state, and there are thirty-two states. Only eight sets of those are
+real outlines, one per Liberation face; the rest are components pointing at one of the eight,
+plus a one-em bar scaled to the letter's width for underline and strikethrough. Colour is a
+`COLR` record and a `CPAL` entry, so it costs no drawing at all.
 
-Then one rule seeds a span and a second carries it:
+A closing `**` does not have to be matched with the `**` that opened it. It turns bold off
+because bold was on. So emphasis is a set of flags, not a bracket, and five flags is
+thirty-two states. Every glyph carries the state it is in:
 
 ```
-lookup CLRb { sub a by a.b; sub b by b.b; ... } CLRb;
-
-sub asterisk asterisk a' lookup CLRb;   # after **, embolden the next glyph
-sub @Anyb @Any' lookup CLRb;            # and the one after that, and so on
+lookup TOGGLE {
+  sub @S0 asterisk.s0' lookup NULL_s1 asterisk.s0' lookup NULL_s1 @Open;  # bold on
+  sub @S1 @Any.s0' lookup TO_s1;                                          # carry it
+  sub @S1nonspace asterisk.s0' lookup NULL_s0 asterisk.s0' lookup NULL_s0; # bold off
+}
 ```
 
-A lookup walks left to right and sees its own output as backtrack, so the second rule keeps
-firing until the class stops matching. The closing marker is where it stops.
+A delimiter becomes a zero-width glyph carrying the state after the flip, and a lookup walks
+left to right seeing its own output as backtrack, so one pass runs the whole machine. Depth
+never comes up, which is why the four nested spans in the box above come out right.
 
-Four `ignore` rules keep it off ordinary prose. A closing marker is one with styled glyphs behind
-it. A heading has nothing to backtrack over, which is the only line-start test OpenType offers,
-so `C#` survives. An underscore between alphanumerics is literal, so `get_user_name` survives. A
-delimiter followed by a space opens nothing, so `2 * 3` survives.
-
-A marker is then hidden only once a styled glyph ends up beside it. One that styled nothing stays
-on the page.
-
-Nesting is the limit. A lookup has no stack, so it cannot know how deep it is, and the depth has
-to be fixed when the font is built rather than found while reading. One level is written out
-above. Arbitrary nesting is not a missing feature.
+The guards are the rest. An opener needs a non-space after it and a closer needs a non-space
+before it, so `2 * 3 * 4` survives. An underscore after a word character opens nothing, so
+`get_user_name` survives. A heading only fires with nothing to backtrack over, which is the
+only line-start test OpenType offers, so `C#` survives.
 
 [RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont).
