@@ -1,4 +1,4 @@
-# Two fonts that do the parsing
+# Three fonts that do the parsing
 
 The loudest complaint about [semfont](https://github.com/RohanAdwankar/semfont) was that it is a
 JavaScript library and not a font. Fair. So I moved the work into the font file.
@@ -6,6 +6,7 @@ JavaScript library and not a font. Fair. So I moved the work into the font file.
 <style>
 @font-face { font-family: "semfont ttf"; src: url("/fonts/semfont-proto.woff2") format("woff2"); font-display: swap; }
 @font-face { font-family: "markfont"; src: url("/fonts/markfont.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "difffont"; src: url("/fonts/difffont.woff2") format("woff2"); font-display: swap; }
 .fontbox { border: 1px solid #3a3a3a; border-radius: 8px; padding: 16px 18px; margin: 22px 0 0;
            font-size: 18px; line-height: 1.65; height: 6.2em; overflow-y: auto;
            background: #fff; color: #111; white-space: pre-wrap; }
@@ -20,6 +21,9 @@ article :not(pre) > code { white-space: nowrap; }
 /* The left pane is the same typeface markfont is built from, so the only
    difference across the pair is the font feature. */
 .raw { font-family: "Liberation Sans", Arial, sans-serif; }
+.df { font-family: "difffont", "Liberation Mono", monospace; }
+.rawmono { font-family: "Liberation Mono", monospace; }
+.pair.diffpair .fontbox { height: 10.4em; font-size: 16px; }
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .pair .fontbox { margin-top: 0; height: 8.4em; }
 @media (max-width: 640px) { .pair { grid-template-columns: 1fr; gap: 0; } }
@@ -30,61 +34,115 @@ article :not(pre) > code { white-space: nowrap; }
 <script>document.body.classList.add('light');</script>
 
 <div class="fontbox sf" contenteditable="true" spellcheck="false">The rollback should have helped, but instead it made things worse. We fixed the crash that was corrupting user data, and the team is genuinely proud of how quickly it shipped.</div>
-<div class="fontnote"><span>semfont, 47 KB</span><span>type in it</span></div>
+<div class="fontnote"><span>semfont, 148 KB</span><span>type in it</span></div>
+
+<script>
+// Chrome does not reshape typed text with a font's rules until something makes it.
+// Swapping between two equivalent font stacks on each keystroke does, and moves nothing.
+(function () {
+  var box = document.querySelector('.fontbox.sf'), flip = false;
+  box.addEventListener('input', function () {
+    flip = !flip;
+    box.style.fontFamily = flip ? '"semfont ttf", serif' : '"semfont ttf", Georgia, serif';
+  });
+})();
+</script>
 
 <div class="pair">
   <div>
     <div class="fontbox raw" id="md-src" contenteditable="true" spellcheck="false">## A heading
-**bold**, *italic*, ~~struck~~, _under_, `code`.
+*italic holding **bold ~~struck~~** inside*, _under_, `code`.
 Not a # heading. get_user_name is safe.</div>
     <div class="fontnote"><span>what you type</span><span>type in it</span></div>
   </div>
   <div>
     <div class="fontbox mf" id="md-out"></div>
-    <div class="fontnote"><span>markfont, 26 KB</span></div>
+    <div class="fontnote"><span>markfont, 60 KB</span></div>
+  </div>
+</div>
+
+<div class="pair diffpair">
+  <div>
+    <div class="fontbox rawmono" id="df-src" contenteditable="true" spellcheck="false">@@ -1,6 +1,7 @@
+ def render(text):
+-    return parse(text)
++    # the font does this now
++    return text</div>
+    <div class="fontnote"><span>what you type</span><span>type in it</span></div>
+  </div>
+  <div>
+    <div class="fontbox df" id="df-out"></div>
+    <div class="fontnote"><span>difffont, 11 KB</span></div>
   </div>
 </div>
 
 <script>
 // The only job of this script is to copy the characters across. Nothing here
-// styles anything; the right pane differs from the left by one font feature.
+// styles anything; each right pane differs from its left by one font feature.
 (function () {
-  var src = document.getElementById('md-src'), out = document.getElementById('md-out');
-  var mirror = function () { out.textContent = src.innerText; };
-  src.addEventListener('input', mirror);
-  mirror();
+  [['md-src', 'md-out'], ['df-src', 'df-out']].forEach(function (ids) {
+    var src = document.getElementById(ids[0]), out = document.getElementById(ids[1]);
+    var mirror = function () { out.textContent = src.innerText; };
+    src.addEventListener('input', mirror);
+    mirror();
+  });
 })();
 </script>
 
-All three boxes hold plain text, and the two above share one typeface. No stylesheet or script
-sets any of that formatting; every colour, weight and rule is a substitution rule inside the font.
-The one script on this page copies characters from the left pane to the right.
+Every box holds plain text, and each pair shares one typeface. No stylesheet or script sets any
+of that formatting; every colour, weight and rule is a substitution rule inside the font. The
+scripts only copy characters from the left pane to the right.
 
 ## How it works
 
-Every letter has a copy per style. A `COLR` record points the copy back at the original outline
-and paints it from a `CPAL` palette entry, so colour costs no new drawing. Bold and italic are
-real Liberation Sans outlines. Underline and strikethrough are a bar drawn into each glyph, which
-joins up into one rule because glyphs sit flush.
+The colour font is one rule per word, plus every real inflection of it. Two bits of state ride
+along in the glyph stream, one for "negated" and one for "resolved", and a clause break clears
+them. So `not great` reads as bad, and `fixed the crash that was corrupting` reads as good. On
+my test sentences the library colours 60 words, and the font agrees on the sign of 59. A plain
+word list agrees on 41.
 
-Then one rule seeds a span and a second carries it:
+The Markdown font gives every letter a copy per state, and there are thirty-two states. Only
+eight sets of those are real outlines, one per Liberation face; the rest are components pointing at one of the eight,
+plus a one-em bar scaled to the letter's width for underline and strikethrough. Colour is a
+`COLR` record and a `CPAL` entry, so it costs no drawing at all.
+
+A closing `**` does not have to be matched with the `**` that opened it. It turns bold off
+because bold was on. So emphasis is a set of flags, not a bracket, and five flags is
+thirty-two states. Every glyph carries the state it is in:
 
 ```
-lookup CLRb { sub a by a.b; sub b by b.b; ... } CLRb;
-
-sub asterisk asterisk a' lookup CLRb;   # after **, embolden the next glyph
-sub @Anyb @Any' lookup CLRb;            # and the one after that, and so on
+lookup TOGGLE {
+  sub @S0 asterisk.s0' lookup NULL_s1 asterisk.s0' lookup NULL_s1 @Open;  # bold on
+  sub @S1 @Any.s0' lookup TO_s1;                                          # carry it
+  sub @S1nonspace asterisk.s0' lookup NULL_s0 asterisk.s0' lookup NULL_s0; # bold off
+}
 ```
 
-A lookup walks left to right and sees its own output as backtrack, so the second rule keeps
-firing until the class stops matching. The closing marker is where it stops.
+A delimiter becomes a zero-width glyph carrying the state after the flip, and a lookup walks
+left to right seeing its own output as backtrack, so one pass runs the whole machine. Depth
+never comes up, which is why the four nested spans in the box above come out right.
 
-Four `ignore` rules keep it off ordinary prose. A closing marker is one with styled glyphs behind
-it. A heading has nothing to backtrack over, which is the only line-start test OpenType offers,
-so `C#` survives. An underscore between alphanumerics is literal, so `get_user_name` survives. A
-delimiter followed by a space opens nothing, so `2 * 3` survives.
+The guards are the rest. An opener needs a non-space after it and a closer needs a non-space
+before it, so `2 * 3 * 4` survives. An underscore after a word character opens nothing, so
+`get_user_name` survives. A heading only fires with nothing to backtrack over, which is the
+only line-start test OpenType offers, so `C#` survives.
 
-A marker is then hidden only once a styled glyph ends up beside it. One that styled nothing stays
-on the page.
+The diff font is the same compiler on a different grammar. Eight lines, no code:
 
-[RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont).
+```
+style added   = color "#1a7f37";
+style removed = color "#cf222e";
+style hunk    = from "LiberationSans-Bold.ttf", color "#8250df";
+
+added   = line_start , "+"  , { any } -> added   keep;
+removed = line_start , "-"  , { any } -> removed keep;
+header  = line_start , "@@" , { any } -> hunk    keep;
+```
+
+Two limits apply to every font here, and I only tested Chrome. A soft line wrap resets the shaper, so
+a span, a `not` or a `**` that crosses a wrap loses its effect on the next line. And text typed
+into an editable box skips the font's rules until something forces a reshape, which is what the
+script under the first box does on each keystroke.
+
+[RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont) has the library, the colour font, and
+the compiler in `gramfont/`.
