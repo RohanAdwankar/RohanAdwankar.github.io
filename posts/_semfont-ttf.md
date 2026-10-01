@@ -1,4 +1,4 @@
-# Two fonts that do the parsing
+# Three fonts that do the parsing
 
 The loudest complaint about [semfont](https://github.com/RohanAdwankar/semfont) was that it is a
 JavaScript library and not a font. Fair. So I moved the work into the font file.
@@ -6,6 +6,7 @@ JavaScript library and not a font. Fair. So I moved the work into the font file.
 <style>
 @font-face { font-family: "semfont ttf"; src: url("/fonts/semfont-proto.woff2") format("woff2"); font-display: swap; }
 @font-face { font-family: "markfont"; src: url("/fonts/markfont.woff2") format("woff2"); font-display: swap; }
+@font-face { font-family: "difffont"; src: url("/fonts/difffont.woff2") format("woff2"); font-display: swap; }
 .fontbox { border: 1px solid #3a3a3a; border-radius: 8px; padding: 16px 18px; margin: 22px 0 0;
            font-size: 18px; line-height: 1.65; height: 6.2em; overflow-y: auto;
            background: #fff; color: #111; white-space: pre-wrap; }
@@ -20,6 +21,9 @@ article :not(pre) > code { white-space: nowrap; }
 /* The left pane is the same typeface markfont is built from, so the only
    difference across the pair is the font feature. */
 .raw { font-family: "Liberation Sans", Arial, sans-serif; }
+.df { font-family: "difffont", "Liberation Mono", monospace; }
+.rawmono { font-family: "Liberation Mono", monospace; }
+.pair.diffpair .fontbox { height: 10.4em; font-size: 16px; }
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .pair .fontbox { margin-top: 0; height: 8.4em; }
 @media (max-width: 640px) { .pair { grid-template-columns: 1fr; gap: 0; } }
@@ -57,20 +61,37 @@ Not a # heading. get_user_name is safe.</div>
   </div>
 </div>
 
+<div class="pair diffpair">
+  <div>
+    <div class="fontbox rawmono" id="df-src" contenteditable="true" spellcheck="false">@@ -1,6 +1,7 @@
+ def render(text):
+-    return parse(text)
++    # the font does this now
++    return text</div>
+    <div class="fontnote"><span>what you type</span><span>type in it</span></div>
+  </div>
+  <div>
+    <div class="fontbox df" id="df-out"></div>
+    <div class="fontnote"><span>difffont, 11 KB</span></div>
+  </div>
+</div>
+
 <script>
 // The only job of this script is to copy the characters across. Nothing here
-// styles anything; the right pane differs from the left by one font feature.
+// styles anything; each right pane differs from its left by one font feature.
 (function () {
-  var src = document.getElementById('md-src'), out = document.getElementById('md-out');
-  var mirror = function () { out.textContent = src.innerText; };
-  src.addEventListener('input', mirror);
-  mirror();
+  [['md-src', 'md-out'], ['df-src', 'df-out']].forEach(function (ids) {
+    var src = document.getElementById(ids[0]), out = document.getElementById(ids[1]);
+    var mirror = function () { out.textContent = src.innerText; };
+    src.addEventListener('input', mirror);
+    mirror();
+  });
 })();
 </script>
 
-All three boxes hold plain text, and the two above share one typeface. No stylesheet or script
-sets any of that formatting; every colour, weight and rule is a substitution rule inside the font.
-The one script on this page copies characters from the left pane to the right.
+Every box holds plain text, and each pair shares one typeface. No stylesheet or script sets any
+of that formatting; every colour, weight and rule is a substitution rule inside the font. The
+scripts only copy characters from the left pane to the right.
 
 ## How it works
 
@@ -106,9 +127,22 @@ before it, so `2 * 3 * 4` survives. An underscore after a word character opens n
 `get_user_name` survives. A heading only fires with nothing to backtrack over, which is the
 only line-start test OpenType offers, so `C#` survives.
 
-Two limits apply to both fonts, and I only tested Chrome. A soft line wrap resets the shaper, so
+The diff font is the same compiler on a different grammar. Eight lines, no code:
+
+```
+style added   = color "#1a7f37";
+style removed = color "#cf222e";
+style hunk    = from "LiberationSans-Bold.ttf", color "#8250df";
+
+added   = line_start , "+"  , { any } -> added   keep;
+removed = line_start , "-"  , { any } -> removed keep;
+header  = line_start , "@@" , { any } -> hunk    keep;
+```
+
+Two limits apply to every font here, and I only tested Chrome. A soft line wrap resets the shaper, so
 a span, a `not` or a `**` that crosses a wrap loses its effect on the next line. And text typed
 into an editable box skips the font's rules until something forces a reshape, which is what the
 script under the first box does on each keystroke.
 
-[RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont).
+[RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont) has the library, the colour font, and
+the compiler in `gramfont/`.
