@@ -24,6 +24,11 @@ article :not(pre) > code { white-space: nowrap; }
 .df { font-family: "difffont", "Liberation Mono", monospace; }
 .rawmono { font-family: "Liberation Mono", monospace; }
 .pair.diffpair .fontbox { height: 10.4em; font-size: 16px; }
+.page { font-family: "markfont", "Liberation Sans", Arial, sans-serif; font-size: min(18px, 3.7vw);
+         line-height: 1.7; white-space: pre; color: #111; background: #fff; border: 1px solid #d8d8d8;
+         border-radius: 8px; padding: 26px 30px; margin: 22px auto; width: fit-content; max-width: 100%;
+         box-sizing: border-box; overflow-x: auto; }
+@media (max-width: 640px) { .page { padding: 4vw; } }
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .pair .fontbox { margin-top: 0; height: 8.4em; }
 @media (max-width: 640px) { .pair { grid-template-columns: 1fr; gap: 0; } }
@@ -57,7 +62,7 @@ Not a # heading. get_user_name is safe.</div>
   </div>
   <div>
     <div class="fontbox mf" id="md-out"></div>
-    <div class="fontnote"><span>markfont, 60 KB</span></div>
+    <div class="fontnote"><span>markfont, 156 KB</span></div>
   </div>
 </div>
 
@@ -92,6 +97,46 @@ Not a # heading. get_user_name is safe.</div>
 Every box holds plain text, and each pair shares one typeface. No stylesheet or script sets any
 of that formatting; every colour, weight and rule is a substitution rule inside the font. The
 scripts only copy characters from the left pane to the right.
+
+## A page in one paragraph
+
+This is the whole markup of the page below:
+
+```html
+<p style="font-family: markfont; white-space: pre">
+# Field notes: the slow deploy
+*Tuesday, 11:40, written afterwards*
+The release went out at **11:02** and the
+...
+</p>
+```
+
+<p class="page"># Field notes: the slow deploy&#10;
+*Tuesday, 11:40, written afterwards*&#10;
+The release went out at **11:02** and the
+dashboard looked fine for ten minutes.
+Then `p99` doubled. The *cache hit rate*
+fell off a cliff, and nothing had failed.&#10;
+## What we saw&#10;
+Requests were not failing. They were just
+~~fast~~ slow, and only under load. The
+slowest path was the one we had changed:
+`lookup()`, which **every *cached* call** used.&#10;
+    SELECT * FROM lookups
+      WHERE cache_key = ?;&#10;
+## What we did&#10;
+We rolled back, added the missing _index_
+and wrote it down so it would not happen
+again. The fix shipped at 12:15 with a
+test that fails if the index goes away.&#10;
+### Next time&#10;
+• check the *dashboard* before the deploy
+• watch `p99`, not just the error rate
+• keep the rollback one command long</p>
+
+Indented lines are code, because each line carries its own marker, and the asterisks and
+underscores inside one stay as typed. Fenced blocks do not work: Chrome shapes each line
+separately, so a line between two fences has nothing in it that says it is code.
 
 ## How it works
 
@@ -140,7 +185,8 @@ header  = line_start , "@@" , { any } -> hunk    keep;
 ```
 
 Two limits apply to every font here, and I only tested Chrome. A soft line wrap resets the shaper, so
-a span, a `not` or a `**` that crosses a wrap loses its effect on the next line. And text typed
+a span, a `not` or a `**` that crosses a wrap loses its effect on the next line, which is why the page
+above is wrapped by hand. And text typed
 into an editable box skips the font's rules until something forces a reshape, which is what the
 script under the first box does on each keystroke.
 
