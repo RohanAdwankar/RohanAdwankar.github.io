@@ -62,7 +62,7 @@ Not a # heading. get_user_name is safe.</div>
   </div>
   <div>
     <div class="fontbox mf" id="md-out"></div>
-    <div class="fontnote"><span>markfont, 153 KB</span></div>
+    <div class="fontnote"><span>markfont, 156 KB</span></div>
   </div>
 </div>
 
@@ -122,6 +122,8 @@ Requests were not failing. They were just
 ~~fast~~ slow, and only under load. The
 slowest path was the one we had changed:
 `lookup()`, which **every *cached* call** used.&#10;
+    SELECT * FROM lookups
+      WHERE cache_key = ?;&#10;
 ## What we did&#10;
 We rolled back, added the missing _index_
 and wrote it down so it would not happen
@@ -131,6 +133,10 @@ test that fails if the index goes away.&#10;
 • check the *dashboard* before the deploy
 • watch `p99`, not just the error rate
 • keep the rollback one command long</p>
+
+Indented lines are code, because each line carries its own marker, and the asterisks and
+underscores inside one stay as typed. Fenced blocks do not work: Chrome shapes each line
+separately, so a line between two fences has nothing in it that says it is code.
 
 ## How it works
 
