@@ -35,7 +35,7 @@ article :not(pre) > code { white-space: nowrap; }
 <script>document.body.classList.add('light');</script>
 
 <div class="fontbox sf" contenteditable="true" spellcheck="false">The migration ran clean, but production was not clean. It deleted the index, and the rollback failed too. Surprisingly, nobody lost data.</div>
-<div class="fontnote"><span>semfont, 199 KB</span><span>type in it</span></div>
+<div class="fontnote"><span>semfont, 199 KB</span></div>
 
 <script>
 // Chrome does not reshape typed text with a font's rules until something makes it.
@@ -54,7 +54,7 @@ article :not(pre) > code { white-space: nowrap; }
     <div class="fontbox raw" id="md-src" contenteditable="true" spellcheck="false">## A heading
 *italic holding **bold ~~struck~~** inside*, _under_, `code`.
 Not a # heading. get_user_name is safe.</div>
-    <div class="fontnote"><span>what you type</span><span>type in it</span></div>
+    <div class="fontnote"><span>what you type</span></div>
   </div>
   <div>
     <div class="fontbox mf" id="md-out"></div>
@@ -69,7 +69,7 @@ Not a # heading. get_user_name is safe.</div>
 -    return parse(text)
 +    # the font does this now
 +    return text</div>
-    <div class="fontnote"><span>what you type</span><span>type in it</span></div>
+    <div class="fontnote"><span>what you type</span></div>
   </div>
   <div>
     <div class="fontbox df" id="df-out"></div>
@@ -158,7 +158,7 @@ So let's break down the lookups:
 4. `TO_s1` turns a bold-off letter into its bold-on copy, so `a.s0` becomes `a.s1`.
 5. `TOGGLE` is the main one. It invokes the other four lookups to generate the bolding.
 
-A bit confused to be sure but the nice part is the tool will handle all this generation for you so you don't have to spend time writing out the lookups yourself!
+A bit confusing for sure but the nice part is the tool will handle all this generation for you so you don't have to spend time writing out the lookups yourself!
 
 I had a great time exploring the world of fonts, feel free to check out [semfont](https://github.com/RohanAdwankar/semfont) for the code and thanks for reading!
 
