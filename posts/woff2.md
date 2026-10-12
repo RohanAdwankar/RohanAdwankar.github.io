@@ -95,7 +95,7 @@ All of these fonts are downloadable as [.woff2 files](https://github.com/RohanAd
 
 ## How it works
 
-You may have noticed that in some fonts the `f` and `i` combine so that the cross of the f connects with the dash of the i. An example font of this in Google Docs is Lobster. This operation is called ligatures and these type of context sensitive operations are why fonts implement the substitutions we need for the fonts.
+You may have noticed that in some fonts the `f` and `i` combine so that the cross of the f connects with the dash of the i. An example font of this in Google Docs is Lobster. This is called a ligature, and fonts support it through context-sensitive substitution rules. Those same rules are what we use to make a font do formatting.
 
 Every OpenType font (.ttf, .otf, .woff2) carries a table of these substitution rules that the browser runs on each line before drawing it. For example the rule below says that an f followed by an i is drawn as one joined glyph in OpenType Feature File syntax. Fira Code does the same for `=>` and `!=`, and rules can also look at the neighbours around a glyph, which makes them a pattern matcher running inside the font:
 
