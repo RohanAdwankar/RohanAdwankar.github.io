@@ -161,3 +161,5 @@ So let's break down the lookups:
 A bit confused to be sure but the nice part is the tool will handle all this generation for you so you don't have to spend time writing out the lookups yourself!
 
 I had a great time exploring the world of fonts, feel free to check out [semfont](https://github.com/RohanAdwankar/semfont) for the code and thanks for reading!
+
+PS: One fun thing I noticed after publishing. On iOS the semfont box does not flip the colour after a `not`, so "was not clean" shows green, while the Markdown and diff fonts work fine. Every browser on iOS, Chrome included, uses Apple's text engine instead of the one Chrome uses elsewhere, and it seems to handle chained font rules differently. I don't know exactly why yet, so if you do, let me know!
