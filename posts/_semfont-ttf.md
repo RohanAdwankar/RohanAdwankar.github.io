@@ -1,7 +1,8 @@
-# Three fonts that do the parsing
+# parsing in .woff2 
 
-The loudest complaint about [semfont](https://github.com/RohanAdwankar/semfont) was that it is a
-JavaScript library and not a font. Fair. So I moved the work into the font file.
+This post is a [followup](https://rohanadwankar.github.io/posts/semfont.html).
+In the last post one of the feedback I got was that the title was clickbaity because the sentiment parsing wasn't occurring on the font level but rather the typesetting level.
+This wasn't intentional but in retrospect was definitely true and drove me down a fun rabbithole!
 
 <style>
 @font-face { font-family: "semfont ttf"; src: url("/fonts/semfont-proto.woff2") format("woff2"); font-display: swap; }
@@ -94,49 +95,8 @@ Not a # heading. get_user_name is safe.</div>
 })();
 </script>
 
-Every box holds plain text, and each pair shares one typeface. No stylesheet or script sets any
-of that formatting; every colour, weight and rule is a substitution rule inside the font. The
-scripts only copy characters from the left pane to the right.
-
-## A page in one paragraph
-
-This is the whole markup of the page below:
-
-```html
-<p style="font-family: markfont; white-space: pre">
-# Field notes: the slow deploy
-*Tuesday, 11:40, written afterwards*
-The release went out at **11:02** and the
-...
-</p>
-```
-
-<p class="page"># Field notes: the slow deploy&#10;
-*Tuesday, 11:40, written afterwards*&#10;
-The release went out at **11:02** and the
-dashboard looked fine for ten minutes.
-Then `p99` doubled. The *cache hit rate*
-fell off a cliff, and nothing had failed.&#10;
-## What we saw&#10;
-Requests were not failing. They were just
-~~fast~~ slow, and only under load. The
-slowest path was the one we had changed:
-`lookup()`, which **every *cached* call** used.&#10;
-    SELECT * FROM lookups
-      WHERE cache_key = ?;&#10;
-## What we did&#10;
-We rolled back, added the missing _index_
-and wrote it down so it would not happen
-again. The fix shipped at 12:15 with a
-test that fails if the index goes away.&#10;
-### Next time&#10;
-• check the *dashboard* before the deploy
-• watch `p99`, not just the error rate
-• keep the rollback one command long</p>
-
-Indented lines are code, because each line carries its own marker, and the asterisks and
-underscores inside one stay as typed. Fenced blocks do not work: Chrome shapes each line
-separately, so a line between two fences has nothing in it that says it is code.
+Every box holds plain text and instead of scripts the formatting is applied by substitution rule inside the .woff2.
+All of these fonts are downloadable as [.woff2 files](https://github.com/RohanAdwankar/RohanAdwankar.github.io/tree/main/static/fonts).
 
 ## How it works
 
