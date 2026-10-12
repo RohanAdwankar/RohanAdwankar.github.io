@@ -1,7 +1,6 @@
 # parsing in .woff2 
 
-This post is a [followup](https://rohanadwankar.github.io/posts/semfont.html).
-In the last post one feedback I got was that the title was inaccurate because the sentiment parsing wasn't occurring on the font level but rather the typesetting level.
+In [my last post](https://rohanadwankar.github.io/posts/semfont.html).post one feedback I got was that the title was inaccurate because the sentiment parsing wasn't occurring on the font level but rather the typesetting level.
 This wasn't intentional but in retrospect was definitely true and drove me down a fun rabbit hole!
 
 <style>
