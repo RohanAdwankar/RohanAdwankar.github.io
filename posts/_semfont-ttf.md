@@ -105,6 +105,9 @@ feature liga {
 } liga;
 ```
 
+Read it as: when the letters f and i sit next to each other, draw the single glyph `f_i` instead.
+`liga` is just the name of the rule set, and `sub` means substitute.
+
 Fira Code turns `=>` into an arrow and `!=` into a slashed equals the same way, and Arabic fonts pick a letter's
 initial, medial or final shape with it. The rules can also look at neighbours without consuming them. A contextual
 rule says "this glyph, when the glyphs around it look like this, becomes that". That is a pattern matcher running inside the font,
