@@ -123,9 +123,40 @@ The other 2 fonts shown above are a bit harder because they have state.
 For example for semfont we try to match the word with the sentiment, so that needs a rule to remember that a negation (in this case a `not`) came earlier to the word we aim to turn red. Similarly for formatting markdown we need to remember which of bold, italic and code tags are open. 
 A font has no memory, so my solution is the state is carried in the glyphs themselves. This means each letter exists in a copy per state, and a rule swaps a letter for the copy that matches what came before it.
 
-<>
+For example here is the grammer for bolding. It's basically the same as the [markdown font grammer](https://github.com/RohanAdwankar/semfont/blob/main/gramfont/examples/markdown.gram) but for simplicity lets restrict the alphabet to a, b, c, asterisk, and a space.
 
-The colour font is one rule per word, plus every real inflection of it. Two bits of state ride along in the glyph stream, one for "negated" and one for "resolved", and a clause break clears them. So `not great` reads as bad, and `fixed the crash that was corrupting` reads as good. The Markdown font gives every letter a copy per state, and there are thirty-two states. Only eight sets of those are real outlines, one per Liberation face; the rest are components pointing at one of the eight,
-plus a one-em bar scaled to the letter's width for underline and strikethrough. Colour is a `COLR` record and a `CPAL` entry, so it costs no drawing at all.
+```
+alphabet = "a-c* ";
+face      = "LiberationSans-Regular.ttf";
+face bold = "LiberationSans-Bold.ttf";
+toggle bold = "**" -> bold;
+```
 
-Was fun exploring the world of fonts, feel free to check out [semfont](https://github.com/RohanAdwankar/semfont) for the code!
+The last line says that `**` flips bold on and off because in markdown bolding occurs when a word is in between those 2 symbols.
+
+Now here's what it generates:
+```
+lookup PRIME   { sub @Plain by [a.s0 b.s0 c.s0 asterisk.s0 space.s0]; } PRIME;
+lookup NULL_s0 { sub @Plain by null.s0; sub [a.s0 b.s0 c.s0 asterisk.s0 space.s0] by null.s0; } NULL_s0;
+lookup TO_s1   { sub [a.s0 b.s0 c.s0 asterisk.s0 space.s0] by [a.s1 b.s1 c.s1 asterisk.s1 space.s1]; } TO_s1;
+lookup NULL_s1 { sub @Plain by null.s1; sub [a.s0 b.s0 c.s0 asterisk.s0 space.s0] by null.s1; } NULL_s1;
+
+lookup TOGGLE {
+  sub @S0 asterisk.s0' lookup NULL_s1 asterisk.s0' lookup NULL_s1 [a.s0 b.s0 c.s0];
+  sub [a.s1 b.s1 c.s1 asterisk.s1 null.s1] asterisk.s0' lookup NULL_s0 asterisk.s0' lookup NULL_s0;
+  sub @S1 [a.s0 b.s0 c.s0 asterisk.s0 space.s0]' lookup TO_s1;
+  ignore sub @Styled [asterisk.s0]';
+  sub asterisk.s0' lookup NULL_s1 asterisk.s0' lookup NULL_s1 [a.s0 b.s0 c.s0];
+} TOGGLE;
+```
+
+So lets break down the lookups.
+1. the PRIME lookup makes everything in the alphabet go from _ -> _.s0 marking all of them not bold.
+2. NULL_s0 places an invisible, zero-width glyph to carry the bold-on flag. 
+3. NULL_s1 does the same trick to carry the bold-off flag.
+4. TO_s1 turns a bold-off letter into its bold-on copy, so a.s0 becomes a.s1
+5. TOGGLE is the main one which then invokes the other 3 helper functions to generate the bolding.
+
+A bit confused to be sure but the nice part is the tool will handle all this generation for you so you don't have to spend time writing out the lookups yourself!
+
+I had a great time exploring the world of fonts, feel free to check out [semfont](https://github.com/RohanAdwankar/semfont) for the code and thanks for reading!
