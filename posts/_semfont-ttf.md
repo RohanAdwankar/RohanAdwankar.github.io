@@ -35,7 +35,7 @@ article :not(pre) > code { white-space: nowrap; }
 <script>document.body.classList.add('light');</script>
 
 <div class="fontbox sf" contenteditable="true" spellcheck="false">The migration ran clean on staging, but production was not clean. It deleted the index, and the rollback failed too. Nobody lost data, and the fix was not painful.</div>
-<div class="fontnote"><span>semfont, 152 KB</span><span>type in it</span></div>
+<div class="fontnote"><span>semfont, 148 KB</span><span>type in it</span></div>
 
 <script>
 // Chrome does not reshape typed text with a font's rules until something makes it.
@@ -95,9 +95,23 @@ All of these fonts are downloadable as [.woff2 files](https://github.com/RohanAd
 
 ## How it works
 
-<should add section explaing why .woff2 allows substitutions in the first place and the implementation of ligatures in other fonts>
+A font is not only a set of shapes. Every OpenType font (.ttf, .otf, .woff2 are the same thing in different wrappers)
+carries a table called GSUB, a list of substitution rules the text renderer runs on every line before drawing it.
+Fonts have always used it for ligatures. This is the rule in most serif fonts that turns an f followed by an i into one joined glyph:
 
-To make this easier I added a simple language to define the parsing.
+```
+feature liga {
+  sub f i by f_i;
+} liga;
+```
+
+Fira Code turns `=>` into an arrow and `!=` into a slashed equals the same way, and Arabic fonts pick a letter's
+initial, medial or final shape with it. The rules can also look at neighbours without consuming them. A contextual
+rule says "this glyph, when the glyphs around it look like this, becomes that". That is a pattern matcher running inside the font,
+and the browser already runs it on every page.
+
+A git diff is the easy case. The pattern is "at the start of a line, a plus, then anything", and the substitution
+is "the same letters, painted green". To make this easier I added a simple language to define the parsing.
 
 For the simplest font above:
 
