@@ -1,7 +1,6 @@
 # parsing in .woff2 
 
-This post is a [followup](https://rohanadwankar.github.io/posts/semfont.html).
-In the last post one feedback I got was that the title was inaccurate because the sentiment parsing wasn't occurring on the font level but rather the typesetting level.
+In [my last post](https://rohanadwankar.github.io/posts/semfont.html), one piece of feedback I got was that the title was inaccurate because the sentiment parsing wasn't occurring on the font level but rather the typesetting level.
 This wasn't intentional but in retrospect was definitely true and drove me down a fun rabbit hole!
 
 <style>
@@ -35,7 +34,7 @@ article :not(pre) > code { white-space: nowrap; }
 <script>document.body.classList.add('light');</script>
 
 <div class="fontbox sf" contenteditable="true" spellcheck="false">The migration ran clean, but production was not clean. It deleted the index, and the rollback failed too. Surprisingly, nobody lost data.</div>
-<div class="fontnote"><span>semfont, 199 KB</span><span>type in it</span></div>
+<div class="fontnote"><span>semfont, 199 KB</span></div>
 
 <script>
 // Chrome does not reshape typed text with a font's rules until something makes it.
@@ -54,7 +53,7 @@ article :not(pre) > code { white-space: nowrap; }
     <div class="fontbox raw" id="md-src" contenteditable="true" spellcheck="false">## A heading
 *italic holding **bold ~~struck~~** inside*, _under_, `code`.
 Not a # heading. get_user_name is safe.</div>
-    <div class="fontnote"><span>what you type</span><span>type in it</span></div>
+    <div class="fontnote"><span>what you type</span></div>
   </div>
   <div>
     <div class="fontbox mf" id="md-out"></div>
@@ -69,7 +68,7 @@ Not a # heading. get_user_name is safe.</div>
 -    return parse(text)
 +    # the font does this now
 +    return text</div>
-    <div class="fontnote"><span>what you type</span><span>type in it</span></div>
+    <div class="fontnote"><span>what you type</span></div>
   </div>
   <div>
     <div class="fontbox df" id="df-out"></div>
@@ -90,7 +89,7 @@ Not a # heading. get_user_name is safe.</div>
 })();
 </script>
 
-Every box holds plain text and instead of scripts the formatting is applied by substitution rule inside the `.woff2`.
+Every box holds plain text, and the formatting is applied by substitution rules inside the font rather than by a script. 
 All of these fonts are downloadable as [.woff2 files](https://github.com/RohanAdwankar/RohanAdwankar.github.io/tree/main/static/fonts).
 
 ## How it works
@@ -120,10 +119,10 @@ header  = line_start , "@@" , { any } -> hunk    keep;
 ```
 
 The other 2 fonts shown above are a bit harder because they have state.
-For example for semfont we try to match the word with the sentiment, so that needs a rule to remember that a negation (in this case a `not`) came earlier to the word we aim to turn red. Similarly for formatting markdown we need to remember which of bold, italic and code tags are open. 
-A font has no memory, so my solution is the state is carried in the glyphs themselves. This means each letter exists in a copy per state, and a rule swaps a letter for the copy that matches what came before it.
+For example for semfont we try to match the word with the sentiment, so that needs a rule to remember that a negation (in this case a `not`) came earlier than the word we aim to turn red. Similarly for formatting markdown we need to remember which of bold, italic and code tags are open. 
+A font has no memory, so my solution is to carry the state in the glyphs themselves. This means each letter exists in a copy per state, and a rule swaps a letter for the copy that matches what came before it.
 
-For example here is the grammer for bolding. It's basically the same as the [markdown font grammer](https://github.com/RohanAdwankar/semfont/blob/main/gramfont/examples/markdown.gram) but for simplicity lets restrict the alphabet to a, b, c, asterisk, and a space.
+For example here is the grammar for bolding. It's basically the same as the [markdown font grammar](https://github.com/RohanAdwankar/semfont/blob/main/gramfont/examples/markdown.gram) but for simplicity let's restrict the alphabet to a, b, c, asterisk, and a space.
 
 ```
 alphabet = "a-c* ";
@@ -132,7 +131,7 @@ face bold = "LiberationSans-Bold.ttf";
 toggle bold = "**" -> bold;
 ```
 
-The last line says that `**` flips bold on and off because in markdown bolding occurs when a word is in between those 2 symbols.
+The last line says that `**` flips bold on and off because in markdown bolding occurs when a word is in between those two symbols.
 
 Now here's what it generates:
 ```
@@ -156,8 +155,10 @@ So let's break down the lookups:
 2. `NULL_s0` replaces a glyph with an invisible, zero-width glyph that carries the bold-off flag.
 3. `NULL_s1` does the same trick to carry the bold-on flag.
 4. `TO_s1` turns a bold-off letter into its bold-on copy, so `a.s0` becomes `a.s1`.
-5. `TOGGLE` is the main one. It invokes the other four lookups to generate the bolding.
+5. `TOGGLE` is the main one. It invokes the other 3 helper lookups to generate the bolding.
 
-A bit confused to be sure but the nice part is the tool will handle all this generation for you so you don't have to spend time writing out the lookups yourself!
+A bit confusing for sure, but the nice part is the tool will handle all this generation for you so you don't have to spend time writing out the lookups yourself!
 
 I had a great time exploring the world of fonts, feel free to check out [semfont](https://github.com/RohanAdwankar/semfont) for the code and thanks for reading!
+
+PS: One fun thing I noticed after publishing. On iOS the semfont box does not flip the color after a `not`, so "was not clean" shows green, while the Markdown and diff fonts work fine. Every browser on iOS, Chrome included, uses Apple's text engine instead of the one Chrome uses elsewhere, and it seems to handle chained font rules differently. I don't know exactly why yet, so if you do, let me know!
