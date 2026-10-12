@@ -150,12 +150,13 @@ lookup TOGGLE {
 } TOGGLE;
 ```
 
-So lets break down the lookups.
-1. the PRIME lookup makes everything in the alphabet go from _ -> _.s0 marking all of them not bold.
-2. NULL_s0 places an invisible, zero-width glyph to carry the bold-on flag. 
-3. NULL_s1 does the same trick to carry the bold-off flag.
-4. TO_s1 turns a bold-off letter into its bold-on copy, so a.s0 becomes a.s1
-5. TOGGLE is the main one which then invokes the other 3 helper functions to generate the bolding.
+So let's break down the lookups:
+
+1. `PRIME` renames every letter in the alphabet from `a` to `a.s0`, marking all of them as not bold.
+2. `NULL_s0` replaces a glyph with an invisible, zero-width glyph that carries the bold-off flag.
+3. `NULL_s1` does the same trick to carry the bold-on flag.
+4. `TO_s1` turns a bold-off letter into its bold-on copy, so `a.s0` becomes `a.s1`.
+5. `TOGGLE` is the main one. It invokes the other four lookups to generate the bolding.
 
 A bit confused to be sure but the nice part is the tool will handle all this generation for you so you don't have to spend time writing out the lookups yourself!
 
