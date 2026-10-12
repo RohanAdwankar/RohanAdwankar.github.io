@@ -125,6 +125,11 @@ removed = line_start , "-"  , { any } -> removed keep;
 header  = line_start , "@@" , { any } -> hunk    keep;
 ```
 
+A hard case is the same machinery with state. Negation needs a rule to remember that a `not` came earlier,
+and Markdown needs to remember which of bold, italic and code are open. A font has no memory, so the
+state is carried in the glyphs themselves: each letter exists in a copy per state, and a rule swaps a
+letter for the copy that matches what came before it.
+
 The colour font is one rule per word, plus every real inflection of it. Two bits of state ride
 along in the glyph stream, one for "negated" and one for "resolved", and a clause break clears
 them. So `not great` reads as bad, and `fixed the crash that was corrupting` reads as good. On
