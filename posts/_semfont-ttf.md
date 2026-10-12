@@ -34,8 +34,8 @@ article :not(pre) > code { white-space: nowrap; }
 
 <script>document.body.classList.add('light');</script>
 
-<div class="fontbox sf" contenteditable="true" spellcheck="false">The migration ran clean on staging, but production was not clean. It deleted the index, and the rollback failed too. Nobody lost data, and the fix was not painful.</div>
-<div class="fontnote"><span>semfont, 148 KB</span><span>type in it</span></div>
+<div class="fontbox sf" contenteditable="true" spellcheck="false">The migration ran clean, but production was not clean. It deleted the index, and the rollback failed too. Surprisingly, nobody lost data.</div>
+<div class="fontnote"><span>semfont, 199 KB</span><span>type in it</span></div>
 
 <script>
 // Chrome does not reshape typed text with a font's rules until something makes it.
@@ -128,8 +128,10 @@ header  = line_start , "@@" , { any } -> hunk    keep;
 The colour font is one rule per word, plus every real inflection of it. Two bits of state ride
 along in the glyph stream, one for "negated" and one for "resolved", and a clause break clears
 them. So `not great` reads as bad, and `fixed the crash that was corrupting` reads as good. On
-my test sentences the library colours 60 words, and the font agrees on the sign of 59. A plain
-word list agrees on 41.
+my test sentences the library colours 63 words, and the font agrees on the sign of 62. A plain
+word list agrees on 41. Bold is the same trick with the salience lexicon and a second set of
+outlines from the bold cut, and the highlight behind a surprise word is a box glyph layered
+under the letter.
 
 The Markdown font gives every letter a copy per state, and there are thirty-two states. Only
 eight sets of those are real outlines, one per Liberation face; the rest are components pointing at one of the eight,
