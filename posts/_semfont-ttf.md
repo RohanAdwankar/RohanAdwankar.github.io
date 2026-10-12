@@ -25,11 +25,6 @@ article :not(pre) > code { white-space: nowrap; }
 .df { font-family: "difffont", "Liberation Mono", monospace; }
 .rawmono { font-family: "Liberation Mono", monospace; }
 .pair.diffpair .fontbox { height: 10.4em; font-size: 16px; }
-.page { font-family: "markfont", "Liberation Sans", Arial, sans-serif; font-size: min(18px, 3.7vw);
-         line-height: 1.7; white-space: pre; color: #111; background: #fff; border: 1px solid #d8d8d8;
-         border-radius: 8px; padding: 26px 30px; margin: 22px auto; width: fit-content; max-width: 100%;
-         box-sizing: border-box; overflow-x: auto; }
-@media (max-width: 640px) { .page { padding: 4vw; } }
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 .pair .fontbox { margin-top: 0; height: 8.4em; }
 @media (max-width: 640px) { .pair { grid-template-columns: 1fr; gap: 0; } }
@@ -39,8 +34,8 @@ article :not(pre) > code { white-space: nowrap; }
 
 <script>document.body.classList.add('light');</script>
 
-<div class="fontbox sf" contenteditable="true" spellcheck="false">The rollback should have helped, but instead it made things worse. We fixed the crash that was corrupting user data, and the team is genuinely proud of how quickly it shipped.</div>
-<div class="fontnote"><span>semfont, 148 KB</span><span>type in it</span></div>
+<div class="fontbox sf" contenteditable="true" spellcheck="false">The migration ran clean on staging, but production was not clean. It deleted the index, and the rollback failed too. Nobody lost data, and the fix was not painful.</div>
+<div class="fontnote"><span>semfont, 152 KB</span><span>type in it</span></div>
 
 <script>
 // Chrome does not reshape typed text with a font's rules until something makes it.
