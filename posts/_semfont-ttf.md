@@ -95,13 +95,7 @@ All of these fonts are downloadable as [.woff2 files](https://github.com/RohanAd
 
 ## How it works
 
-A font is not only a set of shapes. Every OpenType font (.ttf, .otf and .woff2 are the same thing in different wrappers)
-carries a table called GSUB, a list of substitution rules the text renderer runs on every line before drawing it.
-Fonts have always used it for ligatures, where two letters get drawn as one joined glyph.
-
-Font designers do not write that table by hand. They write the rules in OpenType feature syntax, a small text
-language from Adobe, and a compiler turns it into the binary table inside the font. I used the open source one,
-the Python library [fontTools](https://github.com/fonttools/fonttools). This is a feature syntax rule for the f and i ligature:
+Every OpenType font (.ttf, .otf and .woff2 are the same thing in different wrappers) carries a table of substitution rules that the browser runs on each line before drawing it. Fonts have always used it for ligatures. Designers write the rules in a small Adobe language called feature syntax and a compiler, here the Python library [fontTools](https://github.com/fonttools/fonttools), turns them into the binary table inside the font. This rule says that an f followed by an i is drawn as one joined glyph. Fira Code does the same for `=>` and `!=`, and rules can also look at the neighbours around a glyph, which makes them a pattern matcher running inside the font:
 
 ```
 feature liga {
@@ -109,22 +103,7 @@ feature liga {
 } liga;
 ```
 
-Read it as: when the letters f and i sit next to each other, draw the single glyph `f_i` instead.
-`liga` is the name of the rule set and `sub` means substitute. If you open a .woff2 you will not see this text,
-only the compiled numbers, and real fonts name their glyphs differently. The idea is the same.
-
-Fira Code turns `=>` into an arrow and `!=` into a slashed equals this way, and Arabic fonts pick a letter's
-initial, medial or final shape with it. Rules can also look at the neighbours without consuming them: "this glyph,
-when the glyphs around it look like this, becomes that". That is a pattern matcher running inside the font,
-and the browser already runs it on every page.
-
-A git diff is the easy case. The pattern is "at the start of a line, a plus, then anything", and the substitution
-is "the same letters, painted green". Writing that directly in feature syntax is tedious and easy to get wrong,
-so I wrote a small compiler called gramfont. fontTools only turns feature syntax into a font. It knows nothing about
-parsing, so someone still has to work out which substitution rules make a pattern like "line start, plus, anything" work.
-gramfont does that part. You describe the pattern in a grammar, the notation parsers are usually specified in, and it
-generates the feature syntax and hands it to fontTools to build the font. It is in the
-[semfont repo](https://github.com/RohanAdwankar/semfont/tree/main/gramfont). This is the whole grammar for the diff font above:
+fontTools only compiles rules, it does not know which rules make a parser. So I wrote [gramfont](https://github.com/RohanAdwankar/semfont/tree/main/gramfont), which takes a grammar and generates the feature syntax for fontTools to build. A git diff is the easy case: a line that starts with `+` is green, with `-` is red, and with `@@` is purple, and `keep` leaves the marker visible. This is the whole grammar for the diff font above:
 
 ```
 style added   = color "#1a7f37";
@@ -135,9 +114,6 @@ added   = line_start , "+"  , { any } -> added   keep;
 removed = line_start , "-"  , { any } -> removed keep;
 header  = line_start , "@@" , { any } -> hunk    keep;
 ```
-
-The first three lines name a look, a colour or another typeface. Each rule after them says: at the start of a line,
-this marker followed by anything gets that look, and `keep` leaves the marker visible.
 
 A hard case is the same machinery with state. Negation needs a rule to remember that a `not` came earlier,
 and Markdown needs to remember which of bold, italic and code are open. A font has no memory, so the
