@@ -100,6 +100,22 @@ All of these fonts are downloadable as [.woff2 files](https://github.com/RohanAd
 
 ## How it works
 
+<should add section explaing why .woff2 allows substitutions in the first place and the implementation of ligatures in other fonts>
+
+To make this easier I added a simple language to define the parsing.
+
+For the simplest font above:
+
+```
+style added   = color "#1a7f37";
+style removed = color "#cf222e";
+style hunk    = from "LiberationSans-Bold.ttf", color "#8250df";
+
+added   = line_start , "+"  , { any } -> added   keep;
+removed = line_start , "-"  , { any } -> removed keep;
+header  = line_start , "@@" , { any } -> hunk    keep;
+```
+
 The colour font is one rule per word, plus every real inflection of it. Two bits of state ride
 along in the glyph stream, one for "negated" and one for "resolved", and a clause break clears
 them. So `not great` reads as bad, and `fixed the crash that was corrupting` reads as good. On
@@ -132,23 +148,4 @@ before it, so `2 * 3 * 4` survives. An underscore after a word character opens n
 `get_user_name` survives. A heading only fires with nothing to backtrack over, which is the
 only line-start test OpenType offers, so `C#` survives.
 
-The diff font is the same compiler on a different grammar. Eight lines, no code:
-
-```
-style added   = color "#1a7f37";
-style removed = color "#cf222e";
-style hunk    = from "LiberationSans-Bold.ttf", color "#8250df";
-
-added   = line_start , "+"  , { any } -> added   keep;
-removed = line_start , "-"  , { any } -> removed keep;
-header  = line_start , "@@" , { any } -> hunk    keep;
-```
-
-Two limits apply to every font here, and I only tested Chrome. A soft line wrap resets the shaper, so
-a span, a `not` or a `**` that crosses a wrap loses its effect on the next line, which is why the page
-above is wrapped by hand. And text typed
-into an editable box skips the font's rules until something forces a reshape, which is what the
-script under the first box does on each keystroke.
-
-[RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont) has the library, the colour font, and
-the compiler in `gramfont/`.
+Feel free to check out [RohanAdwankar/semfont](https://github.com/RohanAdwankar/semfont) for the code. 
