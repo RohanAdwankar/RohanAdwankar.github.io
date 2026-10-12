@@ -95,9 +95,13 @@ All of these fonts are downloadable as [.woff2 files](https://github.com/RohanAd
 
 ## How it works
 
-A font is not only a set of shapes. Every OpenType font (.ttf, .otf, .woff2 are the same thing in different wrappers)
+A font is not only a set of shapes. Every OpenType font (.ttf, .otf and .woff2 are the same thing in different wrappers)
 carries a table called GSUB, a list of substitution rules the text renderer runs on every line before drawing it.
-Fonts have always used it for ligatures. Font designers write the rules in a small text language called feature syntax, and this is what a rule that turns an f followed by an i into one joined glyph looks like there:
+Fonts have always used it for ligatures, where two letters get drawn as one joined glyph.
+
+Font designers do not write that table by hand. They write the rules in OpenType feature syntax, a small text
+language from Adobe, and a compiler turns it into the binary table inside the font. I used the open source one,
+the Python library [fontTools](https://github.com/fonttools/fonttools). This is a feature syntax rule for the f and i ligature:
 
 ```
 feature liga {
@@ -106,20 +110,19 @@ feature liga {
 ```
 
 Read it as: when the letters f and i sit next to each other, draw the single glyph `f_i` instead.
-`liga` is just the name of the rule set, and `sub` means substitute.
-This is the source, not what you would see inside the .woff2. A tool compiles it into a binary table
-of glyph numbers, and the glyph names and exact rules differ from font to font. The `fonttools` library can
-read that table back out, and the font builder here writes this same syntax and compiles it.
+`liga` is the name of the rule set and `sub` means substitute. If you open a .woff2 you will not see this text,
+only the compiled numbers, and real fonts name their glyphs differently. The idea is the same.
 
-Fira Code turns `=>` into an arrow and `!=` into a slashed equals the same way, and Arabic fonts pick a letter's
-initial, medial or final shape with it. The rules can also look at neighbours without consuming them. A contextual
-rule says "this glyph, when the glyphs around it look like this, becomes that". That is a pattern matcher running inside the font,
+Fira Code turns `=>` into an arrow and `!=` into a slashed equals this way, and Arabic fonts pick a letter's
+initial, medial or final shape with it. Rules can also look at the neighbours without consuming them: "this glyph,
+when the glyphs around it look like this, becomes that". That is a pattern matcher running inside the font,
 and the browser already runs it on every page.
 
 A git diff is the easy case. The pattern is "at the start of a line, a plus, then anything", and the substitution
-is "the same letters, painted green". To make this easier I added a simple language to define the parsing.
-
-For the simplest font above:
+is "the same letters, painted green". Writing that directly in feature syntax is tedious and easy to get wrong,
+so I wrote a small compiler called gramfont. You describe the pattern in a grammar, the notation parsers are
+usually specified in, and it generates the feature syntax and builds the font. It is in the
+[semfont repo](https://github.com/RohanAdwankar/semfont/tree/main/gramfont). This is the whole grammar for the diff font above:
 
 ```
 style added   = color "#1a7f37";
@@ -130,6 +133,9 @@ added   = line_start , "+"  , { any } -> added   keep;
 removed = line_start , "-"  , { any } -> removed keep;
 header  = line_start , "@@" , { any } -> hunk    keep;
 ```
+
+The first three lines name a look, a colour or another typeface. Each rule after them says: at the start of a line,
+this marker followed by anything gets that look, and `keep` leaves the marker visible.
 
 A hard case is the same machinery with state. Negation needs a rule to remember that a `not` came earlier,
 and Markdown needs to remember which of bold, italic and code are open. A font has no memory, so the
