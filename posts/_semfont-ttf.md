@@ -120,8 +120,10 @@ and the browser already runs it on every page.
 
 A git diff is the easy case. The pattern is "at the start of a line, a plus, then anything", and the substitution
 is "the same letters, painted green". Writing that directly in feature syntax is tedious and easy to get wrong,
-so I wrote a small compiler called gramfont. You describe the pattern in a grammar, the notation parsers are
-usually specified in, and it generates the feature syntax and builds the font. It is in the
+so I wrote a small compiler called gramfont. fontTools only turns feature syntax into a font. It knows nothing about
+parsing, so someone still has to work out which substitution rules make a pattern like "line start, plus, anything" work.
+gramfont does that part. You describe the pattern in a grammar, the notation parsers are usually specified in, and it
+generates the feature syntax and hands it to fontTools to build the font. It is in the
 [semfont repo](https://github.com/RohanAdwankar/semfont/tree/main/gramfont). This is the whole grammar for the diff font above:
 
 ```
