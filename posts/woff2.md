@@ -89,7 +89,7 @@ Not a # heading. get_user_name is safe.</div>
 })();
 </script>
 
-Every box holds plain text and instead of scripts the formatting is applied by substitution rule inside the `.woff2`.
+Every box holds plain text and instead of scripts the formatting is applied by substitution rule inside the font. 
 All of these fonts are downloadable as [.woff2 files](https://github.com/RohanAdwankar/RohanAdwankar.github.io/tree/main/static/fonts).
 
 ## How it works
