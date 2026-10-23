@@ -62,7 +62,7 @@ So lets proceed with the others and toss in Kata containers for the k8s fans.
 ### Naaive Firecracker
 
 Every number in this section was taken on the machine above with the same recorded agent sessions replayed against
-each tenant: 27 real opencode runs on small Python tasks, with the model's think time kept. A design "passes" at a
+each tenant: 26 real opencode sessions (8 small Python tasks run by 4 free models, 304 tool calls), with the model's think time kept. A design "passes" at a
 tenant count if the p99 of the latency it adds to a call stays under 1.5 s, with no errors and no out of memory.
 The numbers marked rough were taken while I was also using the machine, so they are good to about 5%.
 
