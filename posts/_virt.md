@@ -85,8 +85,7 @@ commands over vsock, and the host keeps the workspace and syncs it in.
 
 One VM per tenant, cold booted, never released, no balloon.
 
-TODO(final run): this needs the `--no-snapshot` option. What is measured already is the same VM restored from one shared
-snapshot instead of cold booted, which is a trick and not vanilla: it passes 128 tenants (two seeds), and at 160 the machine runs out of memory.
+TODO(final run): capacity of cold booted VMs (series `fc-vanilla`). So far only a small test: eight idle tenants cost about 123 MiB each cold booted. What is measured at capacity is the same VM restored from one shared snapshot instead, which is a trick and not vanilla: it costs about 37 MiB each, passes 128 tenants (two seeds), and at 160 the machine runs out of memory.
 
 #### The way Claude Code does it
 
@@ -96,14 +95,14 @@ port 2024, one writable 256 GB disk that outlives the VM plus read-only disks fo
 
 What I do not know: its vCPU count, its memory, whether it uses a balloon or snapshots.
 
-Here that is the `reclaim` design: release an idle VM by killing it, and cold boot the next one. TODO(final run).
+Here that is the `reclaim` design: release an idle VM by killing it, and cold boot the next one. TODO(final run), series `fc-claude`. In a first small test the wake costs about a second at p99, which is the cold boot.
 
 #### The way Instinct does it
 
 E2B Firecracker, 2 vCPU, 1.9 GB RAM, 29 GB disk, Ubuntu 22.04 with a desktop, about 1.3 s to the desktop, and a timeout
 with either a cold boot or a snapshot resume. I do not know which Instinct uses.
 
-Here that is the `suspend` design, with its VM sized 2 vCPU and 1900 MiB. TODO(final run). At my own 1 vCPU and 256 MiB
+Here that is the `suspend` design, with its VM sized 2 vCPU and 1900 MiB. TODO(final run), series `fc-instinct`. At my own 1 vCPU and 256 MiB
 it passes 416 tenants with a 5 second idle window (rough, two seeds), and fails at 432 on cpu and disk.
 
 ### Cloud Hypervisor
@@ -124,8 +123,8 @@ cloud-hypervisor \
 
 #### Vanilla
 
-TODO: the line above, one VM per tenant, kept up, no balloon. This needs the Cloud Hypervisor backend, which is the next thing
-to be built.
+TODO(final run), series `ch-vanilla`: the line above, one VM per tenant, cold booted, kept up, no balloon. The backend is built and boots; in a
+small test eight idle ones cost about 167 MiB each, against 123 for Firecracker cold booted.
 
 #### The way Muse does it
 
@@ -138,12 +137,13 @@ inside it. New ones are pre-booted, and one takes about 40 s to become ready.
 What I do not know: the Cloud Hypervisor version and its full command line, whether guest memory is backed by huge pages or
 shared, how the balloon is sized, how the host is configured, or how many of these a host runs.
 
-TODO: Cloud Hypervisor at 2 vCPU and 8 GiB with the balloon on, kept up, and with the same disk layout.
+TODO(final run), series `ch-muse`: Cloud Hypervisor at 2 vCPU and 8 GiB with the balloon on, pre-booted and kept up. It does not yet have
+Muse's four-disk layout, only the one read-only root.
 
 #### Maxxed out
 
-TODO: the same, with snapshot restore (Cloud Hypervisor v54 has `memory_restore_mode=copyonwrite`, so many VMs can share one
-snapshot the way Firecracker allows) and releasing idle VMs.
+TODO(final run), series `ch-snapshot`, `ch-suspend` and `ch-oxroute`: the same with snapshot restore and with idle VMs released. Cloud Hypervisor v54's
+`memory_restore_mode=CopyOnWrite` lets many VMs share one snapshot the way Firecracker does, and two restored from one snapshot held 14 MiB each.
 
 ### Kata Containers
 
@@ -153,7 +153,7 @@ VMM (v54.0), a 6.18.56 guest kernel, and the `python:3.13-slim` image, with the 
 
 #### Vanilla
 
-Kata's own defaults are a 2048 MiB guest, 1 vCPU, and no free page reporting. TODO(final run) on the untouched defaults.
+Kata's own defaults are a 2048 MiB guest, 1 vCPU, and no free page reporting. TODO(final run), series `kata-vanilla`, on the untouched defaults.
 
 #### The way it is usually run
 
