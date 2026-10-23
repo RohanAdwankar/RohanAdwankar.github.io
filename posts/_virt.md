@@ -67,7 +67,7 @@ tenant count if the p99 of the latency it adds to a call stays under 1.5 s, with
 The numbers marked rough were taken while I was also using the machine, so they are good to about 5%.
 
 **The config.** Firecracker v1.17.0, a 6.1.128 guest kernel built MMIO-only (`CONFIG_PCI` is off, which matters in the
-next section), and an 800 MiB ext4 image with bash, python3, coreutils and pip copied in. This is the whole VM:
+next section; Claude Code's Firecracker kernel does have PCI, so a recent Firecracker is not necessarily MMIO-only), and an 800 MiB ext4 image with bash, python3, coreutils and pip copied in. This is the whole VM:
 
 ```
 PUT /boot-source     {"kernel_image_path": "vmlinux-6.1.128",
@@ -89,13 +89,35 @@ TODO(final run): capacity of cold booted VMs (series `fc-vanilla`). So far only 
 
 #### The way Claude Code does it
 
-What I know from the first post: Firecracker, a custom `6.18.5-fc` kernel, a Rust PID 1 (`process_api`) listening on vsock
-port 2024, one writable 256 GB disk that outlives the VM plus read-only disks for the harness. A message wakes the VM
-(about 430 ms to init, 6.4 s to the harness), and when it is idle the host reclaims it: the processes die and the disk is kept.
+What the first post found: Firecracker, a Rust PID 1 (`process_api`) listening on vsock port 2024, one writable 256 GB disk that
+outlives the VM plus read-only disks for the harness. A message wakes the VM, and when it is idle the host reclaims it: the
+processes die and the disk is kept. A second look inside a box (this time with a probe that dumps the VM's configuration) adds the rest:
 
-What I do not know: its vCPU count, its memory, whether it uses a balloon or snapshots.
+```
+kernel   6.18.44-fc-v153 (builder@sandboxing), custom, not an Ubuntu kernel; CONFIG_PCI=y, VMGENID, VIRTIO_BALLOON, VIRTIO_MEM, ZSWAP
+cmdline  mitigations=auto,no_guest_host,no_guest_guest deferred_init=lazy dhash_entries=131072 ihash_entries=65536
+         console=ttyS0 reboot=k panic=1 nomodule random.trust_cpu=1 ipv6.disable=1 swiotlb=noforce psi=1 rdinit=/process_api
+cpu      4 vCPU, one thread per core, a generic Xeon @ 2.80GHz under KVM
+memory   16 GiB (MemTotal 16477348 kB), no swap, 0 hugepages, THP madvise, shmem THP never
+balloon  virtio_balloon: free_page_reporting=1, stats_vq=1, deflate_on_oom=1, no free page hinting, page_reporting_order=9
+disks    vda 256G ext4 rw, discard (reserved so only about 30 GiB is usable); five small read-only disks: rclone, claude-code,
+         env-runner and two skills trees. Measured: 517 MB/s write, 1.6 GB/s read, about 4300 synchronous 4K writes a second
+boot     1.82 s to /process_api as init (the first post measured 430 ms); a cold boot with a new boot id
+```
 
-Here that is the `reclaim` design: release an idle VM by killing it, and cold boot the next one. TODO(final run), series `fc-claude`. In a first small test the wake costs about a second at p99, which is the cold boot.
+How 16 GiB per tenant is affordable. At boot the kernel brings up only 3.2 of the 16 GiB (`Memory: 3214224K/16776824K`), because
+of `deferred_init=lazy`, so the host does not have to back all of it. The balloon hands freed pages back, and at idle the guest holds
+about 0.5 GiB, 310 MB of it the `claude` process. `swiotlb=noforce` skips a bounce buffer the kernel would otherwise allocate in a
+guest with more than 4 GB, and the two hash table sizes are capped so they do not grow with RAM. None of these matter much at 256 MiB.
+
+What this does and does not show about snapshots. The one wake observed was a cold boot onto the kept disk: a new boot id, a dmesg
+starting from zero, and files in `/tmp` from the earlier session still there because `/tmp` is on `vda`. The kernel has VMGENID built in,
+so it could be restored from a snapshot, and one wake does not show whether it ever is. It is one observation.
+
+Here that is the `reclaim` design: release an idle VM by killing it, and cold boot the next one. TODO(final run), series `fc-claude`.
+A first test of keeping a disk and cold booting instead of writing memory snapshots, on this machine: oxroute with every idle VM killed
+and cold booted ran out of memory with 78 VMs resident, where the restore design held 239. A cold booted VM costs about 123 MiB against
+about 37 for one restored from a shared snapshot. The approach suits a host with memory to spare.
 
 #### The way Instinct does it
 
