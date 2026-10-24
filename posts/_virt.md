@@ -162,10 +162,22 @@ shared, how the balloon is sized, how the host is configured, or how many of the
 TODO(final run), series `ch-muse`: Cloud Hypervisor at 2 vCPU and 8 GiB with the balloon on, pre-booted and kept up. It does not yet have
 Muse's four-disk layout, only the one read-only root.
 
-#### Maxxed out
+#### Optimized variant
 
-TODO(final run), series `ch-snapshot`, `ch-suspend` and `ch-oxroute`: the same with snapshot restore and with idle VMs released. Cloud Hypervisor v54's
-`memory_restore_mode=CopyOnWrite` lets many VMs share one snapshot the way Firecracker does, and two restored from one snapshot held 14 MiB each.
+The same VM with the balloon turned on and, as under Firecracker, restored from one shared snapshot instead of cold booted. Cloud Hypervisor v54's
+`memory_restore_mode=CopyOnWrite` maps the snapshot's memory file copy on write, so many VMs share one file and a VM only holds the pages it has touched.
+Two restored from one snapshot held 14 MiB each. The calls are:
+
+```
+PUT /api/v1/vm.create    {..., "balloon": {"size": 0, "deflate_on_oom": true, "free_page_reporting": true}}
+PUT /api/v1/vm.pause
+PUT /api/v1/vm.snapshot  {"destination_url": "file:///snap/pristine"}      # once, with an empty workspace
+# per tenant, on a fresh cloud-hypervisor process:
+PUT /api/v1/vm.restore   {"source_url": "file:///snap/pristine", "memory_restore_mode": "CopyOnWrite"}
+PUT /api/v1/vm.resume
+```
+
+TODO(final run), series `ch-snapshot`, `ch-suspend` and `ch-oxroute`.
 
 ### Kata Containers
 
@@ -177,17 +189,21 @@ VMM (v54.0), a 6.18.56 guest kernel, and the `python:3.13-slim` image, with the 
 
 Kata's own defaults are a 2048 MiB guest, 1 vCPU, and no free page reporting. TODO(final run), series `kata-vanilla`, on the untouched defaults.
 
-#### The way it is usually run
+#### Optimized variant
 
-A pod per tenant, kept up. At 256 MiB per guest and with the balloon off it holds 48 to 52 tenants (rough). Each pod costs
-about 154 MiB of host memory idle, because Kata boots a fresh guest kernel and agent for every pod where Firecracker restores
-a shared snapshot. Pods that are deleted when idle (`kata-cold`) hold 48 as well, because every wake boots a VM.
+Two changes to Kata's shipped Cloud Hypervisor config, made with `sed` so the diff from vanilla is exactly this:
 
-#### Maxxed out
+```
+sed -e 's/^default_memory = .*/default_memory = 256/' \
+    -e 's/^reclaim_guest_freed_memory = false/reclaim_guest_freed_memory = true/' \
+    configuration-clh.toml > kata-clh.toml
+```
 
-The same with `reclaim_guest_freed_memory = true`, which turns on free page reporting. A pod that allocated and freed 150 MB
-goes from 259 MiB to 161 MiB, and stays at 259 with it off. I also tried a 128 MiB guest, which was worse (186 MiB a pod), and
-virtio-fs with no cache, which would not boot. TODO(final run) on the capacity with the balloon on.
+A 256 MiB guest like the Firecracker ones, and `reclaim_guest_freed_memory`, which turns on free page reporting. A pod per tenant with the
+guest at 256 MiB and the reporting off holds 48 to 52 tenants (rough). Each pod costs about 154 MiB of host memory idle, because Kata boots a fresh
+guest kernel and agent for every pod where Firecracker restores a shared snapshot. Pods deleted when idle (`kata-cold`) hold 48 as well, because every wake boots a VM.
+With reporting on, a pod that allocated and freed 150 MB goes from 259 MiB to 161 MiB, and stays at 259 with it off. I also tried a 128 MiB guest, which was
+worse (186 MiB a pod), and virtio-fs with no cache, which would not boot. TODO(final run) on the capacity with reporting on.
 
 ### gVisor
 
@@ -203,9 +219,35 @@ Three things on top of the naive config, each measured on its own.
 1. **Restore from one shared snapshot.** The first VM is booted once and snapshotted with an empty workspace, and every tenant's
    VM is restored from that single file (memory mapped copy on write, the root image shared). A resident VM then holds only the
    pages it has touched, about 35 MiB, instead of its whole 256.
+
+   ```
+   # once: boot a VM, wait for the agent, then
+   PATCH /vm               {"state": "Paused"}
+   PUT   /snapshot/create  {"snapshot_type": "Full", "snapshot_path": "pristine.snap", "mem_file_path": "pristine.mem"}
+
+   # per tenant, on a fresh firecracker process, instead of the boot calls above:
+   PUT   /snapshot/load    {"snapshot_path": "pristine.snap",
+                            "mem_backend": {"backend_type": "File", "backend_path": "pristine.mem"},
+                            "resume_vm": true}
+   ```
+
+   The root drive has to be read-only. Restoring over an image that another VM has since written corrupts the filesystem, because the
+   restored guest's cached ext4 metadata no longer matches the disk. The snapshot's file name includes a hash of the workspace path (the
+   agent's root is baked into guest memory), the kernel and the image, so a rebuilt image never restores a stale snapshot.
 2. **Release idle VMs, and throw away the ones with nothing to keep.** After an idle window the VM is released. The agent asks the
    guest whether it holds anything the workspace does not, and if not the VM is simply killed, which writes nothing, and the next
    command restores the shared snapshot. If it does hold something, such as an installed package, the whole VM is snapshotted.
+
+   ```
+   release():
+     if a command is in flight:                      keep the VM
+     live = guest.busy()                             # a server the agent backgrounded, a cron
+     if live or the probe failed:                    keep the VM, look again later
+     if guest.state() shows no change outside the workspace and /tmp:
+         kill the VMM                                # nothing written; the next command restores the shared snapshot
+     else:
+         pause + /snapshot/create into this tenant's slot (two slots, alternating, so a failed write never destroys the last good one)
+   ```
 3. **A balloon with free page reporting**, the same technique as Muse. In the guest it hands back memory the guest has freed:
    a VM that allocated 120 MB and freed it went from 184 MiB back to 64 MiB in 3 seconds. It adds to the kept design (128 tenants
    to about 150) and does nothing for the released ones, which run out of cpu first.
@@ -237,6 +279,19 @@ Before the routing part, here is what routing is choosing between. This is the s
 | `python3`, 85 ms of cpu | 84.0 ms | 85.7 ms | 89.7 ms |
 
 The light sandbox is the file-only tier: bubblewrap builds a fresh set of namespaces for the command and a seccomp filter limits what it can ask the kernel. That adds about 1.7 ms.
+This is the whole command line around each one (the seccomp program arrives on file descriptor 3):
+
+```
+bwrap --unshare-all --unshare-user --disable-userns --cap-drop ALL --seccomp 3 \
+      --die-with-parent --new-session --clearenv \
+      --ro-bind /usr /usr --symlink usr/bin /bin --symlink usr/lib /lib --symlink usr/lib64 /lib64 \
+      --proc /proc --dev /dev --tmpfs /tmp \
+      --bind $WORKSPACE /work --chdir /work \
+      bash -c "$COMMAND"
+```
+
+The only writable things are the tenant's workspace and a private `/tmp`. There is no network namespace to join and the filter has no socket calls. The filter is the Docker default
+profile's 299 allowed calls, with `clone3` answered "not implemented" (so a program falls back to `clone`, whose flags can be checked) and `clone` with any namespace flag refused.
 A warm VM adds 6 to 7 ms. That is not the VM being slower at the work, since 85 ms of cpu inside it took 89.7 ms, about 5% more. It is the fixed price of getting a command in and out:
 a vsock round trip, and a sync where the host walks the workspace and reports what changed before the command and the guest reports back after it. The spikes in the p95 are a sync with
 something to carry. A wake, meaning a released VM restored from the shared snapshot and then running one command through the whole path, is about 95 ms.
