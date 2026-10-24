@@ -223,6 +223,27 @@ plus `page_reporting.page_reporting_order=3` on the guest command line.
 
 The disk is real: the released design wrote 11 to 13 GiB of session snapshots at its limit.
 
+## What a command costs in each tier
+
+Before the routing part, here is what routing is choosing between. This is the same command run 60 times in each place, in a project of 300 small files, on the machine above.
+
+| command | host, nothing around it | light sandbox | Firecracker, warm |
+|---|---|---|---|
+| `ls` | 4.7 ms | 6.5 ms | 11.6 ms (p95 22.6) |
+| `cat` a file | 4.5 ms | 6.2 ms | 11.3 ms |
+| `grep -rn` over 300 files | 5.0 ms | 7.2 ms | 13.4 ms (p95 27.1) |
+| `find` and sort | 6.0 ms | 7.5 ms | 14.3 ms |
+| `python3` start | 12.5 ms | 13.9 ms | 18.0 ms |
+| `python3`, 85 ms of cpu | 84.0 ms | 85.7 ms | 89.7 ms |
+
+The light sandbox is the file-only tier: bubblewrap builds a fresh set of namespaces for the command and a seccomp filter limits what it can ask the kernel. That adds about 1.7 ms.
+A warm VM adds 6 to 7 ms. That is not the VM being slower at the work, since 85 ms of cpu inside it took 89.7 ms, about 5% more. It is the fixed price of getting a command in and out:
+a vsock round trip, and a sync where the host walks the workspace and reports what changed before the command and the guest reports back after it. The spikes in the p95 are a sync with
+something to carry. A wake, meaning a released VM restored from the shared snapshot and then running one command through the whole path, is about 95 ms.
+
+So a command that only reads or searches files costs about twice as much in the VM as in the light tier, a few milliseconds either way. That is nothing for one command and it is the whole
+story at 600 tenants, because those few milliseconds, the wakes behind them and the memory a resident VM holds are what the routing is trying not to pay.
+
 ## Past 600
 
 Ok so this is all very cool but there's something that you are probably also starting to clue in on.
