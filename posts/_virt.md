@@ -51,6 +51,43 @@ Also to be honest if we benchmark with all the tenants at full activity to be ho
 We will use opencode as the standard for what the agent sandbox needs to run.
 This means the sandbox needs to have internet access and <>.
 
+## How I'm Measuring It
+
+A capacity number means nothing without the tenants it was measured against, so here is what a tenant is.
+
+**The sessions are real.** I gave eight ordinary tasks on a small Python project (explain the repo, fix a failing test, add a function and a test, rename
+something, add type hints, write a README section, list the TODOs, add a command line entry point) to opencode, each to up to four of its free models.
+Opencode's `bash`, `read`, `write`, `edit`, `glob` and `grep` tools were replaced with wrappers that logged every call: the tool, its arguments, and the
+time the model spent thinking before it made the call. That gave 26 usable sessions and 304 tool calls. Opencode has a few more tools (todo lists, subagents, web search), but they touch neither the workspace nor a machine, so they are not part of
+what a sandbox has to serve.
+
+**A tenant replays them.** A tenant alternates between being away and handing the agent a task. When it has a task it picks one of the 26 sessions at random, copies the starting project
+into its workspace, and replays the recorded calls with their recorded think times between them. The away time is long-tailed, with a mean of two minutes: usually a minute or two, sometimes much longer.
+Tenants end up mid-task about 24% of the time, which fits the premise from the start of the post that most tenants are idle. Each tenant also starts at a random point, so they do not all begin together.
+
+```
+tenant:
+  sleep(random start)
+  loop until the run ends:
+      session = random recorded session
+      workspace = fresh copy of the starting project
+      for call in session:
+          sleep(call.think_ms)                  # the model thinking, as recorded
+          run call against this tenant's sandbox
+      sleep(away_time)                          # lognormal, mean 120 s
+```
+
+**Every design gets the same tenants.** All the sandboxes in this post run through one harness and one interface: a command in, an output out, with the workspace kept in step.
+The random choices come from a seed, so seed 1 is the same crowd of tenants for every design, and a second seed is a different crowd with the same statistics. A run is six minutes
+with a sampler recording free memory, VM count, cpu and disk once a second, and a run is aborted if the machine runs out of memory or disk.
+
+**What counts as a pass.** The target is a p99 of 1.5 seconds of latency added to a call, with no errors. "Added" is the time the call took less the time the same call takes
+with one tenant and nothing else going on, which I measured once for every recorded call. Without that, the numbers were dominated by commands that sleep, which take
+the same time under every design, so the benchmark measured the commands and not the sandbox. A design passes at a tenant count if most seeds pass, and the count goes up until it does not.
+
+**What this does not measure.** The tenants are coding sessions on a small project, so it says nothing about a sandbox for browsers or for long jobs at full load. Every tenant gets the same 256 MiB, which
+is not what the products I compare against use, and the sections below say what each of them does instead.
+
 ## Exploring 
 
 In the prior posts the approaches we looked at were vanilla firecracker, firecracker through e2b, and cloud hypervisor.
@@ -302,6 +339,75 @@ story at 600 tenants, because those few milliseconds, the wakes behind them and 
 ## Past 600
 
 Ok so this is all very cool but there's something that you are probably also starting to clue in on.
+
+Of the 304 calls the tenants make, 168 are the file tools (`read`, `edit`, `write`, `glob`, `grep`) and 56 of the 136 shell commands only touch files, `ls` and `cat` and `sed`. That is 224 of 304
+calls, 74%, that never needed a machine at all, and 8 of the 26 sessions never needed one once. Everything above gives such a call a whole VM anyway, and the designs that release VMs when idle pay to restore one for it.
+Those designs run out of cpu and disk, not memory, around 430 tenants, because every release and wake is work (a snapshot written, a snapshot mapped, a sync). Taking the calls that need no machine out of that path is the whole idea.
+
+So sandroute sends each call to the cheapest place that is still safe for it. Here is how it works, in the order a call meets it.
+
+### 1. Decide where the command runs
+
+The command line is parsed with a real bash grammar (tree-sitter), not matched with patterns, so pipelines, `$(...)`, heredocs and `&&` chains all give up the command names inside them.
+A command stays in the light tier only if every name is one the light tier carries, and nothing in it asks about the machine or reaches outside the workspace:
+
+```
+for name in command_names(line):
+    if name has a '/':               return VM    # a binary at some path
+    if name in ALWAYS_VM:            return VM    # python3, gcc, node, npm, cargo, chromium, ...
+    if name in MACHINE_QUERIES:      return VM    # which, env, ps, uname, curl, kill, ...
+if line names a path outside the workspace:  return VM
+if line reads $PATH:                 return VM
+if any name is not a known utility:  return VM
+return LIGHT
+```
+
+The machine queries matter more than they look. `which chromium` run in a cheap shell would say "not installed" about the shell and not about the machine, and a real model concluded exactly that.
+The file tools skip the parsing: they always go to the light tier.
+
+### 2. Run it in the light tier
+
+The light tier is the `bwrap` command line from the cost section: a fresh set of namespaces, a seccomp filter, the workspace as the only writable thing. It starts with `posix_spawn` and not `fork`, because a
+fork copies the parent's page tables and the cost of a launch then grows with the size of the process that is serving hundreds of tenants. A command costs about 7 ms whatever size the host process is.
+
+### 3. Wake a VM when a command needs one
+
+The first command that needs a machine finds none and boots one. The VM is the shared-snapshot restore from the Firecracker section, so a wake, including the sync and one command, takes about 90 ms and the VM holds only the pages it touches:
+
+```
+run(command):
+    if classify(command) == LIGHT:  return bwrap_exec(command)
+    if the VM is not up:            boot()          # restore the shared snapshot, or resume this tenant's own
+    return vm.exec(command)
+```
+
+### 4. Keep the workspace in step
+
+The host owns the workspace, so both tiers see the same files. Around every command in the VM the host pushes what changed on its side and pulls what the command changed:
+
+```
+vm.exec(command):
+    push_changes()                  # walk the host workspace, send files whose size or mtime changed
+    result = agent.exec(command)    # the guest agent also walks its tree before and after
+    apply(result.report)            # write what the command created, changed or deleted back to the host
+```
+
+That walk is the 6 to 7 ms a warm VM costs over the light tier. A file changed on both sides since the last exchange is a conflict, and the VM's version wins.
+
+### 5. Hand the VM back
+
+After an idle window with no VM command, the VM is released, as in the `release()` flow shown earlier. It is kept if anything is still alive inside it, such as a server the agent started in the background. If the guest holds
+nothing outside the workspace and `/tmp`, it is killed outright, which writes nothing. Otherwise it is snapshotted into this tenant's own slot and resumed next time.
+
+### 6. Hints
+
+The harness can say when a turn ends, and releasing then instead of waiting out the window halves the number of VMs resident at any moment. It can also say when a turn starts, so the VM wakes while the model is still thinking
+about its first command. Both are optional, and the numbers in this post use the idle window alone unless a series says otherwise.
+
+### What it buys
+
+On the same tenants and the same machine, the design that releases VMs and sends everything to them passes 416 tenants. With the routing in front it passes 576 (rough, two seeds), and it runs out of cpu, not memory, so most of what is left is the cost of the VM commands themselves.
+TODO(final run): the headline `oxroute` against `suspend`, and the same table for the Cloud Hypervisor variant.
 
 ## Routing Graunlarity
 
