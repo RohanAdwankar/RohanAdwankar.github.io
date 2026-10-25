@@ -157,6 +157,75 @@ The light tier does something else that no VM does: its cost does not grow with 
 
 The same replay, run against designs from other systems: Kata Containers (a VM per pod, driven through Kubernetes) holds 40 tenants, gVisor with pods deleted when idle holds 80 (192 kept up, in an earlier rough run), and a Cloud Hypervisor VM at the size Muse is described to use, 2 vCPU and 8 GiB with a balloon, holds 16. Those are not slower designs. They are designs for tenants that hold state: an always-on VM that keeps its working set is a good deal for a personal agent, and the wrong one for a machine full of mostly idle coding sessions.
 
+## Try it yourself
+
+The usual way to show a sandbox API is to start a hundred of them at once, each writing a file and reading it back. With E2B it looks like this:
+
+```python
+import asyncio
+import uuid
+from e2b import AsyncSandbox
+
+async def run_single_sandbox(idx: int):
+    # Spin up an isolated microVM asynchronously
+    async with await AsyncSandbox.create() as sandbox:
+        random_str = uuid.uuid4().hex
+
+        # Write file inside sandbox
+        await sandbox.files.write("/tmp/random.txt", random_str)
+
+        # Read or verify back
+        res = await sandbox.commands.run("cat /tmp/random.txt")
+        print(f"Sandbox {idx} ({sandbox.sandbox_id}): {res.stdout.strip()}")
+
+async def main():
+    # Spin up 100 sandboxes simultaneously
+    tasks = [run_single_sandbox(i) for i in range(100)]
+    await asyncio.gather(*tasks)
+
+if __name__ == "__main__":
+    asyncio.run(main())
+```
+
+And with sandroute:
+
+```rust
+async fn run_single_sandbox(idx: usize) -> anyhow::Result<()> {
+    // Create an isolated sandbox
+    let sandbox = Sandroute::create().await?;
+    let random = format!("{idx}-{:x}", SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos());
+
+    // Write a file inside the sandbox
+    sandbox.write_file("random.txt", &random).await?;
+
+    // Read it back with a command
+    let res = sandbox.run("cat random.txt", None).await?;
+    println!("Sandbox {idx}: {}", res.stdout.trim());
+    sandbox.close().await
+}
+
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    // Spin up the sandboxes simultaneously
+    let tasks: Vec<_> = (0..100).map(|i| tokio::spawn(run_single_sandbox(i))).collect();
+    for t in tasks { t.await??; }
+    Ok(())
+}
+```
+
+The two have the same shape, apart from the explicit `close()`: Rust cannot await in a destructor, so there is no `async with`. It is `examples/hundred.rs` in the [repo](https://github.com/rohox/sandroute), and you run it with `cargo run --release --example hundred 100` once the VM image is built.
+
+I cannot put a stopwatch on the E2B version on this machine, because self-hosting E2B wants at least 4 cores and 8 GB and this one has 4 threads and 7 GiB. So this is the code side by side and sandroute's numbers, on the same laptop as everything else in this post:
+
+| sandboxes | the read runs in | time | host memory used |
+|---|---|---|---|
+| 100 | the light sandbox (`cat`) | 0.8 s | 23 MiB |
+| 100 | a microVM (`python3`) | 2.0 s | 242 MiB |
+| 700 | the light sandbox (`cat`) | 5.4 s | 589 MiB |
+| 700 | a microVM (`python3`) | 18.5 s | 3.1 GiB |
+
+Every one of those sandboxes is isolated from the others and from the host. The first row is the fast one because `cat random.txt` only touches files, so it never needed a VM, and the fourth is what it costs when every sandbox does need one: 700 microVMs restored from a shared snapshot in 18.5 seconds, holding 3.1 GiB, which is about 4.4 MiB each.
+
 ## What is left
 
 The next step is the 26% of calls that still need a VM. Most of them are `python3`, and running Python in the light tier would be the biggest remaining win, but it widens the kernel surface a hostile tenant can reach (a script can make any allowed system call) and a script that needs the network or `pip` would fail without telling anyone, so I have not done it. After that: a cheaper wake (about 110 ms of cpu today), a limit on how many VMs restore at once so a burst of turns doesn't thrash four threads, and a predictor that wakes a VM only for turns that will need one.
