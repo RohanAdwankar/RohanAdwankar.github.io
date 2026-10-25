@@ -1,4 +1,4 @@
-# Squeezing hostile agent tenants onto a 7 GiB laptop, one step at a time
+# How many Agents can I fit on my 7GB PC
 
 I wanted to know how many AI agent sandboxes one small machine can serve if the tenants can be hostile to each other. The machine is an IdeaPad 3 with 7 GiB of RAM, 4 threads and no GPU.
 Instead of comparing finished products I started from the simplest design and changed one thing at a time, measuring after each change. Five steps took it from 48 tenants to 736.
