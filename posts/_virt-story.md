@@ -213,7 +213,7 @@ async fn main() -> anyhow::Result<()> {
 }
 ```
 
-The two have the same shape, apart from the explicit `close()`: Rust cannot await in a destructor, so there is no `async with`. It is `examples/hundred.rs` in the [repo](https://github.com/rohox/sandroute), and you run it with `cargo run --release --example hundred 100` once the VM image is built.
+The two have the same shape, apart from the explicit `close()`: Rust cannot await in a destructor, so there is no `async with`. It is `examples/hundred.rs` in the [repo](https://github.com/RohanAdwankar/sandroute), and you run it with `cargo run --release --example hundred 100` once the VM image is built.
 
 That snippet runs on E2B's hosted service, so it needs an account and an API key, and self-hosting E2B wants at least 4 cores and 8 GB where this laptop has 4 threads and 7 GiB. So it is not something I can time here. The closest thing that does run locally is [microsandbox](https://github.com/superradcompany/microsandbox), an open source runtime that starts a microVM per sandbox from a Python (or Rust) SDK, with nothing to install but KVM. The same job looks like this:
 
@@ -260,4 +260,4 @@ One caveat on how to read that. Microsandbox starts all of its VMs at the same m
 
 The next step is the 26% of calls that still need a VM. Most of them are `python3`, and running Python in the light tier would be the biggest remaining win, but it widens the kernel surface a hostile tenant can reach (a script can make any allowed system call) and a script that needs the network or `pip` would fail without telling anyone, so I have not done it. After that: a cheaper wake (about 110 ms of cpu today), a limit on how many VMs restore at once so a burst of turns doesn't thrash four threads, and a predictor that wakes a VM only for turns that will need one.
 
-The code and every raw result are in the [sandroute repo](https://github.com/rohox/sandroute).
+The code and every raw result are in the [sandroute repo](https://github.com/RohanAdwankar/sandroute).
