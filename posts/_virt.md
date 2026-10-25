@@ -425,6 +425,12 @@ and 1,800 wakes, with a lower mean cpu (43% against 51%). Routing removed most o
 start a turn together, the wakes and the Python test runs they cause queue on four threads, and the p99 passes 1.5 s while the average machine is still half idle. The 26% of calls that still need a VM
 (mostly `python3`) are real work that no design avoids.
 
+The latency each call pays at those limits:
+
+![Latency added to a call at each design's limit](/img/virt-latency.png)
+
+Every design sits under the 1.5 s target at its limit by construction, so the chart shows what the limit costs. The kept-up designs are fast (a p99 of 20 to 35 ms) because their VMs are always there, and they stop for lack of memory. The released designs pay a wake on the unlucky calls, so their p95 and p99 climb toward the target while the median stays in single digits of milliseconds, and they stop for lack of cpu. The Claude Code style design pays a cold boot of about 1.2 s on every wake, and oxroute pays a wake on far fewer calls.
+
 Against what the other setups give on this machine (the chart above), the picture is bigger: 736 tenants against 176 for a kept-up Firecracker VM per tenant, 64 for the way Claude Code is described to work, 40 for Kata
 and 16 for the way Muse is configured. Most of that comes from restoring one shared snapshot and throwing a VM away when it holds nothing, and the routing is the last 15% on top.
 
