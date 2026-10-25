@@ -125,21 +125,6 @@ Two details made that work. `/tmp` is a second synced area, kept on the host whi
 
 **640 tenants**, from 176, and the machine now runs out of *cpu* and not memory. Resident VMs at the peak are 228, each costing about 8 MiB. The tail is where the cost is: a woken call takes a median of 115 ms and the p99 for all calls is 1.3 s, because 640 tenants produced 4,590 wakes in a six minute run.
 
-### The step I almost lost: warm the interpreter
-
-When I rewrote the guest agent from Python to a static Rust binary, this step fell apart. The same tenants at the same count went from a p99 of 0.5 seconds to 4.6.
-
-The cause was invisible. The old agent was a Python program, so Python and its standard library were always in the guest's page cache when the snapshot was taken, and every restored VM got them for free. The Rust agent doesn't load Python, so every restored VM read it from the virtual disk on its first command. A wake followed by `python3 -m unittest` cost 530 ms of cpu; with Python warm it costs 161.
-
-The fix is to say it out loud: before the snapshot is taken, the init script loads what a tenant is going to use.
-
-```
-chroot "$R" /usr/bin/python3 -c 'import unittest, json, re, os, sys, subprocess, pathlib, argparse, collections, typing, shutil, tempfile, io, itertools, functools, textwrap, datetime, logging, asyncio'
-chroot "$R" /bin/bash -c 'ls / >/dev/null; grep -q . /etc/passwd; sed -n 1p /etc/passwd >/dev/null'
-```
-
-Whatever is in the guest's page cache at snapshot time is shared copy on write across every VM restored from it, so this costs the host memory once.
-
 ## Step 5: don't use a VM for most commands
 
 Looking at what the tenants run, 224 of 304 recorded calls (74%) never needed a machine at all: they are the file tools (`read`, `edit`, `write`, `glob`, `grep`), and shell commands like `ls`, `cat` and `sed`. Only 80 of the 136 shell commands ran code, and 8 of the 26 sessions never needed a VM once. Yet every design above gives each of them a whole VM, or pays to wake one.
@@ -178,6 +163,7 @@ The light tier does something else that no VM does: its cost does not grow with 
 
 ## Other steps, and what didn't matter
 
+- **Warming Python into the snapshot.** Whatever sits in the guest's page cache when the snapshot is taken is shared by every VM restored from it, so the init script imports Python's common standard library before the snapshot. A wake that runs `python3 -m unittest` then costs 161 ms of cpu instead of 530.
 - **A balloon with free page reporting**, the technique Muse is described to use. A guest that allocated and freed 120 MB went from 184 MiB back to 64 MiB in three seconds. In an earlier rough run it took the kept-up design from 128 tenants to about 150, and it does nothing for the released designs, which run out of cpu first.
 - **Telling the sandbox when a turn ends** lets it release the VM at once, instead of waiting out the idle window. In an earlier rough run that halved the number of resident VMs. It needs a harness that can say when a turn ends, so it is not in the numbers above.
 - **Telling it when a turn starts** so the VM wakes during the model's thinking time. A blind prewarm cost more cpu than it saved, because a third of the sessions never need a VM. It would need a predictor.
