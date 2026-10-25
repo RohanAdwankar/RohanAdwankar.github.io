@@ -30,6 +30,10 @@ rohan@oxroute:~$
 
 As you can see with 7 GiB of RAM you may guess this to be in the dozens but let's apply some optimizations to see how far we can push it.
 
+![736 tenants on a 7 GiB laptop, replayed from real agent sessions at 8x](/img/virt-timelapse.gif)
+
+*What 736 tenants look like on this machine, replayed from real agent sessions at 8x. Each tile is an active tenant: blue ran its last command in a light sandbox and orange in a microVM, and the line and ring tie each terminal to its tile.*
+
 ![Each step, and what it bought](/img/virt-ladder.png)
 
 ## What a tenant is
@@ -280,6 +284,10 @@ Past a hundred, the sandroute version keeps going:
 | 700 | a microVM (`python3`) | 18.5 s | 3.1 GiB |
 
 Every one of those sandboxes is isolated from the others and from the host. Seven hundred microVMs restored from a shared snapshot in 18.5 seconds, holding 3.1 GiB, is about 4.4 MiB each. Microsandbox is where this laptop stops it. A hundred sandboxes at once work. At 110 the machine runs out of memory while most of the sandboxes are still starting: free memory fell to 259 MiB, then 293 MiB at 120 and 284 MiB at 130 (where 34 of the 130 had finished), and I stopped each run there (the same rule the capacity benchmark uses, under 300 MiB free) rather than let the kernel start killing things. That is a ceiling of about 100 sandboxes at once, and sandroute does seven hundred on the same machine, seven times as many, in 18.5 seconds.
+
+![130 sandboxes started at once, microsandbox next to sandroute](/img/virt-exhaustion.gif)
+
+*130 sandboxes started at once. Microsandbox's memory climbs to the limit before most have finished and the run is stopped with 34 done; sandroute finishes all 130 in 3.4 s.*
 
 One caveat on how to read that. Microsandbox starts all of its VMs at the same moment here, which is what the snippet asks for, and a smaller number would work if they were started a few at a time. A hundred at once is the job the E2B example sets, so it is the fair one to run.
 
