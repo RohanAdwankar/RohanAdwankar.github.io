@@ -215,16 +215,44 @@ async fn main() -> anyhow::Result<()> {
 
 The two have the same shape, apart from the explicit `close()`: Rust cannot await in a destructor, so there is no `async with`. It is `examples/hundred.rs` in the [repo](https://github.com/rohox/sandroute), and you run it with `cargo run --release --example hundred 100` once the VM image is built.
 
-I cannot put a stopwatch on the E2B version on this machine, because self-hosting E2B wants at least 4 cores and 8 GB and this one has 4 threads and 7 GiB. So this is the code side by side and sandroute's numbers, on the same laptop as everything else in this post:
+That snippet runs on E2B's hosted service, so it needs an account and an API key, and self-hosting E2B wants at least 4 cores and 8 GB where this laptop has 4 threads and 7 GiB. So it is not something I can time here. The closest thing that does run locally is [microsandbox](https://github.com/superradcompany/microsandbox), an open source runtime that starts a microVM per sandbox from a Python (or Rust) SDK, with nothing to install but KVM. The same job looks like this:
+
+```python
+async def run_single_sandbox(idx: int):
+    # Spin up an isolated microVM asynchronously
+    sandbox = await Sandbox.create(f"bench-{idx}", image="python", cpus=1, memory=256)
+    try:
+        random_str = uuid.uuid4().hex
+
+        # Write file inside sandbox
+        await sandbox.fs.write("/tmp/random.txt", random_str.encode())
+
+        # Read or verify back
+        res = await sandbox.exec("cat", ["/tmp/random.txt"])
+        print(f"Sandbox {idx}: {res.stdout_text.strip()}")
+    finally:
+        await sandbox.stop_and_wait()
+        await Sandbox.remove(f"bench-{idx}")
+```
+
+All three, on the same laptop, a hundred sandboxes at once, each with a 256 MiB guest:
+
+| | the read runs in | time | host memory used |
+|---|---|---|---|
+| microsandbox | a microVM (`cat`) | 8.6 s | 4.6 GiB |
+| sandroute | a microVM (`python3`) | 2.0 s | 242 MiB |
+| sandroute | the light sandbox (`cat`) | 0.8 s | 23 MiB |
+
+Microsandbox boots a fresh microVM for every sandbox, and it is quick for that: ten sandboxes took 0.8 s. A hundred of them fill the machine, and the 4.6 GiB they hold is where the 100 or so a 7 GiB laptop can hold comes from. Sandroute restores every VM from one shared snapshot, so a VM costs about 2 MiB at a hundred and 4.4 MiB at seven hundred, and a command that only touches files does not need one. That is the whole trick of this post, and it is also why this is not a fair fight about boot speed: microsandbox is doing the honest thing, and the comparison is what the shared snapshot and the light sandbox buy.
+
+Past a hundred, the sandroute version keeps going:
 
 | sandboxes | the read runs in | time | host memory used |
 |---|---|---|---|
-| 100 | the light sandbox (`cat`) | 0.8 s | 23 MiB |
-| 100 | a microVM (`python3`) | 2.0 s | 242 MiB |
 | 700 | the light sandbox (`cat`) | 5.4 s | 589 MiB |
 | 700 | a microVM (`python3`) | 18.5 s | 3.1 GiB |
 
-Every one of those sandboxes is isolated from the others and from the host. The first row is the fast one because `cat random.txt` only touches files, so it never needed a VM, and the fourth is what it costs when every sandbox does need one: 700 microVMs restored from a shared snapshot in 18.5 seconds, holding 3.1 GiB, which is about 4.4 MiB each.
+Every one of those sandboxes is isolated from the others and from the host. Seven hundred microVMs restored from a shared snapshot in 18.5 seconds, holding 3.1 GiB, is about 4.4 MiB each. I did not try seven hundred on microsandbox: at a hundred it was already using most of the machine.
 
 ## What is left
 
