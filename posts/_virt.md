@@ -190,35 +190,7 @@ The same replay, run against designs from other systems: Kata Containers (a VM p
 
 ## Try it yourself
 
-The usual way to show a sandbox API is to start a hundred of them at once, each writing a file and reading it back. With E2B it looks like this:
-
-```python
-import asyncio
-import uuid
-from e2b import AsyncSandbox
-
-async def run_single_sandbox(idx: int):
-    # Spin up an isolated microVM asynchronously
-    async with await AsyncSandbox.create() as sandbox:
-        random_str = uuid.uuid4().hex
-
-        # Write file inside sandbox
-        await sandbox.files.write("/tmp/random.txt", random_str)
-
-        # Read or verify back
-        res = await sandbox.commands.run("cat /tmp/random.txt")
-        print(f"Sandbox {idx} ({sandbox.sandbox_id}): {res.stdout.strip()}")
-
-async def main():
-    # Spin up 100 sandboxes simultaneously
-    tasks = [run_single_sandbox(i) for i in range(100)]
-    await asyncio.gather(*tasks)
-
-if __name__ == "__main__":
-    asyncio.run(main())
-```
-
-And with sandroute:
+The usual way to show a sandbox API is to start a hundred of them at once, each writing a file and reading it back. Here is that job in sandroute:
 
 ```rust
 async fn run_single_sandbox(idx: usize) -> anyhow::Result<()> {
@@ -244,9 +216,9 @@ async fn main() -> anyhow::Result<()> {
 }
 ```
 
-The two have the same shape, apart from the explicit `close()`: Rust cannot await in a destructor, so there is no `async with`. It is `examples/hundred.rs` in the [repo](https://github.com/RohanAdwankar/sandroute), and you run it with `cargo run --release --example hundred 100` once the VM image is built.
+It is `examples/hundred.rs` in the [repo](https://github.com/RohanAdwankar/sandroute), and you run it with `cargo run --release --example hundred 100` once the VM image is built. The `close()` is explicit because Rust cannot await in a destructor.
 
-That snippet runs on E2B's hosted service, so it needs an account and an API key, and self-hosting E2B wants at least 4 cores and 8 GB where this laptop has 4 threads and 7 GiB. So it is not something I can time here. The closest thing that does run locally is [microsandbox](https://github.com/superradcompany/microsandbox), an open source runtime that starts a microVM per sandbox from a Python (or Rust) SDK, with nothing to install but KVM. The same job looks like this:
+To have something to compare against I ran the same job on [microsandbox](https://github.com/superradcompany/microsandbox), an open source runtime that starts a microVM per sandbox from a Python (or Rust) SDK, with nothing to install but KVM. It looks like this:
 
 ```python
 async def run_single_sandbox(idx: int):
@@ -289,7 +261,7 @@ Every one of those sandboxes is isolated from the others and from the host. Seve
 
 *130 sandboxes started at once. Microsandbox's memory climbs to the limit before most have finished and the run is stopped with 34 done; sandroute finishes all 130 in 3.4 s.*
 
-One caveat on how to read that. Microsandbox starts all of its VMs at the same moment here, which is what the snippet asks for, and a smaller number would work if they were started a few at a time. A hundred at once is the job the E2B example sets, so it is the fair one to run.
+One caveat on how to read that. Microsandbox starts all of its VMs at the same moment here, which is what the job asks for, and a smaller number would work if they were started a few at a time. A hundred at once is the usual way to show a sandbox API, so it is the fair one to run.
 
 ## What is left
 
