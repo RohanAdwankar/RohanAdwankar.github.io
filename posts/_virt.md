@@ -2,7 +2,7 @@
 
 ![736 tenants on a 7 GiB laptop, replayed from real agent sessions at 8x](/img/virt-timelapse.gif)
 
-Recently I got a new computer<abbr title="by this i mean someone i know upgraded and i gladly nabbed it">*</abbr> so in continuity with my [other](https://rohanadwankar.github.io/posts/platforms.html) [posts](https://rohanadwankar.github.io/posts/sandbox2.html) on sandboxs I figured we should take a look at how many agent sandboxes we can fit to get an intuition on what these agents sandboxes look like.
+Recently I got a new computer<span class="note" tabindex="0" data-note="by this i mean someone i know upgraded and i gladly nabbed it">*</span> so in continuity with my [other](https://rohanadwankar.github.io/posts/platforms.html) [posts](https://rohanadwankar.github.io/posts/sandbox2.html) on sandboxs I figured we should take a look at how many agent sandboxes we can fit to get an intuition on what these agents sandboxes look like.
 
 Here's the computer we will be playing with!
 <pre class="fastfetch"><code class="nohighlight">rohan@oxroute:~$ fastfetch
