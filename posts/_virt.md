@@ -78,6 +78,8 @@ The latency is excellent (p99 of 20 ms) because every VM is already there.
 
 So next since we are limited by memory, we can start optimize out that.
 
+![48 tenants, each in its own VM that stays up. Memory is already at 3.6 GiB.](/img/virt-level1.gif)
+
 ## Level 2: Idle Killing
 
 Most tenants are idle most of the time, so don't keep their VMs.
@@ -89,6 +91,8 @@ Then when a new message is sent the VM boots again and the disk reattaches.
 This tactic allows use to grow from 48 to 64 tenants, and at 96 the machine runs out of memory.
 
 One downside is that now about 1 call in 11 wakes a VM, and a cold boot of a guest kernel costs 1.2 seconds, so the p99 sits at 1.2 s even with only 64 tenants.
+
+![64 tenants. Idle VMs are killed, and each tenant's next command waits for a cold boot.](/img/virt-level2.gif)
 
 ## Level 3: Snapshots 
 
@@ -138,6 +142,8 @@ And a guest that really did install something (a `pip install`, say) keeps its s
 **640 tenants**, from 176, and the machine now runs out of *cpu* and not memory.
 Resident VMs at the peak are 228, each costing about 8 MiB.
 The tail is where the cost is: a woken call takes a median of 115 ms and the p99 for all calls is 1.3 s, because 640 tenants produced 4,590 wakes in a six minute run.
+
+![576 tenants, shown below its limit of 640 because recording the run adds load. VMs come and go as tenants start and stop turns.](/img/virt-level3.gif)
 
 ## Level 4: Routing 
 

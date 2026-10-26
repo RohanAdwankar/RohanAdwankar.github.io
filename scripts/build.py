@@ -58,6 +58,7 @@ PAGE_CSS = '''
     input:checked + .slider:before { transform: translateX(20px); background-color: #e0e0e0; }
     pre.mermaid { background: transparent; text-align: center; margin: 24px 0; overflow-x: auto; }
     article pre { overflow-x: auto; max-width: 100%; }
+    article img { max-width: 100%; height: auto; }
     pre code.hljs { border-radius: 6px; padding: 14px 16px; font-size: 13.5px; overflow-x: auto; }
     article :not(pre) > code { background: #262626; border: 1px solid #3a3a3a; border-radius: 4px; padding: 0.08em 0.36em; font-size: 0.86em; color: #e7a6a0; }
     body.light article :not(pre) > code { background: #f4f4f4; border-color: #e2e2e2; color: #c0392b; }
