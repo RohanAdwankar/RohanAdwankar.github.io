@@ -1,68 +1,63 @@
-# How many Agents can I fit on my 7GB PC
-
-Recently I got a new computer so in continuity with my sandbox interest I figured we should take a look at how many sandboxes we can fit into this.
-
-```
-rohan@oxroute:~$ fastfetch
-                             ....              rohan@oxroute
-              .',:clooo:  .:looooo:.           -------------
-           .;looooooooc  .oooooooooo'          OS: Ubuntu 26.04.1 LTS (Resolute4
-        .;looooool:,''.  :ooooooooooc          Host: 81X8 (IdeaPad 3 15ITL05)
-       ;looool;.         'oooooooooo,          Kernel: Linux 7.0.0-38-generic
-      ;clool'             .cooooooc.  ,,       Uptime: 2 days, 10 hours, 39 mins
-         ...                ......  .:oo,      Packages: 1304 (dpkg), 3 (snap)
-  .;clol:,.                        .loooo'     Shell: bash 5.3.9
- :ooooooooo,                        'ooool     Display (BOE0816): 1366x768 in 1]
-'ooooooooooo.                        loooo.    Terminal: /dev/pts/0
-'ooooooooool                         coooo.    CPU: 11th Gen Intel(R) Core(TM) z
- ,loooooooc.                        .loooo.    GPU: Intel UHD Graphics G4 @ 1.2]
-   .,;;;'.                          ;ooooc     Memory: 1.18 GiB / 7.05 GiB (17%)
-       ...                         ,ooool.     Swap: 794.90 MiB / 4.00 GiB (19%)
-    .cooooc.              ..',,'.  .cooo.      Disk (/): 54.40 GiB / 97.87 GiB 4
-      ;ooooo:.           ;oooooooc.  :l.       Local IP (wlp0s20f3): 10.0.0.10/4
-       .coooooc,..      coooooooooo.           Battery (L16M2PB2): 97% [AC Conn]
-         .:ooooooolc:. .ooooooooooo'           Locale: en_US.UTF-8
-           .':loooooo;  ,oooooooooc
-               ..';::c'  .;loooo:'
-
-rohan@oxroute:~$
-```
-
-As you can see with 7 GiB of RAM you may guess this to be in the dozens but let's apply some optimizations to see how far we can push it.
+# 700 agent sandboxes on a 7GB PC
 
 ![736 tenants on a 7 GiB laptop, replayed from real agent sessions at 8x](/img/virt-timelapse.gif)
 
-*What 736 tenants look like on this machine, replayed from real agent sessions at 8x. Each tile is an active tenant: blue ran its last command in a light sandbox and orange in a microVM, and the line and ring tie each terminal to its tile.*
+Recently I got a new computer<abbr title="by this i mean someone i know upgraded and i gladly nabbed it">*</abbr> so in continuity with my [other](https://rohanadwankar.github.io/posts/platforms.html) [posts](https://rohanadwankar.github.io/posts/sandbox2.html) on sandboxs I figured we should take a look at how many agent sandboxes we can fit to get an intuition on what these agents sandboxes look like.
 
-![Each step, and what it bought](/img/virt-ladder.png)
+Here's the computer we will be playing with!
+<pre class="fastfetch"><code class="nohighlight">rohan@oxroute:~$ fastfetch
+<span class="c31">                             ....</span>              <span class="c31">rohan</span>@<span class="c31">oxroute</span>
+<span class="c31">              .&#x27;,:clooo:  .:looooo:.</span>           -------------
+<span class="c31">           .;looooooooc  .oooooooooo&#x27;</span>          <span class="c31">OS</span>: Ubuntu 26.04.1 LTS (Resolute4
+<span class="c31">        .;looooool:,&#x27;&#x27;.  :ooooooooooc</span>          <span class="c31">Host</span>: 81X8 (IdeaPad 3 15ITL05)
+<span class="c31">       ;looool;.         &#x27;oooooooooo,</span>          <span class="c31">Kernel</span>: Linux 7.0.0-38-generic
+<span class="c31">      ;clool&#x27;             .cooooooc.  ,,</span>       <span class="c31">Uptime</span>: 2 days, 10 hours, 39 mins
+<span class="c31">         ...                ......  .:oo,</span>      <span class="c31">Packages</span>: 1304 (dpkg), 3 (snap)
+<span class="c31">  .;clol:,.                        .loooo&#x27;</span>     <span class="c31">Shell</span>: bash 5.3.9
+<span class="c31"> :ooooooooo,                        &#x27;ooool</span>     <span class="c31">Display (BOE0816)</span>: 1366x768 in 1]
+<span class="c31">&#x27;ooooooooooo.                        loooo.</span>    <span class="c31">Terminal</span>: /dev/pts/0
+<span class="c31">&#x27;ooooooooool                         coooo.</span>    <span class="c31">CPU</span>: 11th Gen Intel(R) Core(TM) z
+<span class="c31"> ,loooooooc.                        .loooo.</span>    <span class="c31">GPU</span>: Intel UHD Graphics G4 @ 1.2]
+<span class="c31">   .,;;;&#x27;.                          ;ooooc</span>     <span class="c31">Memory</span>: 1.18 GiB / 7.05 GiB (17%)
+<span class="c31">       ...                         ,ooool.</span>     <span class="c31">Swap</span>: 794.90 MiB / 4.00 GiB (19%)
+<span class="c31">    .cooooc.              ..&#x27;,,&#x27;.  .cooo.</span>      <span class="c31">Disk (/)</span>: 54.40 GiB / 97.87 GiB 4
+<span class="c31">      ;ooooo:.           ;oooooooc.  :l.</span>       <span class="c31">Local IP (wlp0s20f3)</span>: 10.0.0.10/4
+<span class="c31">       .coooooc,..      coooooooooo.</span>           <span class="c31">Battery (L16M2PB2)</span>: 97% [AC Conn]
+<span class="c31">         .:ooooooolc:. .ooooooooooo&#x27;</span>           <span class="c31">Locale</span>: en_US.UTF-8
+<span class="c31">           .&#x27;:loooooo;  ,oooooooooc</span>
+<span class="c31">               ..&#x27;;::c&#x27;  .;loooo:&#x27;</span>
 
-## What a tenant is
+rohan@oxroute:~$
+</code></pre>
 
-A capacity number means nothing without the tenants it was measured against.
 
-I recorded 26 real [opencode](https://opencode.ai) sessions: eight ordinary tasks on a small Python project (explain the repo, fix a failing test, add a function and a test, rename something, add type hints, write a README section, list the TODOs, add a command line entry point), each given to up to four of opencode's free models, with its tool calls logged along with how long the model thought before each one. That is 304 tool calls.
+For some background on why this is interesting, agent sandboxes are a quickly growing area of interest beccause AI agent require environments to operate it.
 
-A simulated tenant alternates between being away (long-tailed, mean two minutes) and handing the agent a task. When it has a task it picks a recorded session at random, copies the starting project into its workspace and replays the calls with their recorded think times. Tenants are mid-task about 24% of the time, which matches how people use these things.
+Since we have seen a steady increase in the capability of agents to work over longer periods of time we would expect that the amount of compute dedicated to agent sandboxes would increase accordingly.
 
-```
-tenant:
-  sleep(random start)
-  loop until the run ends:
-      session = random recorded session
-      workspace = fresh copy of the starting project
-      for call in session:
-          sleep(call.think_ms)                  # the model thinking, as recorded
-          run call against this tenant's sandbox
-      sleep(away_time)                          # lognormal, mean 120 s
-```
+This growth is so exciting that many believe that in the near future when everyone has consumer agents running roughly 24/7 we don't have enough CPUs to even host that level of [comptue](https://x.com/MTSlive/status/2112699475894669358) experts have even claimed
 
-Every design gets the same tenants, because the random choices come from a seed. A run is six minutes. A design **passes** at N tenants if the p99 of the latency it *adds* to a call stays under 1.5 seconds, with no errors and no out-of-memory abort. "Added" is a call's time less the time the same call takes with one tenant on the machine, which keeps commands that simply sleep from drowning out the sandbox. Each count runs on two seeds, and a design **holds** N if both pass.
+So clearly it is worthwhile to see what these sandboxes are and what optimizations we can apply.
 
-"Hostile" means each tenant needs its own kernel boundary, so the baseline is a microVM per tenant: Firecracker v1.17.0, a 1 vCPU, 256 MiB guest, a 6.1 kernel, and an 800 MiB ext4 image with bash and python3.
+## Defining the Game 
 
-## Step 1: a VM per tenant, kept up
+For this to be useful/educational we need to have a benchmark which roughly reflects agent behavior.
 
-This is the whole VM:
+So to start I recorded 26 real [opencode](https://opencode.ai) agent sessions where the agent is doing things like explaining a repo, fixing a failing test, adding a command line entry point, etc.).
+You can find these session files [here](https://github.com/RohanAdwankar/sandroute/tree/main/bench/traces)
+
+A simulated tenant alternates between being away (long-tailed, mean two minutes) and handing the agent a task to replicate the user behavior of periodically checking your phone and texting muse.
+When it has a task it picks a recorded session at random, copies the starting project into its workspace and replays the calls with their recorded think times.
+Tenants are mid-task about 24% of the time, which is my relatively arbitary but nor unreasonable guess for their activity.
+
+Every design gets the same tenants, because the random choices come from a seed.
+A run is six minutes.
+A design **passes** at N tenants if the p99 of the latency it *adds* to a call stays under 1.5 seconds, with no errors and no out-of-memory abort. "Added" is a call's time less the time the same call takes with one tenant on the machine (helpful for example for commands that simply sleep).
+Each count runs on two seeds, and a design **holds** N if both pass.
+
+## Level 1: Cold Boots 
+
+Let's start off with a standard Firecracker MicroVM.
 
 ```
 PUT /boot-source     {"kernel_image_path": "vmlinux-6.1.128",
@@ -73,19 +68,35 @@ PUT /vsock           {"guest_cid": 3, "uds_path": "v.sock"}
 PUT /actions         {"action_type": "InstanceStart"}
 ```
 
-Boot one per tenant, never turn them off. A small agent in each guest runs commands over vsock, and the host keeps the workspace in sync.
+Boot one per tenant without never turning them off.
 
-**48 tenants.** At 64 the machine runs out of memory. Each VM costs about 113 MiB of host memory even when it does nothing, almost half of the 256 MiB it was given, because the guest kernel and the agent touch most of what they have. The latency is excellent (p99 of 20 ms) because every VM is already there. The limit is purely memory, and so are the next two steps.
+This gets us to ~48 tenants with the machine running out of memory at 64.
 
-## Step 2: kill idle VMs, cold boot on the next command
+Each VM costs about 113 MiB of host memory even when it does nothing, almost half of the 256 MiB it was given, because the guest kernel and the agent touch most of what they have.
 
-Most tenants are idle most of the time, so don't keep their VMs. After 30 seconds without a command, kill the VM, and boot a fresh one on the next command. The disk, which here means the workspace on the host, is the only thing that persists. This is, as far as I can tell from the box, how Claude Code does it.
+The latency is excellent (p99 of 20 ms) because every VM is already there.
 
-**64 tenants**, up from 48. At 96 the machine still runs out of memory. The VMs that are up are not cheaper (about 100 MiB each), there are just fewer of them. And the latency is where it hurts: about 1 call in 11 wakes a VM, and a cold boot of a guest kernel costs 1.2 seconds, so the p99 sits at 1.2 s even with only 64 tenants. The design works by paying latency to save memory, and it only goes up a little.
+So next since we are limited by memory, we can start optimize out that.
 
-## Step 3: boot once, restore everyone from one snapshot
+## Level 2: Idle Killing
 
-Booting is the expensive part, and every boot does the same work. So boot one VM, wait for the agent to come up, pause it, and write out its memory. Every tenant's VM is then *restored* from that single file with the memory mapped copy on write, so a VM only holds the pages it has changed.
+Most tenants are idle most of the time, so don't keep their VMs.
+
+After 30 seconds without a command, kill the VM, and boot a fresh one on the next command.
+
+Then when a new message is sent the VM boots again and the disk reattaches.
+
+This tactic allows use to grow from 48 to 64 tenants, and at 96 the machine runs out of memory.
+
+One downside is that now about 1 call in 11 wakes a VM, and a cold boot of a guest kernel costs 1.2 seconds, so the p99 sits at 1.2 s even with only 64 tenants.
+
+## Level 3: Snapshots 
+
+Booting is the expensive, and most boots are doing the same work.
+
+So now we can boot one VM, wait for the agent to come up, pause it, and write out its memory.
+
+Every tenant's VM is then restored from that single file with the memory mapped copy on write, so a VM only holds the pages it has changed.
 
 ```
 # once: boot a VM, wait for the agent, then
@@ -98,53 +109,50 @@ PUT   /snapshot/load    {"snapshot_path": "pristine.snap",
                          "resume_vm": true}
 ```
 
-Two things have to be true for this to work. The root drive must be read-only, because restoring over an image another VM has since written corrupts the filesystem (the restored guest's cached ext4 metadata no longer matches the disk). And the snapshot has to be taken *while the workspace is empty*, because the host owns the workspace and pushes it in on every wake.
+Two things have to be true for this to work.
 
-**176 tenants** kept up, at about 27 MiB each instead of 113. A restore takes tens of milliseconds, so at this point a VM is cheap enough to restore on demand, which is the next step.
+The root drive must be read-only, because restoring over an image another VM has since written corrupts the filesystem (the restored guest's cached ext4 metadata no longer matches the disk).
 
-## Step 4: release idle VMs, and throw away the ones that hold nothing
+And the snapshot has to be taken *while the workspace is empty*, because the host owns the workspace and pushes it in on every wake.
 
-Now the combination: release a VM after a short idle window and restore the shared snapshot on the next command. A window of 5 seconds turned out to be best.
+One more trick, whatever sits in the guest's page cache when the snapshot is taken is shared by every VM restored from it, so the init script imports Python's common standard library before the snapshot.
+A wake that runs `python3 -m unittest` then costs 161 ms of cpu instead of 530.
 
-The question is what to do with the VM when you release it. The naive answer is to snapshot its memory to disk so it can resume exactly. That works, and it cost me: at about 400 tenants the machine was writing 11 to 13 GiB of session snapshots and running out of disk bandwidth.
+This boost us a ton up to 176 tenants at about 27 MiB each instead of 113.
 
-The better answer is that most guests hold nothing worth saving. The workspace is on the host and gets pushed back in. If the guest also holds nothing outside the workspace and `/tmp`, the VM can simply be killed, and the next wake restores the shared snapshot, with no disk written at all:
+Since these restore in tens of milliseconds, a VM is cheap enough to restore on demand, so now bring back Level 2's killing: release a VM after a short idle window and restore the shared snapshot on the next command.
+A window of 5 seconds turned out to be best.
 
-```
-release():
-  if a command is in flight:                      keep the VM
-  live = guest.busy()                             # a server the agent backgrounded, a cron
-  if live or the probe failed:                    keep the VM, look again later
-  if guest.state() shows no change outside the workspace and /tmp:
-      kill the VMM                                # nothing written
-  else:
-      pause + /snapshot/create into this tenant's own slot
-```
+The question is what to do with the VM when you release it.
+The naive answer is to snapshot its memory to disk so it can resume exactly.
+That works, and it cost me: at about 400 tenants the machine was writing 11 to 13 GiB of session snapshots and running out of disk bandwidth.
 
-Two details made that work. `/tmp` is a second synced area, kept on the host while the guest is gone, so a test run that writes scratch files doesn't make the guest look dirty. And a guest that really did install something (a `pip install`, say) keeps its snapshot, in two alternating slots so a failed write never destroys the last good one.
+The better answer is that most guests hold nothing worth saving.
+The workspace is on the host and gets pushed back in.
+If the guest also holds nothing outside the workspace and `/tmp`, the VM can simply be killed, and the next wake restores the shared snapshot, with no disk written at all:
 
-**640 tenants**, from 176, and the machine now runs out of *cpu* and not memory. Resident VMs at the peak are 228, each costing about 8 MiB. The tail is where the cost is: a woken call takes a median of 115 ms and the p99 for all calls is 1.3 s, because 640 tenants produced 4,590 wakes in a six minute run.
+Two details made that work.
+`/tmp` is a second synced area, kept on the host while the guest is gone, so a test run that writes scratch files doesn't make the guest look dirty.
+And a guest that really did install something (a `pip install`, say) keeps its snapshot, in two alternating slots so a failed write never destroys the last good one.
 
-## Step 5: don't use a VM for most commands
+**640 tenants**, from 176, and the machine now runs out of *cpu* and not memory.
+Resident VMs at the peak are 228, each costing about 8 MiB.
+The tail is where the cost is: a woken call takes a median of 115 ms and the p99 for all calls is 1.3 s, because 640 tenants produced 4,590 wakes in a six minute run.
 
-Looking at what the tenants run, 224 of 304 recorded calls (74%) never needed a machine at all: they are the file tools (`read`, `edit`, `write`, `glob`, `grep`), and shell commands like `ls`, `cat` and `sed`. Only 80 of the 136 shell commands ran code, and 8 of the 26 sessions never needed a VM once. Yet every design above gives each of them a whole VM, or pays to wake one.
+## Level 4: Routing 
 
-So send each call to the cheapest place that is still safe for it. The command line is parsed with a real bash grammar (tree-sitter). A command stays in a light sandbox only if every name in it is one the sandbox carries, and nothing in it asks about the machine or reaches outside the workspace:
+Thus far we have optimizing by configuring the VM but lets do some out of the box thinking (obligatory[this should be a hyperlink which when clicked plays the budum tiss sound for a pun]) and see how we can offload the neccesity of the VM.
 
-```
-for name in command_names(line):
-    if name has a '/':               return VM    # a binary at some path
-    if name in ALWAYS_VM:            return VM    # python3, gcc, node, npm, cargo, chromium, ...
-    if name in MACHINE_QUERIES:      return VM    # which, env, ps, uname, curl, kill, ...
-if line names a path outside the workspace:  return VM
-if line reads $PATH:                 return VM
-if any name is not a known utility:  return VM
-return LIGHT
-```
+Looking at what the agents are running, 224 of 304 recorded calls (74%) never needed a real comptuer they are the file tools (`read`, `edit`, `write`, `glob`, `grep`), and shell commands like `ls`, `cat` and `sed`.
 
-`which chromium` in a cheap shell would say "not installed" about the shell and not about the machine, and a real model concluded exactly that, which is why machine questions always go to the VM.
+Only 80 of the 136 shell commands ran code, and 8 of the 26 sessions never needed a VM once.
 
-The light sandbox is [bubblewrap](https://github.com/containers/bubblewrap) plus a seccomp filter, with no VM:
+Thinking back to how people use agents this makes a lot of sense.
+Even though there are spurts of activity when actually programming which require a VM (eg. browser use, compilation) for a large segement of operations the agent just needs to read parts of their codebase / memory files and retrieve the asnwer.
+
+Therefore if we can selectively route querires ligher sandbox we can satisfy agent requests in then we can increase the percentage of commands which dont require rewaking the VM.
+This routing system was the intuion behind oxroute[add link].
+In this case for the light sandbox I chose [bubblewrap](https://github.com/containers/bubblewrap) plus a seccomp filter, with no VM:
 
 ```
 bwrap --unshare-all --unshare-user --disable-userns --cap-drop ALL --seccomp 3 \
@@ -155,28 +163,32 @@ bwrap --unshare-all --unshare-user --disable-userns --cap-drop ALL --seccomp 3 \
       bash -c "$COMMAND"
 ```
 
-The only writable things are the tenant's workspace and a private `/tmp`; there is no network namespace to join and the filter has no socket calls. The filter is the Docker default profile's 299 allowed calls, with `clone3` answered "not implemented" and `clone` with any namespace flag refused. A command costs about 6 ms, against 2.4 ms bare and 7.5 ms in a warm VM.
+The only writable things are the tenant's workspace and a private `/tmp`; there is no network namespace to join and the filter has no socket calls.
+The filter is the Docker default profile's 299 allowed calls, with `clone3` answered "not implemented" and `clone` with any namespace flag refused.
+A command costs about 6 ms, against 2.4 ms bare and 7.5 ms in a warm VM.
+The light tier also does something nice, its cost does not grow with the host process.
+The orchestrator starts each command with `posix_spawn` and not `fork`, because a fork copies the parent's page tables, and with hundreds of tenants the parent is hundreds of megabytes.
+A command costs about 6ms whatever the size of the host process.
 
-**736 tenants**, from 640. That is a smaller step than the others, and it is worth explaining why. At its limit the released design runs 19,353 calls and 4,590 wakes in a six minute run. With routing, oxroute runs 22,328 calls and 1,777 wakes, at 43% mean cpu against 51%. Routing removed most of the wakes. But the limit is not set by the average, it is set by bursts: when many tenants start a turn at once, the wakes and the Python test runs they cause queue on four threads, and the p99 passes 1.5 seconds while the machine is half idle. The 26% of calls that still need a VM, mostly `python3`, are real work that no design avoids.
+This routing approach generates a 100 tenant boost up to 736 tenants.
+This is great but perhaps a smaller boost then you may expect due to the profile of the benchmark workload.
+Compare the two designs at the point where each one stops passing.
+Level 3 (restoring a VM on every command that needs one) handles 640 tenants, who make 19,353 calls in a six minute run and wakes a VM 4,590 times, using 51% of the cpu on average.
+Level 4 (running file commands outside a VM) handles 736 tenants, who make 22,328 calls and wake a VM only 1,777 times, using 43% of the cpu.
+Routing removed most of the wakes.
+But the tenant limit is set by bursts, not the average.
+When many tenants start a turn at the same moment, there are more wakes and Python test runs than the four cpu threads can run at once, so some calls wait their turn, and the p99 passes 1.5 seconds while the machine is half idle.
+The 26% of calls that still need a VM, mostly `python3`, are real work that no design avoids at the peaks, but depending on the profile of the peaking the tenant gains could be seen as more or less.
 
-The light tier does something else that no VM does: its cost does not grow with the host process. The orchestrator starts each command with `posix_spawn` and not `fork`, because a fork copies the parent's page tables, and with hundreds of tenants the parent is hundreds of megabytes. A command costs about 7 ms whatever the size of the host process.
+![736 tenants on a 7 GiB laptop, replayed from real agent sessions at 8x](/img/virt-timelapse.gif)
 
-## Other steps, and what didn't matter
+![Each step, and what it bought](/img/virt-ladder.png)
 
-- **Warming Python into the snapshot.** Whatever sits in the guest's page cache when the snapshot is taken is shared by every VM restored from it, so the init script imports Python's common standard library before the snapshot. A wake that runs `python3 -m unittest` then costs 161 ms of cpu instead of 530.
-- **A balloon with free page reporting**, the technique Muse is described to use. A guest that allocated and freed 120 MB went from 184 MiB back to 64 MiB in three seconds. In an earlier rough run it took the kept-up design from 128 tenants to about 150, and it does nothing for the released designs, which run out of cpu first.
-- **Telling the sandbox when a turn ends** lets it release the VM at once, instead of waiting out the idle window. In an earlier rough run that halved the number of resident VMs. It needs a harness that can say when a turn ends, so it is not in the numbers above.
-- **Telling it when a turn starts** so the VM wakes during the model's thinking time. A blind prewarm cost more cpu than it saved, because a third of the sessions never need a VM. It would need a predictor.
-
-## The same tenants on other people's designs
-
-![Latency added to a call at each design's limit](/img/virt-latency.png)
-
-The same replay, run against designs from other systems: Kata Containers (a VM per pod, driven through Kubernetes) holds 40 tenants, gVisor with pods deleted when idle holds 80 (192 kept up, in an earlier rough run), and a Cloud Hypervisor VM at the size Muse is described to use, 2 vCPU and 8 GiB with a balloon, holds 16. Those are not slower designs. They are designs for tenants that hold state: an always-on VM that keeps its working set is a good deal for a personal agent, and the wrong one for a machine full of mostly idle coding sessions.
+![Latency added to a call at each level's limit](/img/virt-latency.png)
 
 ## Try it yourself
 
-The usual way to show a sandbox API is to start a hundred of them at once, each writing a file and reading it back. Here is that job in sandroute:
+Here is the script to start 100 sandboxes in sandroute:
 
 ```rust
 async fn run_single_sandbox(idx: usize) -> anyhow::Result<()> {
@@ -202,9 +214,10 @@ async fn main() -> anyhow::Result<()> {
 }
 ```
 
-It is `examples/hundred.rs` in the [repo](https://github.com/RohanAdwankar/sandroute), and you run it with `cargo run --release --example hundred 100` once the VM image is built. The `close()` is explicit because Rust cannot await in a destructor.
+It is `examples/hundred.rs` in the [repo](https://github.com/RohanAdwankar/sandroute), and you run it with `cargo run --release --example hundred 100` once the VM image is built.
+The `close()` is explicit because Rust cannot await in a destructor.
 
-To have something to compare against I ran the same job on [microsandbox](https://github.com/superradcompany/microsandbox), an open source runtime that starts a microVM per sandbox from a Python (or Rust) SDK, with nothing to install but KVM. It looks like this:
+To see the L4 speed benefit you can run the equivalent with [microsandbox](https://github.com/superradcompany/microsandbox):
 
 ```python
 async def run_single_sandbox(idx: int):
@@ -232,25 +245,47 @@ All three, on the same laptop, a hundred sandboxes at once, each with a 256 MiB 
 | sandroute | a microVM (`python3`) | 2.0 s | 242 MiB |
 | sandroute | the light sandbox (`cat`) | 0.8 s | 23 MiB |
 
-Microsandbox boots a fresh microVM for every sandbox, and it is quick for that: ten sandboxes took 0.8 s. A hundred of them fill the machine, and the 4.6 GiB they hold is where the 100 or so a 7 GiB laptop can hold comes from. Sandroute restores every VM from one shared snapshot, so a VM costs about 2 MiB at a hundred and 4.4 MiB at seven hundred, and a command that only touches files does not need one. That is the whole trick of this post, and it is also why this is not a fair fight about boot speed: microsandbox is doing the honest thing, and the comparison is what the shared snapshot and the light sandbox buy.
+Sandroute would normally run a `cat` in the light sandbox, so the second row reads the file with Python, which it does not route to the light sandbox, to make sure the read runs in a microVM like microsandbox's does.
+Microsandbox boots a fresh microVM for every sandbox, with nothing shared between them.
 
-Past a hundred, the sandroute version keeps going:
+That takes 8.6 s for a hundred and holds 4.6 GiB, which is where the 100 or so a 7 GiB laptop can hold comes from.
+Sandroute restores every VM from one shared snapshot, so a hundred take 2.0 s and 242 MiB, and a command that only touches files does not need a VM at all.
+
+Past a hundred, the sandroute version keeps going, while at 110 microsandbox starts failing.
 
 | sandboxes | the read runs in | time | host memory used |
 |---|---|---|---|
 | 700 | the light sandbox (`cat`) | 5.4 s | 589 MiB |
 | 700 | a microVM (`python3`) | 18.5 s | 3.1 GiB |
 
-Every one of those sandboxes is isolated from the others and from the host. Seven hundred microVMs restored from a shared snapshot in 18.5 seconds, holding 3.1 GiB, is about 4.4 MiB each. Microsandbox is where this laptop stops it. A hundred sandboxes at once work. At 110 the machine runs out of memory while most of the sandboxes are still starting: free memory fell to 259 MiB, then 293 MiB at 120 and 284 MiB at 130 (where 34 of the 130 had finished), and I stopped each run there (the same rule the capacity benchmark uses, under 300 MiB free) rather than let the kernel start killing things. That is a ceiling of about 100 sandboxes at once, and sandroute does seven hundred on the same machine, seven times as many, in 18.5 seconds.
 
 ![130 sandboxes started at once, microsandbox next to sandroute](/img/virt-exhaustion.gif)
 
-*130 sandboxes started at once. Microsandbox's memory climbs to the limit before most have finished and the run is stopped with 34 done; sandroute finishes all 130 in 3.4 s.*
-
-One caveat on how to read that. Microsandbox starts all of its VMs at the same moment here, which is what the job asks for, and a smaller number would work if they were started a few at a time. A hundred at once is the usual way to show a sandbox API, so it is the fair one to run.
+Microsandbox starts all of its VMs at the same moment here, which is what the job asks for, and a smaller number would work if they were started a few at a time.
 
 ## What is left
 
-The next step is the 26% of calls that still need a VM. Most of them are `python3`, and running Python in the light tier would be the biggest remaining win, but it widens the kernel surface a hostile tenant can reach (a script can make any allowed system call) and a script that needs the network or `pip` would fail without telling anyone, so I have not done it. After that: a cheaper wake (about 110 ms of cpu today), a limit on how many VMs restore at once so a burst of turns doesn't thrash four threads, and a predictor that wakes a VM only for turns that will need one.
+The next step is the 26% of calls that still need a VM.
+Most of them are `python3`, and running Python in the light tier would be the biggest remaining win, but it widens the kernel surface a hostile tenant can reach (a script can make any allowed system call) and a script that needs the network or `pip` would fail without telling anyone, so I have not done it.
+After that: a cheaper wake (about 110 ms of cpu today), a limit on how many VMs restore at once so a burst of turns doesn't thrash four threads, and a predictor that wakes a VM only for turns that will need one.
+
+Ideas I tried or have not tried yet:
+
+- **A balloon with free page reporting**, the technique Muse is described to use.
+  A guest that allocated and freed 120 MB went from 184 MiB back to 64 MiB in three seconds.
+  In an earlier rough run it took the kept-up design from 128 tenants to about 150, and it had minimal impact on the released designs, which run out of cpu first.
+  A balloon pays off most for long running agents, whose VMs stay up and keep freed memory they never hand back, and these tenants are mostly idle with VMs that are released within seconds.
+  For a more diverse set of workloads with longer running agents it could be worth turning on.
+- **Telling the sandbox when a turn ends** lets it release the VM at once, instead of waiting out the idle window.
+  In an earlier rough run that halved the number of resident VMs.
+  It needs a harness that can say when a turn ends, so it is not in the numbers above.
+- **Telling it when a turn starts** so the VM wakes during the model's thinking time.
+  A blind prewarm cost more cpu than it saved, because a third of the sessions never need a VM.
+  It would need a predictor.
+- **Other designs, untuned.** The same replay, run against designs from other systems as they come, without the optimizations above: Kata Containers (a VM per pod, driven through Kubernetes) holds 40 tenants, gVisor with pods deleted when idle holds 80 (192 kept up, in an earlier rough run), and a Cloud Hypervisor VM at the size Muse is described to use, 2 vCPU and 8 GiB with a balloon, holds 16.
+  Those are not slower designs.
+  They are designs for tenants that hold state: an always-on VM that keeps its working set is a good deal for a personal agent, and the wrong one for a machine full of mostly idle coding sessions.
+  These numbers show what the optimizations are worth more than what the hypervisors are worth, since only Firecracker got them; running the same steps on another hypervisor would be the fair comparison.
+
 
 The code and every raw result are in the [sandroute repo](https://github.com/RohanAdwankar/sandroute).
