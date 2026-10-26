@@ -59,6 +59,10 @@ PAGE_CSS = '''
     pre.mermaid { background: transparent; text-align: center; margin: 24px 0; overflow-x: auto; }
     article pre { overflow-x: auto; max-width: 100%; }
     article img { max-width: 100%; height: auto; }
+    /* the fastfetch printout is 90 monospace characters wide: scale its text with the width of the block, like a picture, up to the usual size */
+    article pre.fastfetch { container-type: inline-size; background: #282c34; color: #abb2bf; border-radius: 6px; padding: 14px 16px; overflow: hidden; }
+    article pre.fastfetch code { display: block; padding: 0; background: none; font-size: min(13.5px, calc(100cqw / 55)); line-height: 1.15; }
+    pre.fastfetch .c31 { color: #e95420; }
     pre code.hljs { border-radius: 6px; padding: 14px 16px; font-size: 13.5px; overflow-x: auto; }
     article :not(pre) > code { background: #262626; border: 1px solid #3a3a3a; border-radius: 4px; padding: 0.08em 0.36em; font-size: 0.86em; color: #e7a6a0; }
     body.light article :not(pre) > code { background: #f4f4f4; border-color: #e2e2e2; color: #c0392b; }
