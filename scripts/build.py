@@ -59,6 +59,16 @@ PAGE_CSS = '''
     pre.mermaid { background: transparent; text-align: center; margin: 24px 0; overflow-x: auto; }
     article pre { overflow-x: auto; max-width: 100%; }
     article img { max-width: 100%; height: auto; }
+    /* the explainers in a post: static/explainers.js fills each .explain */
+    .explain { margin: 28px 0; padding: 16px 18px; background: #1f1f1c; font-size: 16px; }
+    .explain .ex-title { margin: 0 0 10px; color: #8c8b86; font-size: 15px; line-height: 1.4; }
+    .explain .ex-row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 10px 0 0; }
+    .explain .ex-seg { display: flex; }
+    .explain .ex-row label { color: #8c8b86; white-space: nowrap; }
+    .explain input[type=range] { flex: 1; min-width: 0; accent-color: #d9772b; }
+    .explain button { background: #2d2d29; color: #e0e0e0; border: 0; padding: 7px 11px; font: 14px Georgia, serif; border-radius: 0; cursor: pointer; }
+    .explain button.on { background: #d9772b; color: #161614; }
+    .explain .ex-out { margin: 12px 0 0; line-height: 1.45; }
     /* a note that opens on hover or on tap: a title attribute never shows on a phone */
     article p { position: relative; }
     article .note { color: #e7a6a0; cursor: help; padding: 0 0.2em; outline: none; }
