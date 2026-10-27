@@ -161,9 +161,10 @@ This was a productive experiment in that the idea of intelligently routing in sa
 
 That being said this also showed the limitations of using just one set of runs as a benchmark because the profile of the tenant activity (how bursty is it, the proportion of different types of commands) certainly changes the returns we get from our optimizations. I'll talk about this more in the [Next Steps](https://rohanadwankar.github.io/posts/virt#next-steps) section. 
 
-## Try it yourself
+## Try It
 
-Here is roughly the script to start 100 sandboxes in sandroute:
+I aim to make the sandroute developer experience as easy to use as other tools but with some more opinionated defaults and the router which make optimizations harder to miss. 
+Here is roughly how to start 100 sandboxes in sandroute:
 
 ```rust
 async fn run_single_sandbox(idx: usize) -> anyhow::Result<()> {
@@ -189,11 +190,9 @@ async fn main() -> anyhow::Result<()> {
 }
 ```
 
-It is `examples/hundred.rs` in the [repo](https://github.com/RohanAdwankar/sandroute), and you run it with `cargo run --release --example hundred 100` once the VM image is built.
+You can find the full code at `examples/hundred.rs` in the [repo](https://github.com/RohanAdwankar/sandroute/blob/main/examples/hundred.rs), and you run it with `cargo run --release --example hundred 100` once the VM image is built.
 
-I aim to make the sandroute developer experience as easy to use as other tools but with some more opinionated defaults and the router which make optimizations easier to write.
-
-Here is how to make 100 sandboxes using [microsandbox](https://github.com/superradcompany/microsandbox) which is a popular library for this:
+This is around the same as how to make 100 sandboxes using [microsandbox](https://github.com/superradcompany/microsandbox) which is a popular library for this ([full script](https://github.com/RohanAdwankar/sandroute/blob/main/bench/compare/microsandbox_hundred.py)):
 
 ```python
 async def run_single_sandbox(idx: int):
@@ -225,13 +224,13 @@ Sandroute would normally run a `cat` in the light sandbox, so the second row rea
 
 ![130 sandboxes started at once, microsandbox next to sandroute](/img/virt-exhaustion.gif)
 
-I should clarify that this necessarily isn't a comparison in possible performance since microsandbox starts all of its VMs at the same moment here, and a smaller number could work if they were started a few at a time. 
+To be clear, this isn't meant to be a comparison in potential performance since microsandbox is starting all of its VMs at the same moment here, and a smaller number could work if they were started a few at a time. The goal of this comparison was more to show that since sandroute is very opinionated towards coding agents we can pack more optimizations out of the box which keep the memory demand low (in this case snapshotting and quickly tearing the VM down after cat completes).
 
 ## Next Steps 
 
 My goal is to continue to push [sandroute](https://github.com/RohanAdwankar/sandroute) even farther to push the limits on sandbox density.
 
-Here are the main threads I'm looking forward to closing next: 
+Here are my main hopes for optimizations: 
 
 1. **Routing Intelligence**: Right now we route between 2 "sandboxes", but if we had a greater variety we can further optimize for different toolcalls. Furthermore the routing options could even include externally hosted sandbox services so users can intelligently burst to the cloud using the cheapest one available. 
 
@@ -240,5 +239,7 @@ Here are the main threads I'm looking forward to closing next:
 3. **More Offloading**: Outside of the file system related commands are there other common types of commands which can safely execute at a lighter degree of isolation than Firecracker? I have some ideas about python and WASM that I'm looking forward to trying out
 
 4. **Up the Stack**: Currently our signal is the tool call, if the harness sent signals prior to the tool call itself we can use those to improve the routing. For example if the model is undergoing compaction then perhaps we have enough time to spin down and save some compute.
+
+4. **Security**: The issue with routing is that it introduces a lot of risk for hostile tenants. While I think my focus will be more on the use case of non hostile tenants, I would like to see where we can use attestation and other tricks to be able to keep the router but decrease the risk.
 
 If this seems interesting to you feel free to shoot me a message or star the [sandroute repo](https://github.com/RohanAdwankar/sandroute) to follow along.
