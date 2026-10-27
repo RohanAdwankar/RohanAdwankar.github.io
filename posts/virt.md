@@ -44,7 +44,7 @@ Whether that ends up being true or not, it clearly is worthwhile to see what the
 For this to be useful experiment I needed to have a benchmark which roughly reflects agent behavior.
 
 So to start I recorded 26 real [opencode](https://opencode.ai) agent sessions where the agent is doing things like explaining a repo, fixing a failing test, adding a command line entry point, etc.
-You can find these session files [here](https://github.com/RohanAdwankar/sandroute/tree/main/bench/traces)
+You can find these session files [here](https://github.com/RohanAdwankar/sandroute/tree/main/bench/traces).
 
 A simulated tenant alternates between being away (averaging two minutes away with a [log normal distribution](https://github.com/RohanAdwankar/sandroute/blob/main/src/bin/tenants.rs#L294-L297)) and messaging the agent a task. 
 
@@ -242,7 +242,7 @@ Here are my main hopes for optimizations:
 
 2. **Diverse Evals**: Currently we have built the mechanism favoring 1 profile but if we expand the evals to include a diverse set of tenant profiles perhaps we can provide presets which work more optimally. Perhaps this capacity to adjust the sandboxing depending on the tenant workloads could even be moved up into the router.
 
-3. **More Offloading**: Outside of the file system related commands are there other common types of commands which can safely execute at a lighter degree of isolation than Firecracker? I have some ideas about python and WASM that I'm looking forward to trying out
+3. **More Offloading**: Outside of the file system related commands are there other common types of commands which can safely execute at a lighter degree of isolation than Firecracker? I have some ideas about python and WASM that I'm looking forward to trying out.
 
 4. **Up the Stack**: Currently our signal is the tool call, if the harness sent signals prior to the tool call itself we can use those to improve the routing. For example if the model is undergoing compaction then perhaps we have enough time to spin down and save some compute.
 
