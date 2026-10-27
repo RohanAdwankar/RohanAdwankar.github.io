@@ -118,15 +118,15 @@ When a VM is released it is killed if the guest holds nothing outside the worksp
 A guest that really did install something, a `pip install` say, keeps a snapshot in two alternating slots, so a failed write never destroys the last good one.
 Snapshotting every released VM is the naive version, and at about 400 tenants it wrote 11 to 13 GiB and ran out of disk bandwidth.
 
-![576 tenants, shown below its limit of 640 because recording the run adds load. VMs come and go as tenants start and stop turns.](/img/virt-level3.gif)
+![576 tenants, Level 3 at its limit. VMs come and go as tenants start and stop turns.](/img/virt-level3.gif)
 
-This brings us from 64 to **640 tenants**. 
+This brings us from 64 to **576 tenants**. 
 
 Also as you can see comparing this demo's graphs to the prior graphs we are now CPU bound instead of memory bound.
 
-Most wakes are fast (median of 115 ms) but 640 tenants caused 4,590 wakes in six minutes, and when many land at once they queue up on the four cpu threads. 
+Most wakes are fast (median of 88 ms) but 576 tenants caused about 4,100 wakes in six minutes, and when many land at once they queue up on the four cpu threads. 
 
-That queueing is what pushes the p99 (the slowest 1 call in 100) up to 1.3 s and what causes runs to fail past ~640.
+That queueing is what pushes the p99 (the slowest 1 call in 100) up to about 1 s, and why runs fail ~576 tenants.
 
 ## Level 4: Routing
 
@@ -153,8 +153,8 @@ The orchestrator starts each command with `posix_spawn` and not `fork`, because 
 
 ![736 tenants on a 7 GiB laptop, replayed from real agent sessions at 8x](/img/virt-timelapse.gif)
 
-This routing now boosts us to **736 tenants**, 96 more than Level 3, which is less of a gain than you might expect for removing the whole micro-VM.
-At their limits Level 3 handles 640 tenants making 19,353 calls with 4,590 wakes at 51% mean cpu, and Level 4 handles 736 tenants making 22,328 calls with 1,777 wakes at 43%.
+This routing now boosts us to **736 tenants**, 160 more than Level 3, which is less of a gain than you might expect for removing the whole micro-VM.
+At their limits Level 3 handles 576 tenants making about 17,400 calls with about 4,100 wakes at 44% mean cpu, and Level 4 handles 736 tenants making about 22,100 calls with about 1,740 wakes at 46%.
 Routing removed most of the wakes, but as we've seen before the limit is set by bursts and not the average. When many tenants start a turn at once there are more wakes and Python test runs than the four cpu threads can run at once which can push the p99 past 1.5 seconds even though the machine itself is half idle.
 
 ## In Review
@@ -238,7 +238,7 @@ Here are the main threads I'm looking forward to closing next:
 
 1. **Routing Intelligence**: Right now we route between 2 "sandboxes", but if we had a greater variety we can further optimize for different toolcalls. Furthermore the routing options could even include externally hosted sandbox services so users can intelligently burst to the cloud using the cheapest one available. 
 
-2. **Diverse Profiles**: Currently we have built the mechanism favoring 1 profile but if we expand the evals to include a diverse set of tenant profiles perhaps we can provide presets which work more optimally. Perhaps this capacity to adjust the sandboxing depending on the tenant workloads could even be moved up into the router.
+2. **Diverse Evals**: Currently we have built the mechanism favoring 1 profile but if we expand the evals to include a diverse set of tenant profiles perhaps we can provide presets which work more optimally. Perhaps this capacity to adjust the sandboxing depending on the tenant workloads could even be moved up into the router.
 
 3. **More Offloading**: Outside of the file system related commands are there other common types of commands which can safely execute at a lighter degree of isolation than Firecracker? I have some ideas about python and WASM that I'm looking forward to trying out
 
