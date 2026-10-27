@@ -238,7 +238,7 @@ Here are the main threads I'm looking forward to closing next:
 
 1. **Routing Intelligence**: Right now we route between 2 "sandboxes", but if we had a greater variety we can further optimize for different toolcalls. Furthermore the routing options could even include externally hosted sandbox services so users can intelligently burst to the cloud using the cheapest one available. 
 
-2. **Diverse Profiles**: Currently we have built the mechanism favoring 1 profile but if we expand the evals to include a diverse set of tenant profiles perhaps we can provide presets which work more optimally. Perhaps this capacity to adjust the sandboxing depending on the tenant workloads could even be moved up into the router.
+2. **Diverse Evals**: Currently we have built the mechanism favoring 1 profile but if we expand the evals to include a diverse set of tenant profiles perhaps we can provide presets which work more optimally. Perhaps this capacity to adjust the sandboxing depending on the tenant workloads could even be moved up into the router.
 
 3. **More Offloading**: Outside of the file system related commands are there other common types of commands which can safely execute at a lighter degree of isolation than Firecracker? I have some ideas about python and WASM that I'm looking forward to trying out
 
