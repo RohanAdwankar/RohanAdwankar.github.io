@@ -73,9 +73,9 @@ PAGE_CSS = '''
     article p { position: relative; }
     article .note { color: #e7a6a0; cursor: help; padding: 0 0.2em; outline: none; }
     article .note:hover::after, article .note:focus::after { content: attr(data-note); position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px; z-index: 10; background: #262626; border: 1px solid #3a3a3a; border-radius: 4px; padding: 8px 12px; font-size: 15px; line-height: 1.4; color: #e0e0e0; }
-    /* the fastfetch printout is 90 monospace characters wide: scale its text with the width of the block, like a picture, up to the usual size */
+    /* the fastfetch printout is 103 monospace characters wide: scale its text with the width of the block, like a picture, up to the usual size */
     article pre.fastfetch { container-type: inline-size; background: #282c34; color: #abb2bf; border-radius: 6px; padding: 14px 16px; overflow: hidden; }
-    article pre.fastfetch code { display: block; padding: 0; background: none; font-size: min(13.5px, calc(100cqw / 55)); line-height: 1.15; }
+    article pre.fastfetch code { display: block; padding: 0; background: none; font-size: min(13.5px, calc(100cqw / 63)); line-height: 1.15; }
     pre.fastfetch .c31 { color: #e95420; }
     pre code.hljs { border-radius: 6px; padding: 14px 16px; font-size: 13.5px; overflow-x: auto; }
     article :not(pre) > code { background: #262626; border: 1px solid #3a3a3a; border-radius: 4px; padding: 0.08em 0.36em; font-size: 0.86em; color: #e7a6a0; }

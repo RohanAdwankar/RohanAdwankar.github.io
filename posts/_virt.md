@@ -8,23 +8,23 @@ Here's the computer we will be playing with!
 <pre class="fastfetch"><code class="nohighlight">rohan@oxroute:~$ fastfetch
 <span class="c31">                             ....</span>              <span class="c31">rohan</span>@<span class="c31">oxroute</span>
 <span class="c31">              .&#x27;,:clooo:  .:looooo:.</span>           -------------
-<span class="c31">           .;looooooooc  .oooooooooo&#x27;</span>          <span class="c31">OS</span>: Ubuntu 26.04.1 LTS (Resolute4
+<span class="c31">           .;looooooooc  .oooooooooo&#x27;</span>          <span class="c31">OS</span>: Ubuntu 26.04.1 LTS (Resolute Raccoon) x86_64
 <span class="c31">        .;looooool:,&#x27;&#x27;.  :ooooooooooc</span>          <span class="c31">Host</span>: 81X8 (IdeaPad 3 15ITL05)
 <span class="c31">       ;looool;.         &#x27;oooooooooo,</span>          <span class="c31">Kernel</span>: Linux 7.0.0-38-generic
-<span class="c31">      ;clool&#x27;             .cooooooc.  ,,</span>       <span class="c31">Uptime</span>: 2 days, 10 hours, 39 mins
+<span class="c31">      ;clool&#x27;             .cooooooc.  ,,</span>       <span class="c31">Uptime</span>: 6 days, 15 hours, 21 mins
 <span class="c31">         ...                ......  .:oo,</span>      <span class="c31">Packages</span>: 1304 (dpkg), 3 (snap)
 <span class="c31">  .;clol:,.                        .loooo&#x27;</span>     <span class="c31">Shell</span>: bash 5.3.9
-<span class="c31"> :ooooooooo,                        &#x27;ooool</span>     <span class="c31">Display (BOE0816)</span>: 1366x768 in 1]
-<span class="c31">&#x27;ooooooooooo.                        loooo.</span>    <span class="c31">Terminal</span>: /dev/pts/0
-<span class="c31">&#x27;ooooooooool                         coooo.</span>    <span class="c31">CPU</span>: 11th Gen Intel(R) Core(TM) z
-<span class="c31"> ,loooooooc.                        .loooo.</span>    <span class="c31">GPU</span>: Intel UHD Graphics G4 @ 1.2]
-<span class="c31">   .,;;;&#x27;.                          ;ooooc</span>     <span class="c31">Memory</span>: 1.18 GiB / 7.05 GiB (17%)
-<span class="c31">       ...                         ,ooool.</span>     <span class="c31">Swap</span>: 794.90 MiB / 4.00 GiB (19%)
-<span class="c31">    .cooooc.              ..&#x27;,,&#x27;.  .cooo.</span>      <span class="c31">Disk (/)</span>: 54.40 GiB / 97.87 GiB 4
-<span class="c31">      ;ooooo:.           ;oooooooc.  :l.</span>       <span class="c31">Local IP (wlp0s20f3)</span>: 10.0.0.10/4
-<span class="c31">       .coooooc,..      coooooooooo.</span>           <span class="c31">Battery (L16M2PB2)</span>: 97% [AC Conn]
-<span class="c31">         .:ooooooolc:. .ooooooooooo&#x27;</span>           <span class="c31">Locale</span>: en_US.UTF-8
-<span class="c31">           .&#x27;:loooooo;  ,oooooooooc</span>
+<span class="c31"> :ooooooooo,                        &#x27;ooool</span>     <span class="c31">Display (BOE0816)</span>: 1366x768 in 15&quot;, 60 Hz [Built-in]
+<span class="c31">&#x27;ooooooooooo.                        loooo.</span>    <span class="c31">Terminal</span>: /dev/tty1
+<span class="c31">&#x27;ooooooooool                         coooo.</span>    <span class="c31">Terminal Font</span>: VGA default kernel font 8x16x512
+<span class="c31"> ,loooooooc.                        .loooo.</span>    <span class="c31">CPU</span>: 11th Gen Intel(R) Core(TM) i3-1115G4 (4) @ 4.10 GHz
+<span class="c31">   .,;;;&#x27;.                          ;ooooc</span>     <span class="c31">GPU</span>: Intel UHD Graphics G4 @ 1.25 GHz [Integrated]
+<span class="c31">       ...                         ,ooool.</span>     <span class="c31">Memory</span>: 1.21 GiB / 7.05 GiB (17%)
+<span class="c31">    .cooooc.              ..&#x27;,,&#x27;.  .cooo.</span>      <span class="c31">Swap</span>: 1.85 GiB / 4.00 GiB (46%)
+<span class="c31">      ;ooooo:.           ;oooooooc.  :l.</span>       <span class="c31">Disk (/)</span>: 71.16 GiB / 97.87 GiB (73%) - ext4
+<span class="c31">       .coooooc,..      coooooooooo.</span>           <span class="c31">Local IP (wlp0s20f3)</span>: 10.0.0.10/24
+<span class="c31">         .:ooooooolc:. .ooooooooooo&#x27;</span>           <span class="c31">Battery (L16M2PB2)</span>: 95% [AC Connected]
+<span class="c31">           .&#x27;:loooooo;  ,oooooooooc</span>            <span class="c31">Locale</span>: en_US.UTF-8
 <span class="c31">               ..&#x27;;::c&#x27;  .;loooo:&#x27;</span>
 
 rohan@oxroute:~$
