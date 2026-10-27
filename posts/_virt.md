@@ -8,23 +8,23 @@ Here's the computer we will be playing with!
 <pre class="fastfetch"><code class="nohighlight">rohan@oxroute:~$ fastfetch
 <span class="c31">                             ....</span>              <span class="c31">rohan</span>@<span class="c31">oxroute</span>
 <span class="c31">              .&#x27;,:clooo:  .:looooo:.</span>           -------------
-<span class="c31">           .;looooooooc  .oooooooooo&#x27;</span>          <span class="c31">OS</span>: Ubuntu 26.04.1 LTS (Resolute4
+<span class="c31">           .;looooooooc  .oooooooooo&#x27;</span>          <span class="c31">OS</span>: Ubuntu 26.04.1 LTS (Resolute Raccoon) x86_64
 <span class="c31">        .;looooool:,&#x27;&#x27;.  :ooooooooooc</span>          <span class="c31">Host</span>: 81X8 (IdeaPad 3 15ITL05)
 <span class="c31">       ;looool;.         &#x27;oooooooooo,</span>          <span class="c31">Kernel</span>: Linux 7.0.0-38-generic
-<span class="c31">      ;clool&#x27;             .cooooooc.  ,,</span>       <span class="c31">Uptime</span>: 2 days, 10 hours, 39 mins
+<span class="c31">      ;clool&#x27;             .cooooooc.  ,,</span>       <span class="c31">Uptime</span>: 6 days, 15 hours, 21 mins
 <span class="c31">         ...                ......  .:oo,</span>      <span class="c31">Packages</span>: 1304 (dpkg), 3 (snap)
 <span class="c31">  .;clol:,.                        .loooo&#x27;</span>     <span class="c31">Shell</span>: bash 5.3.9
-<span class="c31"> :ooooooooo,                        &#x27;ooool</span>     <span class="c31">Display (BOE0816)</span>: 1366x768 in 1]
-<span class="c31">&#x27;ooooooooooo.                        loooo.</span>    <span class="c31">Terminal</span>: /dev/pts/0
-<span class="c31">&#x27;ooooooooool                         coooo.</span>    <span class="c31">CPU</span>: 11th Gen Intel(R) Core(TM) z
-<span class="c31"> ,loooooooc.                        .loooo.</span>    <span class="c31">GPU</span>: Intel UHD Graphics G4 @ 1.2]
-<span class="c31">   .,;;;&#x27;.                          ;ooooc</span>     <span class="c31">Memory</span>: 1.18 GiB / 7.05 GiB (17%)
-<span class="c31">       ...                         ,ooool.</span>     <span class="c31">Swap</span>: 794.90 MiB / 4.00 GiB (19%)
-<span class="c31">    .cooooc.              ..&#x27;,,&#x27;.  .cooo.</span>      <span class="c31">Disk (/)</span>: 54.40 GiB / 97.87 GiB 4
-<span class="c31">      ;ooooo:.           ;oooooooc.  :l.</span>       <span class="c31">Local IP (wlp0s20f3)</span>: 10.0.0.10/4
-<span class="c31">       .coooooc,..      coooooooooo.</span>           <span class="c31">Battery (L16M2PB2)</span>: 97% [AC Conn]
-<span class="c31">         .:ooooooolc:. .ooooooooooo&#x27;</span>           <span class="c31">Locale</span>: en_US.UTF-8
-<span class="c31">           .&#x27;:loooooo;  ,oooooooooc</span>
+<span class="c31"> :ooooooooo,                        &#x27;ooool</span>     <span class="c31">Display (BOE0816)</span>: 1366x768 in 15&quot;, 60 Hz [Built-in]
+<span class="c31">&#x27;ooooooooooo.                        loooo.</span>    <span class="c31">Terminal</span>: /dev/tty1
+<span class="c31">&#x27;ooooooooool                         coooo.</span>    <span class="c31">Terminal Font</span>: VGA default kernel font 8x16x512
+<span class="c31"> ,loooooooc.                        .loooo.</span>    <span class="c31">CPU</span>: 11th Gen Intel(R) Core(TM) i3-1115G4 (4) @ 4.10 GHz
+<span class="c31">   .,;;;&#x27;.                          ;ooooc</span>     <span class="c31">GPU</span>: Intel UHD Graphics G4 @ 1.25 GHz [Integrated]
+<span class="c31">       ...                         ,ooool.</span>     <span class="c31">Memory</span>: 1.21 GiB / 7.05 GiB (17%)
+<span class="c31">    .cooooc.              ..&#x27;,,&#x27;.  .cooo.</span>      <span class="c31">Swap</span>: 1.85 GiB / 4.00 GiB (46%)
+<span class="c31">      ;ooooo:.           ;oooooooc.  :l.</span>       <span class="c31">Disk (/)</span>: 71.16 GiB / 97.87 GiB (73%) - ext4
+<span class="c31">       .coooooc,..      coooooooooo.</span>           <span class="c31">Local IP (wlp0s20f3)</span>: 10.0.0.10/24
+<span class="c31">         .:ooooooolc:. .ooooooooooo&#x27;</span>           <span class="c31">Battery (L16M2PB2)</span>: 95% [AC Connected]
+<span class="c31">           .&#x27;:loooooo;  ,oooooooooc</span>            <span class="c31">Locale</span>: en_US.UTF-8
 <span class="c31">               ..&#x27;;::c&#x27;  .;loooo:&#x27;</span>
 
 rohan@oxroute:~$
@@ -108,11 +108,6 @@ One other optimization aside from the core sandbox is we added an init [script](
 
 Furthermore since a restore now takes tens of milliseconds, the idle killing can become even more aggressive. 
 
-Move the slider to see the trade, using the commands one tenant made in a real run:
-
-<div class="explain" data-kind="window"></div>
-<script src="/explainers.js" defer></script>
-
 A window of 5 seconds turned out to be best.
 When a VM is released it is killed if the guest holds nothing outside the workspace and `/tmp`, because the workspace lives on the host and is pushed back in on the next wake.
 A guest that really did install something, a `pip install` say, keeps a snapshot in two alternating slots, so a failed write never destroys the last good one.
@@ -168,12 +163,12 @@ That being said this also showed the limitations of using just one set of runs a
 
 ## Try it yourself
 
-Here is the script to start 100 sandboxes in sandroute:
+Here is roughly the script to start 100 sandboxes in sandroute:
 
 ```rust
 async fn run_single_sandbox(idx: usize) -> anyhow::Result<()> {
     // Create an isolated sandbox
-    let sandbox = Sandroute::create().await?;
+    let sandbox = Sandroute::create_with(1, 512).await?; // 1 vCPU and 512 MiB for the VM
     let random = format!("{idx}-{:x}", SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos());
 
     // Write a file inside the sandbox
@@ -196,7 +191,9 @@ async fn main() -> anyhow::Result<()> {
 
 It is `examples/hundred.rs` in the [repo](https://github.com/RohanAdwankar/sandroute), and you run it with `cargo run --release --example hundred 100` once the VM image is built.
 
-To see the L4 speed benefit you can run the equivalent with [microsandbox](https://github.com/superradcompany/microsandbox):
+I aim to make the sandroute developer experience as easy to use as other tools but with some more opinionated defaults and the router which make optimizations easier to write.
+
+Here is how to make 100 sandboxes using [microsandbox](https://github.com/superradcompany/microsandbox) which is a popular library for this:
 
 ```python
 async def run_single_sandbox(idx: int):
@@ -228,7 +225,7 @@ Sandroute would normally run a `cat` in the light sandbox, so the second row rea
 
 ![130 sandboxes started at once, microsandbox next to sandroute](/img/virt-exhaustion.gif)
 
-Microsandbox starts all of its VMs at the same moment here, which is what the job asks for, and a smaller number would work if they were started a few at a time.
+I should clarify that this necessarily isn't a comparison in possible performance since microsandbox starts all of its VMs at the same moment here, and a smaller number could work if they were started a few at a time. 
 
 ## Next Steps 
 

@@ -59,23 +59,13 @@ PAGE_CSS = '''
     pre.mermaid { background: transparent; text-align: center; margin: 24px 0; overflow-x: auto; }
     article pre { overflow-x: auto; max-width: 100%; }
     article img { max-width: 100%; height: auto; }
-    /* the explainers in a post: static/explainers.js fills each .explain */
-    .explain { margin: 28px 0; padding: 16px 18px; background: #1f1f1c; font-size: 16px; }
-    .explain .ex-title { margin: 0 0 10px; color: #8c8b86; font-size: 15px; line-height: 1.4; }
-    .explain .ex-row { display: flex; flex-wrap: wrap; gap: 8px 12px; align-items: center; margin: 10px 0 0; }
-    .explain .ex-seg { display: flex; }
-    .explain .ex-row label { color: #8c8b86; white-space: nowrap; }
-    .explain input[type=range] { flex: 1; min-width: 0; accent-color: #d9772b; }
-    .explain button { background: #2d2d29; color: #e0e0e0; border: 0; padding: 7px 11px; font: 14px Georgia, serif; border-radius: 0; cursor: pointer; }
-    .explain button.on { background: #d9772b; color: #161614; }
-    .explain .ex-out { margin: 12px 0 0; line-height: 1.45; }
     /* a note that opens on hover or on tap: a title attribute never shows on a phone */
     article p { position: relative; }
     article .note { color: #e7a6a0; cursor: help; padding: 0 0.2em; outline: none; }
     article .note:hover::after, article .note:focus::after { content: attr(data-note); position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px; z-index: 10; background: #262626; border: 1px solid #3a3a3a; border-radius: 4px; padding: 8px 12px; font-size: 15px; line-height: 1.4; color: #e0e0e0; }
-    /* the fastfetch printout is 90 monospace characters wide: scale its text with the width of the block, like a picture, up to the usual size */
+    /* the fastfetch printout is 103 monospace characters wide: scale its text with the width of the block, like a picture, up to the usual size */
     article pre.fastfetch { container-type: inline-size; background: #282c34; color: #abb2bf; border-radius: 6px; padding: 14px 16px; overflow: hidden; }
-    article pre.fastfetch code { display: block; padding: 0; background: none; font-size: min(13.5px, calc(100cqw / 55)); line-height: 1.15; }
+    article pre.fastfetch code { display: block; padding: 0; background: none; font-size: min(13.5px, calc(100cqw / 63)); line-height: 1.15; }
     pre.fastfetch .c31 { color: #e95420; }
     pre code.hljs { border-radius: 6px; padding: 14px 16px; font-size: 13.5px; overflow-x: auto; }
     article :not(pre) > code { background: #262626; border: 1px solid #3a3a3a; border-radius: 4px; padding: 0.08em 0.36em; font-size: 0.86em; color: #e7a6a0; }
