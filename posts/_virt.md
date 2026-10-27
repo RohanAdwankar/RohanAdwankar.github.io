@@ -48,7 +48,7 @@ You can find these session files [here](https://github.com/RohanAdwankar/sandrou
 
 A simulated tenant alternates between being away (averaging two minutes away with a [log normal distribution](https://github.com/RohanAdwankar/sandroute/blob/main/src/bin/tenants.rs#L294-L297)) and messaging the agent a task. 
 
-This aims to replicate the user behavior of periodically checking your phone and texting muse.
+This aims to replicate the user behavior of periodically checking your phone and replying to the agent.
 
 When it has a task it picks a recorded session at random, copies the starting project into its workspace and replays the calls with their recorded think times.
 
@@ -104,7 +104,7 @@ PUT   /snapshot/load    {"snapshot_path": "pristine.snap",
 ```
 
 This uses a read-only root drive, because restoring over an image another VM has written corrupts the filesystem, and a snapshot taken while the workspace is empty, because the host owns the workspace and pushes it in on every wake.
-One other optimization aside from the core sandbox is we added an init [script](TODO: link this) which imports Python's standard library before the snapshot, so a wake that runs `python3 -m unittest` costs 161 ms of cpu instead of 530.
+One other optimization aside from the core sandbox is we added an init [script](https://github.com/RohanAdwankar/sandroute/blob/d67cd81f769884502a817da9b113dbdac2c4c876/scripts/build-rootfs.sh#L137-L140) which imports Python's standard library before the snapshot, so a wake that runs `python3 -m unittest` costs 161 ms of cpu instead of 530.
 
 Furthermore since a restore now takes tens of milliseconds, the idle killing can become even more aggressive. 
 
@@ -120,7 +120,7 @@ Snapshotting every released VM is the naive version, and at about 400 tenants it
 
 ![576 tenants, shown below its limit of 640 because recording the run adds load. VMs come and go as tenants start and stop turns.](/img/virt-level3.gif)
 
-This brings us from 176 to **640 tenants**. 
+This brings us from 64 to **640 tenants**. 
 
 Also as you can see comparing this demo's graphs to the prior graphs we are now CPU bound instead of memory bound.
 
@@ -130,7 +130,7 @@ That queueing is what pushes the p99 (the slowest 1 call in 100) up to 1.3 s and
 
 ## Level 4: Routing
 
-So far we have only tuned the VM, so let's do some out of the box thinking (obligatory[this should be a hyperlink which when clicked plays the budum tiss sound for a pun]) and avoid the VM.
+So far we have only tuned the VM, so let's do some out of the box thinking (obligatory <a href="#" onclick="new Audio('/audio/badum-tss.wav').play(); return false;">ba dum tss</a>) and avoid the VM.
 224 of the 304 recorded calls (74%) never needed a big computer since they are the file tools (`read`, `edit`, `write`, `glob`, `grep`) and shell commands like `ls`, `cat` and `sed`.
 This makes sense, because a lot of what an agent does is read parts of the codebase and its memory files.
 
