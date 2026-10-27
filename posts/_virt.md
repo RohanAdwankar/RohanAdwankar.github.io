@@ -31,7 +31,7 @@ rohan@oxroute:~$
 </code></pre>
 
 
-Agent sandboxes are a quickly growing area of interest because AI agent require environments to operate in.
+Agent sandboxes are a quickly growing area of interest because AI agents require environments to operate in.
 
 Since we have seen a steady increase in the capability of agents to work over longer periods of time we would expect that the amount of compute dedicated to agent sandboxes would increase accordingly.
 
@@ -81,14 +81,14 @@ Then when a new message is sent the VM boots again and the disk reattaches.
 
 ![64 tenants. Idle VMs are killed, and each tenant's next command waits for a cold boot.](/img/virt-level2.gif)
 
-This tactic allows use to grow from 48 to ~**64** tenants.
+This tactic allows us to grow from 48 to ~**64** tenants.
 
 One downside is that now about 1 call in 11 wakes a VM, and a cold boot of a guest kernel costs 1.2 seconds, so the p99 rises to 1.2 s even with only 64 tenants.
 
 
 ## Level 3: Snapshots
 
-Booting is the expensive but every boot does basically the same thing. 
+Booting is the expensive part, but every boot does basically the same thing. 
 So we can speed it up by booting one VM, waiting for the agent to come up, pausing it, and writing its memory to a file.
 Every tenant's VM is then restored from that file with the memory mapped copy on write, so a VM only holds the pages it has changed.
 
@@ -120,7 +120,7 @@ Snapshotting every released VM is the naive version, and at about 400 tenants it
 
 ![576 tenants, shown below its limit of 640 because recording the run adds load. VMs come and go as tenants start and stop turns.](/img/virt-level3.gif)
 
-This bring us from 176 to **640 tenants**. 
+This brings us from 176 to **640 tenants**. 
 
 Also as you can see comparing this demo's graphs to the prior graphs we are now CPU bound instead of memory bound.
 
@@ -130,7 +130,7 @@ That queueing is what pushes the p99 (the slowest 1 call in 100) up to 1.3 s and
 
 ## Level 4: Routing
 
-So far we have only tuned the VM, so lets do some out of the box thinking (obligatory[this should be a hyperlink which when clicked plays the budum tiss sound for a pun]) and avoid the VM.
+So far we have only tuned the VM, so let's do some out of the box thinking (obligatory[this should be a hyperlink which when clicked plays the budum tiss sound for a pun]) and avoid the VM.
 224 of the 304 recorded calls (74%) never needed a big computer since they are the file tools (`read`, `edit`, `write`, `glob`, `grep`) and shell commands like `ls`, `cat` and `sed`.
 This makes sense, because a lot of what an agent does is read parts of the codebase and its memory files.
 
@@ -164,7 +164,7 @@ Routing removed most of the wakes, but as we've seen before the limit is set by 
 
 This was a productive experiment in that the idea of intelligently routing in sandboxing seems very exciting to me as an avenue to keep exploring to try to squeeze out the last bits of performance from sandboxing software.
 
-That being said this also showed the limitations of using just one set of runs as a benchmark because the profile of the tenant activity (how bursty is it, the proportionment of different types of commands) certainly changes the returns we get from our optimizations.I'll talk about this more in the [Next Steps](https://rohanadwankar.github.io/posts/virt#next-steps) section. 
+That being said this also showed the limitations of using just one set of runs as a benchmark because the profile of the tenant activity (how bursty is it, the proportion of different types of commands) certainly changes the returns we get from our optimizations. I'll talk about this more in the [Next Steps](https://rohanadwankar.github.io/posts/virt#next-steps) section. 
 
 ## Try it yourself
 
