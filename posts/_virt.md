@@ -120,7 +120,7 @@ Snapshotting every released VM is the naive version, and at about 400 tenants it
 
 ![576 tenants, shown below its limit of 640 because recording the run adds load. VMs come and go as tenants start and stop turns.](/img/virt-level3.gif)
 
-This brings us from 176 to **640 tenants**. 
+This brings us from 64 to **640 tenants**. 
 
 Also as you can see comparing this demo's graphs to the prior graphs we are now CPU bound instead of memory bound.
 
