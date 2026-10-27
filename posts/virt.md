@@ -43,7 +43,7 @@ Whether that ends up being true or not, it clearly is worthwhile to see what the
 
 For this to be useful experiment I needed to have a benchmark which roughly reflects agent behavior.
 
-So to start I recorded 26 real [opencode](https://opencode.ai) agent sessions where the agent is doing things like explaining a repo, fixing a failing test, adding a command line entry point, etc.).
+So to start I recorded 26 real [opencode](https://opencode.ai) agent sessions where the agent is doing things like explaining a repo, fixing a failing test, adding a command line entry point, etc.
 You can find these session files [here](https://github.com/RohanAdwankar/sandroute/tree/main/bench/traces)
 
 A simulated tenant alternates between being away (averaging two minutes away with a [log normal distribution](https://github.com/RohanAdwankar/sandroute/blob/main/src/bin/tenants.rs#L294-L297)) and messaging the agent a task. 
@@ -121,7 +121,7 @@ Also as you can see comparing this demo's graphs to the prior graphs we are now 
 
 Most wakes are fast (median of 88 ms) but 576 tenants caused about 4,100 wakes in six minutes, and when many land at once they queue up on the four cpu threads. 
 
-That queueing is what pushes the p99 (the slowest 1 call in 100) up to about 1 s, and why runs fail ~576 tenants.
+That queueing is what pushes the p99 (the slowest 1 call in 100) up to about 1 s, and why runs start failing somewhere between 576 and 640 tenants.
 
 ## Level 4: Routing
 
@@ -169,7 +169,7 @@ Here is roughly how to start 100 sandboxes in sandroute:
 ```rust
 async fn run_single_sandbox(idx: usize) -> anyhow::Result<()> {
     // Create an isolated sandbox
-    let sandbox = Sandroute::create_with(1, 512).await?; // 1 vCPU and 512 MiB for the VM
+    let sandbox = Sandroute::create_with(1, 256).await?; // 1 vCPU and 256 MiB for the VM
     let random = format!("{idx}-{:x}", SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos());
 
     // Write a file inside the sandbox
@@ -210,6 +210,12 @@ async def run_single_sandbox(idx: int):
     finally:
         await sandbox.stop_and_wait()
         await Sandbox.remove(f"bench-{idx}")
+
+async def main():
+    # Spin up the sandboxes simultaneously
+    await asyncio.gather(*[run_single_sandbox(i) for i in range(100)])
+
+asyncio.run(main())
 ```
 
 All three, on the same laptop, a hundred sandboxes at once, each with a 256 MiB guest:
@@ -240,6 +246,6 @@ Here are my main hopes for optimizations:
 
 4. **Up the Stack**: Currently our signal is the tool call, if the harness sent signals prior to the tool call itself we can use those to improve the routing. For example if the model is undergoing compaction then perhaps we have enough time to spin down and save some compute.
 
-4. **Security**: The issue with routing is that it introduces a lot of risk for hostile tenants. While I think my focus will be more on the use case of non hostile tenants, I would like to see where we can use attestation and other tricks to be able to keep the router but decrease the risk.
+5. **Security**: The issue with routing is that it introduces a lot of risk for hostile tenants. While I think my focus will be more on the use case of non hostile tenants, I would like to see where we can use attestation and other tricks to be able to keep the router but decrease the risk.
 
 If this seems interesting to you feel free to shoot me a message or star the [sandroute repo](https://github.com/RohanAdwankar/sandroute) to follow along.
