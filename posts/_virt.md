@@ -163,7 +163,7 @@ That being said this also showed the limitations of using just one set of runs a
 
 ## Try it yourself
 
-Here is the script to start 100 sandboxes in sandroute:
+Here is roughly the script to start 100 sandboxes in sandroute:
 
 ```rust
 async fn run_single_sandbox(idx: usize) -> anyhow::Result<()> {
@@ -191,7 +191,9 @@ async fn main() -> anyhow::Result<()> {
 
 It is `examples/hundred.rs` in the [repo](https://github.com/RohanAdwankar/sandroute), and you run it with `cargo run --release --example hundred 100` once the VM image is built.
 
-To see the L4 speed benefit you can run the equivalent with [microsandbox](https://github.com/superradcompany/microsandbox):
+I aim to make the sandroute developer experience as easy to use as other tools but with some more opinionated defaults and the router which make optimizations easier to write.
+
+Here is how to make 100 sandboxes using [microsandbox](https://github.com/superradcompany/microsandbox) which is a popular library for this:
 
 ```python
 async def run_single_sandbox(idx: int):
@@ -223,7 +225,7 @@ Sandroute would normally run a `cat` in the light sandbox, so the second row rea
 
 ![130 sandboxes started at once, microsandbox next to sandroute](/img/virt-exhaustion.gif)
 
-Microsandbox starts all of its VMs at the same moment here, which is what the job asks for, and a smaller number would work if they were started a few at a time.
+I should clarify that this necessarily isn't a comparison in possible performance since microsandbox starts all of its VMs at the same moment here, and a smaller number could work if they were started a few at a time. 
 
 ## Next Steps 
 
