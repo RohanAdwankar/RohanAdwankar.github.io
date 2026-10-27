@@ -130,7 +130,7 @@ That queueing is what pushes the p99 (the slowest 1 call in 100) up to about 1 s
 
 ## Level 4: Routing
 
-So far we have only tuned the VM, so let's do some out of the box thinking (obligatory <a href="#" onclick="new Audio('/audio/badum-tss.wav').play(); return false;">ba dum tss</a>) and avoid the VM.
+So far we have only tuned the VM, so let's do some out of the box thinking ([obligatory](https://www.youtube.com/watch?v=bcYppAs6ZdI)) and avoid the VM.
 224 of the 304 recorded calls (74%) never needed a big computer since they are the file tools (`read`, `edit`, `write`, `glob`, `grep`) and shell commands like `ls`, `cat` and `sed`.
 This makes sense, because a lot of what an agent does is read parts of the codebase and its memory files.
 
