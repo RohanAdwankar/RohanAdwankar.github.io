@@ -108,11 +108,6 @@ One other optimization aside from the core sandbox is we added an init [script](
 
 Furthermore since a restore now takes tens of milliseconds, the idle killing can become even more aggressive. 
 
-Move the slider to see the trade, using the commands one tenant made in a real run:
-
-<div class="explain" data-kind="window"></div>
-<script src="/explainers.js" defer></script>
-
 A window of 5 seconds turned out to be best.
 When a VM is released it is killed if the guest holds nothing outside the workspace and `/tmp`, because the workspace lives on the host and is pushed back in on the next wake.
 A guest that really did install something, a `pip install` say, keeps a snapshot in two alternating slots, so a failed write never destroys the last good one.
