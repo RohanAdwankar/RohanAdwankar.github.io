@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Diagram test</title>
+<style>
+  :root { color-scheme: dark; }
+  body { margin: 0; padding: 16px; background: #181818; color: #ddd; font: 16px/1.5 Georgia, serif; }
+  h2 { font-size: 1rem; margin: 24px 0 8px; }
+  .box { background: transparent; overflow-x: auto; }
+  p { margin: 4px 0 16px; color: #999; }
+</style>
+</head>
+<body>
+<p>Two draws of the same diagram. Screenshot both on the phone.</p>
+<h2>A: default (HTML labels)</h2>
+<div class="box" id="a"></div>
+<h2>B: plain SVG text labels</h2>
+<div class="box" id="b"></div>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+var DIAGRAM = [
+  'flowchart TB',
+  '  subgraph vm["Cloud Hypervisor microVM (the hatchling)"]',
+  '    direction TB',
+  '    hostsvc["VM-side systemd: spawnd, sentinel, authd, hatch-safety, postgres, browser-broker, ingress-rev-proxy"]',
+  '    subgraph cell["systemd-nspawn runtime cell (htch-runtime)"]',
+  '      execd["hatch-execd, spawns your shells"]',
+  '      daemon["hatch daemon, the harness (entered from outside)"]',
+  '      home[("/home/hatch on vdd (rw, LUKS2), the RV, persists")]',
+  '      opt[("/opt/hatch squashfs on vdc (ro, verity), tools + skills + models")]',
+  '    end',
+  '    hostsvc -->|nsenter into the cell| daemon',
+  '    hostsvc -->|nsenter into the cell| execd',
+  '  end',
+  '  daemon -->|unix socket the cell can\'t see| inference["inference proxy"]'
+].join('\n');
+
+async function draw(target, id, plainLabels) {
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'dark',
+    securityLevel: 'loose',
+    fontFamily: 'Georgia, serif',
+    htmlLabels: !plainLabels,
+    flowchart: { htmlLabels: !plainLabels }
+  });
+  var out = await mermaid.render(id, DIAGRAM);
+  document.getElementById(target).innerHTML = out.svg;
+}
+(async function () {
+  await draw('a', 'diagram-a', false);
+  await draw('b', 'diagram-b', true);
+})();
+</script>
+</body>
+</html>
